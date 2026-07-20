@@ -1,0 +1,256 @@
+{
+  "id": "page-domain-support",
+  "title": "Domain, DNS & Email Support",
+  "slug": "domain-dns-email-support",
+  "description": "Straightforward help with domain settings, DNS records, email delivery, verification, and renewals.",
+  "showInNavigation": true,
+  "seo": {
+    "title": "Domain, DNS & Email Support | WebcareLeader",
+    "description": "Straightforward help with domain settings, DNS records, email delivery, verification, and renewals.",
+    "canonicalUrl": "https://webcareleader.example.com/domain-dns-email-support/",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": ["website support", "website maintenance", "WebcareLeader"]
+  },
+  "sections": [
+    {
+      "id": "domain-support-hero",
+      "type": "hero",
+      "label": "Domain, DNS & Email Support introduction",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "domain-support-hero-eyebrow",
+          "type": "text",
+          "text": "Reliable website support for growing businesses",
+          "style": {
+            "variant": "eyebrow"
+          }
+        },
+        {
+          "id": "domain-support-hero-title",
+          "type": "heading",
+          "level": 1,
+          "text": "Domain, DNS & Email Support"
+        },
+        {
+          "id": "domain-support-hero-copy",
+          "type": "text",
+          "text": "Straightforward help with domain settings, DNS records, email delivery, verification, and renewals."
+        },
+        {
+          "id": "domain-support-hero-cta",
+          "type": "button",
+          "label": "Talk to a website expert",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "domain-support-benefits",
+      "type": "features",
+      "label": "Benefits",
+      "layout": {
+        "container": "standard",
+        "columns": 3,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "domain-support-benefits-title",
+          "type": "heading",
+          "level": 2,
+          "text": "What this service does for your business"
+        },
+        {
+          "id": "domain-support-benefit-1",
+          "type": "text",
+          "text": "Prevent configuration mistakes that interrupt service"
+        },
+        {
+          "id": "domain-support-benefit-2",
+          "type": "text",
+          "text": "Restore email and website routing with less guesswork"
+        },
+        {
+          "id": "domain-support-benefit-3",
+          "type": "text",
+          "text": "Document ownership and critical records"
+        }
+      ]
+    },
+    {
+      "id": "domain-support-included",
+      "type": "services",
+      "label": "What's included",
+      "layout": {
+        "container": "standard",
+        "columns": 2,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "domain-support-included-title",
+          "type": "heading",
+          "level": 2,
+          "text": "What's included"
+        },
+        {
+          "id": "domain-support-included-1",
+          "type": "text",
+          "text": "DNS record review and correction"
+        },
+        {
+          "id": "domain-support-included-2",
+          "type": "text",
+          "text": "Domain verification and nameserver guidance"
+        },
+        {
+          "id": "domain-support-included-3",
+          "type": "text",
+          "text": "SPF, DKIM, and DMARC assistance"
+        },
+        {
+          "id": "domain-support-included-4",
+          "type": "text",
+          "text": "Email delivery troubleshooting"
+        },
+        {
+          "id": "domain-support-included-5",
+          "type": "text",
+          "text": "Renewal and access review"
+        }
+      ]
+    },
+    {
+      "id": "domain-support-process",
+      "type": "content",
+      "label": "Our process",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "domain-support-process-title",
+          "type": "heading",
+          "level": 2,
+          "text": "A clear process from first review to completion"
+        },
+        {
+          "id": "domain-support-process-1",
+          "type": "text",
+          "text": "1. Confirm ownership and affected services"
+        },
+        {
+          "id": "domain-support-process-2",
+          "type": "text",
+          "text": "2. Capture the current DNS state"
+        },
+        {
+          "id": "domain-support-process-3",
+          "type": "text",
+          "text": "3. Plan changes and lower risk where possible"
+        },
+        {
+          "id": "domain-support-process-4",
+          "type": "text",
+          "text": "4. Apply, verify, and document records"
+        }
+      ]
+    },
+    {
+      "id": "domain-support-faq",
+      "type": "custom",
+      "label": "Frequently asked questions",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "domain-support-faq-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Frequently asked questions"
+        },
+        {
+          "id": "domain-support-faq-q1",
+          "type": "heading",
+          "level": 3,
+          "text": "How long do DNS changes take?"
+        },
+        {
+          "id": "domain-support-faq-a1",
+          "type": "text",
+          "text": "Many changes appear quickly, but caching and provider settings can extend propagation. We monitor the expected records."
+        },
+        {
+          "id": "domain-support-faq-q2",
+          "type": "heading",
+          "level": 3,
+          "text": "Can you recover an expired domain?"
+        },
+        {
+          "id": "domain-support-faq-a2",
+          "type": "text",
+          "text": "Recovery depends on the registrar and expiry stage. We help identify available options but cannot guarantee recovery."
+        }
+      ]
+    },
+    {
+      "id": "domain-support-cta",
+      "type": "cta",
+      "label": "Call to action",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "primary"
+      },
+      "components": [
+        {
+          "id": "domain-support-cta-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Get dependable website help today",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "domain-support-cta-copy",
+          "type": "text",
+          "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "domain-support-cta-button",
+          "type": "button",
+          "label": "Request website support",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false,
+          "style": {
+            "align": "center"
+          }
+        }
+      ]
+    }
+  ]
+}

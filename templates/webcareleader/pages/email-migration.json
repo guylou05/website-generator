@@ -1,0 +1,256 @@
+{
+  "id": "page-email-migration",
+  "title": "Email Migration",
+  "slug": "email-migration",
+  "description": "Move business mailboxes, calendars, and contacts with careful preparation and user-focused support.",
+  "showInNavigation": true,
+  "seo": {
+    "title": "Email Migration | WebcareLeader",
+    "description": "Move business mailboxes, calendars, and contacts with careful preparation and user-focused support.",
+    "canonicalUrl": "https://webcareleader.example.com/email-migration/",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": ["website support", "website maintenance", "WebcareLeader"]
+  },
+  "sections": [
+    {
+      "id": "email-migration-hero",
+      "type": "hero",
+      "label": "Email Migration introduction",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "email-migration-hero-eyebrow",
+          "type": "text",
+          "text": "Reliable website support for growing businesses",
+          "style": {
+            "variant": "eyebrow"
+          }
+        },
+        {
+          "id": "email-migration-hero-title",
+          "type": "heading",
+          "level": 1,
+          "text": "Email Migration"
+        },
+        {
+          "id": "email-migration-hero-copy",
+          "type": "text",
+          "text": "Move business mailboxes, calendars, and contacts with careful preparation and user-focused support."
+        },
+        {
+          "id": "email-migration-hero-cta",
+          "type": "button",
+          "label": "Talk to a website expert",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "email-migration-benefits",
+      "type": "features",
+      "label": "Benefits",
+      "layout": {
+        "container": "standard",
+        "columns": 3,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "email-migration-benefits-title",
+          "type": "heading",
+          "level": 2,
+          "text": "What this service does for your business"
+        },
+        {
+          "id": "email-migration-benefit-1",
+          "type": "text",
+          "text": "Reduce lost mail and user disruption"
+        },
+        {
+          "id": "email-migration-benefit-2",
+          "type": "text",
+          "text": "Coordinate DNS and mailbox cutover"
+        },
+        {
+          "id": "email-migration-benefit-3",
+          "type": "text",
+          "text": "Give users clear instructions before and after launch"
+        }
+      ]
+    },
+    {
+      "id": "email-migration-included",
+      "type": "services",
+      "label": "What's included",
+      "layout": {
+        "container": "standard",
+        "columns": 2,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "email-migration-included-title",
+          "type": "heading",
+          "level": 2,
+          "text": "What's included"
+        },
+        {
+          "id": "email-migration-included-1",
+          "type": "text",
+          "text": "Mailbox and domain inventory"
+        },
+        {
+          "id": "email-migration-included-2",
+          "type": "text",
+          "text": "Destination tenant preparation"
+        },
+        {
+          "id": "email-migration-included-3",
+          "type": "text",
+          "text": "Data migration planning and execution"
+        },
+        {
+          "id": "email-migration-included-4",
+          "type": "text",
+          "text": "DNS authentication updates"
+        },
+        {
+          "id": "email-migration-included-5",
+          "type": "text",
+          "text": "Cutover support and verification"
+        }
+      ]
+    },
+    {
+      "id": "email-migration-process",
+      "type": "content",
+      "label": "Our process",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "email-migration-process-title",
+          "type": "heading",
+          "level": 2,
+          "text": "A clear process from first review to completion"
+        },
+        {
+          "id": "email-migration-process-1",
+          "type": "text",
+          "text": "1. Inventory users, aliases, and dependencies"
+        },
+        {
+          "id": "email-migration-process-2",
+          "type": "text",
+          "text": "2. Prepare accounts and migration batches"
+        },
+        {
+          "id": "email-migration-process-3",
+          "type": "text",
+          "text": "3. Run pilot and pre-stage data"
+        },
+        {
+          "id": "email-migration-process-4",
+          "type": "text",
+          "text": "4. Cut over, verify, and support users"
+        }
+      ]
+    },
+    {
+      "id": "email-migration-faq",
+      "type": "custom",
+      "label": "Frequently asked questions",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "email-migration-faq-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Frequently asked questions"
+        },
+        {
+          "id": "email-migration-faq-q1",
+          "type": "heading",
+          "level": 3,
+          "text": "Will old email be preserved?"
+        },
+        {
+          "id": "email-migration-faq-a1",
+          "type": "text",
+          "text": "The migration scope identifies which mail, calendars, and contacts can be transferred from the source platform."
+        },
+        {
+          "id": "email-migration-faq-q2",
+          "type": "heading",
+          "level": 3,
+          "text": "Can users keep their addresses?"
+        },
+        {
+          "id": "email-migration-faq-a2",
+          "type": "text",
+          "text": "Usually yes when the same domain remains in use. Account naming and aliases are confirmed during planning."
+        }
+      ]
+    },
+    {
+      "id": "email-migration-cta",
+      "type": "cta",
+      "label": "Call to action",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "primary"
+      },
+      "components": [
+        {
+          "id": "email-migration-cta-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Get dependable website help today",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "email-migration-cta-copy",
+          "type": "text",
+          "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "email-migration-cta-button",
+          "type": "button",
+          "label": "Request website support",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false,
+          "style": {
+            "align": "center"
+          }
+        }
+      ]
+    }
+  ]
+}

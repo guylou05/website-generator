@@ -1,0 +1,27 @@
+{
+  "id": "home-trust-bar",
+  "type": "custom",
+  "label": "Trust bar",
+  "layout": {
+    "container": "wide",
+    "columns": 1,
+    "spacing": "small",
+    "background": "surface"
+  },
+  "components": [
+    {
+      "id": "home-trust-title",
+      "type": "heading",
+      "level": 2,
+      "text": "Trusted support for business-critical websites"
+    },
+    {
+      "id": "home-trust-copy",
+      "type": "text",
+      "text": "Clear communication \u2022 Practical solutions \u2022 Security-minded work \u2022 No confusing handoffs",
+      "style": {
+        "align": "center"
+      }
+    }
+  ]
+}

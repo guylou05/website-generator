@@ -1,0 +1,17 @@
+{
+  "assets": [
+    {
+      "id": "logo",
+      "path": "assets/webcareleader-logo.svg",
+      "role": "logo",
+      "alt": "WebcareLeader"
+    },
+    {
+      "id": "social-card",
+      "path": "assets/social-card-placeholder.txt",
+      "role": "social",
+      "alt": "WebcareLeader website support"
+    }
+  ],
+  "note": "Placeholder assets must be replaced and published at the absolute URLs declared in website.json before launch."
+}

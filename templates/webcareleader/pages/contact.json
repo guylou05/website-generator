@@ -1,0 +1,231 @@
+{
+  "id": "page-contact",
+  "title": "Contact",
+  "slug": "contact",
+  "description": "Contact WebcareLeader for website maintenance, repairs, migrations, security, domain, DNS, or email support.",
+  "showInNavigation": true,
+  "seo": {
+    "title": "Contact | WebcareLeader",
+    "description": "Contact WebcareLeader for website maintenance, repairs, migrations, security, domain, DNS, or email support.",
+    "canonicalUrl": "https://webcareleader.example.com/contact/",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": ["website support", "website maintenance", "WebcareLeader"]
+  },
+  "sections": [
+    {
+      "id": "contact-hero",
+      "type": "hero",
+      "label": "Tell us how we can help introduction",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "contact-hero-eyebrow",
+          "type": "text",
+          "text": "Reliable website support for growing businesses",
+          "style": {
+            "variant": "eyebrow"
+          }
+        },
+        {
+          "id": "contact-hero-title",
+          "type": "heading",
+          "level": 1,
+          "text": "Tell us how we can help"
+        },
+        {
+          "id": "contact-hero-copy",
+          "type": "text",
+          "text": "Share what you are trying to accomplish, what is currently happening, and how urgent the request is."
+        },
+        {
+          "id": "contact-hero-cta",
+          "type": "button",
+          "label": "Send a support request",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "contact-form",
+      "type": "contact",
+      "label": "Support request form",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "contact-form-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Request website support"
+        },
+        {
+          "id": "contact-form-component",
+          "type": "form",
+          "name": "support-request",
+          "action": "/api/contact",
+          "method": "POST",
+          "fields": [
+            {
+              "id": "contact-name",
+              "name": "name",
+              "label": "Name",
+              "type": "text",
+              "required": true,
+              "placeholder": "Your name"
+            },
+            {
+              "id": "contact-email",
+              "name": "email",
+              "label": "Work email",
+              "type": "email",
+              "required": true,
+              "placeholder": "you@company.com"
+            },
+            {
+              "id": "contact-service",
+              "name": "service",
+              "label": "Service needed",
+              "type": "select",
+              "required": true,
+              "options": [
+                {
+                  "label": "Maintenance plans",
+                  "value": "maintenance"
+                },
+                {
+                  "label": "Emergency repair",
+                  "value": "emergency"
+                },
+                {
+                  "label": "Domain, DNS, or email support",
+                  "value": "domain-email"
+                },
+                {
+                  "label": "Website migration",
+                  "value": "website-migration"
+                },
+                {
+                  "label": "Security and malware removal",
+                  "value": "security"
+                },
+                {
+                  "label": "Email migration",
+                  "value": "email-migration"
+                },
+                {
+                  "label": "Not sure yet",
+                  "value": "unsure"
+                }
+              ]
+            },
+            {
+              "id": "contact-message",
+              "name": "message",
+              "label": "What is happening?",
+              "type": "textarea",
+              "required": true,
+              "placeholder": "Include any errors, timing, and business impact."
+            }
+          ],
+          "submitLabel": "Send support request",
+          "successMessage": "Thank you. We will review your request and respond with the next step.",
+          "consentText": "By submitting, you agree that WebcareLeader may contact you about this request."
+        }
+      ]
+    },
+    {
+      "id": "contact-faq",
+      "type": "custom",
+      "label": "Frequently asked questions",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "contact-faq-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Frequently asked questions"
+        },
+        {
+          "id": "contact-faq-q1",
+          "type": "heading",
+          "level": 3,
+          "text": "What should I include in my request?"
+        },
+        {
+          "id": "contact-faq-a1",
+          "type": "text",
+          "text": "Include the website address, what changed, any exact error message, when the problem began, and how it affects customers or staff."
+        },
+        {
+          "id": "contact-faq-q2",
+          "type": "heading",
+          "level": 3,
+          "text": "Should I send passwords through this form?"
+        },
+        {
+          "id": "contact-faq-a2",
+          "type": "text",
+          "text": "No. Never send passwords in the initial request. We will provide a safer access process if credentials are needed."
+        }
+      ]
+    },
+    {
+      "id": "contact-cta",
+      "type": "cta",
+      "label": "Call to action",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "primary"
+      },
+      "components": [
+        {
+          "id": "contact-cta-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Prefer a planned consultation?",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "contact-cta-copy",
+          "type": "text",
+          "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "contact-cta-button",
+          "type": "button",
+          "label": "Request website support",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false,
+          "style": {
+            "align": "center"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "maintenance-process",
+  "type": "content",
+  "label": "Our process",
+  "layout": {
+    "container": "narrow",
+    "columns": 1,
+    "spacing": "large",
+    "background": "default"
+  },
+  "components": [
+    {
+      "id": "maintenance-process-title",
+      "type": "heading",
+      "level": 2,
+      "text": "A clear process from first review to completion"
+    },
+    {
+      "id": "maintenance-process-1",
+      "type": "text",
+      "text": "1. Review the website and hosting environment"
+    },
+    {
+      "id": "maintenance-process-2",
+      "type": "text",
+      "text": "2. Recommend the right care level"
+    },
+    {
+      "id": "maintenance-process-3",
+      "type": "text",
+      "text": "3. Create baselines and verified backups"
+    },
+    {
+      "id": "maintenance-process-4",
+      "type": "text",
+      "text": "4. Maintain, monitor, and report"
+    }
+  ]
+}
