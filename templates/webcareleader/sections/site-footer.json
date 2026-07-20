@@ -1,0 +1,32 @@
+{
+  "id": "home-footer",
+  "type": "custom",
+  "label": "Site footer",
+  "layout": {
+    "container": "wide",
+    "columns": 1,
+    "spacing": "medium",
+    "background": "surface"
+  },
+  "components": [
+    {
+      "id": "home-footer-title",
+      "type": "heading",
+      "level": 2,
+      "text": "WebcareLeader"
+    },
+    {
+      "id": "home-footer-copy",
+      "type": "text",
+      "text": "Website care, repairs, migrations, and technical support for organizations that need a dependable partner."
+    },
+    {
+      "id": "home-footer-contact",
+      "type": "button",
+      "label": "Contact support",
+      "href": "/contact",
+      "intent": "link",
+      "external": false
+    }
+  ]
+}
