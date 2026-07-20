@@ -3,10 +3,23 @@ export interface NavigationItem {
   id: string;
   label: string;
   href: string;
-  external?: boolean;
-  children?: NavigationItem[];
+  external: boolean;
+  children: NavigationItem[];
 }
-export const navigationItemSchema: z.ZodType<NavigationItem> = z.lazy(() =>
+
+export interface NavigationItemInput {
+  id: string;
+  label: string;
+  href: string;
+  external?: boolean | undefined;
+  children?: NavigationItemInput[] | undefined;
+}
+
+export const navigationItemSchema: z.ZodType<
+  NavigationItem,
+  z.ZodTypeDef,
+  NavigationItemInput
+> = z.lazy(() =>
   z
     .object({
       id: z.string().min(1),

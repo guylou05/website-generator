@@ -1,3 +1,4 @@
+/** Public API for WordPress authentication, REST access, and deployments. */
 export * from './auth.js';
 export * from './client.js';
 export * from './deployer.js';
