@@ -40,11 +40,7 @@ export interface SectionLayoutPlan {
   readonly container: 'narrow' | 'standard' | 'wide' | 'full';
   readonly columns: number;
   readonly background:
-    | 'default'
-    | 'surface'
-    | 'primary'
-    | 'secondary'
-    | 'accent';
+    'default' | 'surface' | 'primary' | 'secondary' | 'accent';
 }
 
 export interface DesignPlanningInput {

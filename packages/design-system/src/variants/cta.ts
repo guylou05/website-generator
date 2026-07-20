@@ -1,7 +1,4 @@
-import type {
-  ContentLimits,
-  SectionVariantDefinition,
-} from '../components/index.js';
+import type { SectionVariantDefinition } from '../components/index.js';
 export type CtaLayout = 'centered' | 'split' | 'banner';
 export type CtaStyle = 'solid' | 'soft' | 'bordered';
 export const ctaVariants: SectionVariantDefinition<'cta', CtaLayout, CtaStyle> =

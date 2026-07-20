@@ -2,35 +2,77 @@ name: ${COMPOSE_PROJECT_NAME:-website-generator}
 services:
   dashboard:
     build: { context: ., dockerfile: apps/dashboard/Dockerfile }
-    ports: ["${DASHBOARD_PORT:-3000}:3000"]
-    environment: { NEXT_PUBLIC_API_URL: "http://localhost:${API_PORT:-8080}/api" }
-    volumes: ["./apps/dashboard:/workspace/apps/dashboard", "dashboard_node_modules:/workspace/apps/dashboard/node_modules"]
+    ports: ['${DASHBOARD_PORT:-3000}:3000']
+    environment:
+      { NEXT_PUBLIC_API_URL: 'http://localhost:${API_PORT:-8080}/api' }
+    volumes:
+      [
+        './apps/dashboard:/workspace/apps/dashboard',
+        'dashboard_node_modules:/workspace/apps/dashboard/node_modules',
+      ]
     depends_on: { api: { condition: service_started } }
   api:
     build: { context: apps/api }
     env_file: apps/api/.env
-    volumes: ["./apps/api:/var/www/html"]
-    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy } }
+    volumes: ['./apps/api:/var/www/html']
+    depends_on:
+      {
+        postgres: { condition: service_healthy },
+        redis: { condition: service_healthy },
+      }
   nginx:
     image: nginx:1.27-alpine
-    ports: ["${API_PORT:-8080}:80"]
-    volumes: ["./apps/api/public:/var/www/html/public:ro", "./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro"]
+    ports: ['${API_PORT:-8080}:80']
+    volumes:
+      [
+        './apps/api/public:/var/www/html/public:ro',
+        './docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro',
+      ]
     depends_on: [api]
   worker:
     build: { context: ., dockerfile: apps/worker/Dockerfile }
     env_file: apps/worker/.env
-    volumes: ["./apps/worker:/workspace/apps/worker", "./packages:/workspace/packages", "worker_node_modules:/workspace/apps/worker/node_modules"]
+    volumes:
+      [
+        './apps/worker:/workspace/apps/worker',
+        './packages:/workspace/packages',
+        'worker_node_modules:/workspace/apps/worker/node_modules',
+      ]
     depends_on: { redis: { condition: service_healthy } }
   postgres:
     image: postgres:17-alpine
-    environment: { POSTGRES_DB: "${POSTGRES_DB:-website_generator}", POSTGRES_USER: "${POSTGRES_USER:-website_generator}", POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-local-development-only}" }
-    ports: ["${POSTGRES_PORT:-5432}:5432"]
-    volumes: ["postgres_data:/var/lib/postgresql/data"]
-    healthcheck: { test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"], interval: 5s, timeout: 5s, retries: 10 }
+    environment:
+      {
+        POSTGRES_DB: '${POSTGRES_DB:-website_generator}',
+        POSTGRES_USER: '${POSTGRES_USER:-website_generator}',
+        POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-local-development-only}',
+      }
+    ports: ['${POSTGRES_PORT:-5432}:5432']
+    volumes: ['postgres_data:/var/lib/postgresql/data']
+    healthcheck:
+      {
+        test:
+          ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'],
+        interval: 5s,
+        timeout: 5s,
+        retries: 10,
+      }
   redis:
     image: redis:7.4-alpine
     command: redis-server --appendonly yes
-    ports: ["${REDIS_PORT:-6379}:6379"]
-    volumes: ["redis_data:/data"]
-    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 3s, retries: 10 }
-volumes: { postgres_data: {}, redis_data: {}, dashboard_node_modules: {}, worker_node_modules: {} }
+    ports: ['${REDIS_PORT:-6379}:6379']
+    volumes: ['redis_data:/data']
+    healthcheck:
+      {
+        test: ['CMD', 'redis-cli', 'ping'],
+        interval: 5s,
+        timeout: 3s,
+        retries: 10,
+      }
+volumes:
+  {
+    postgres_data: {},
+    redis_data: {},
+    dashboard_node_modules: {},
+    worker_node_modules: {},
+  }

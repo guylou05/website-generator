@@ -6,5 +6,10 @@ export default tseslint.config(
   { ignores: ['**/dist/**', '**/.next/**', '**/node_modules/**'] },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      globals: { structuredClone: 'readonly', URL: 'readonly' },
+    },
+  },
   prettier,
 );

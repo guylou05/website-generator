@@ -1,17 +1,6 @@
 import type { ResponsiveValue } from './breakpoints.js';
 export type SpacingStep =
-  | '0'
-  | '1'
-  | '2'
-  | '3'
-  | '4'
-  | '6'
-  | '8'
-  | '12'
-  | '16'
-  | '20'
-  | '24'
-  | '32';
+  '0' | '1' | '2' | '3' | '4' | '6' | '8' | '12' | '16' | '20' | '24' | '32';
 export type SpacingScale = Readonly<Record<SpacingStep, string>>;
 export interface SpacingTokens {
   readonly scale: SpacingScale;

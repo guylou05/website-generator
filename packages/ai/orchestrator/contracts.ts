@@ -5,12 +5,7 @@ import type { WebsitePlan } from '../planner/index.js';
 import type { SeoContent, WebsiteContent } from '../writer/index.js';
 
 export type PipelineStage =
-  | 'analysis'
-  | 'planning'
-  | 'writing'
-  | 'seo'
-  | 'design'
-  | 'blueprint';
+  'analysis' | 'planning' | 'writing' | 'seo' | 'design' | 'blueprint';
 
 export interface BlueprintGenerationInput {
   readonly profile: BusinessProfile;

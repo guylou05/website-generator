@@ -1,1 +1,12 @@
-{ "extends": "../../tsconfig.base.json", "compilerOptions": { "outDir": "dist", "rootDir": "src", "module": "ESNext", "target": "ES2022" }, "include": ["src/**/*.ts"] }
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": true,
+    "module": "ESNext",
+    "target": "ES2022"
+  },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../design-system" }, { "path": "../shared" }]
+}

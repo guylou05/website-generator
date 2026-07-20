@@ -6,7 +6,11 @@ export interface NavigationItem {
   external?: boolean;
   children?: NavigationItem[];
 }
-export const navigationItemSchema: z.ZodType<NavigationItem> = z.lazy(() =>
+export const navigationItemSchema: z.ZodType<
+  NavigationItem,
+  z.ZodTypeDef,
+  unknown
+> = z.lazy(() =>
   z
     .object({
       id: z.string().min(1),

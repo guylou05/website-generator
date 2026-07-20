@@ -3,20 +3,9 @@ import type { ContainerWidth } from './container.js';
 
 export type SectionAlignment = 'start' | 'center' | 'end';
 export type SupportedMedia =
-  | 'none'
-  | 'image'
-  | 'video'
-  | 'illustration'
-  | 'icon'
-  | 'avatar'
-  | 'logo';
+  'none' | 'image' | 'video' | 'illustration' | 'icon' | 'avatar' | 'logo';
 export type SectionBackground =
-  | 'default'
-  | 'surface'
-  | 'primary'
-  | 'secondary'
-  | 'accent'
-  | 'media';
+  'default' | 'surface' | 'primary' | 'secondary' | 'accent' | 'media';
 export interface ContentLimits {
   readonly maxHeadingCharacters: number;
   readonly maxBodyCharacters: number;

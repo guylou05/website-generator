@@ -1,9 +1,5 @@
 export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'outline'
-  | 'ghost'
-  | 'link';
+  'primary' | 'secondary' | 'outline' | 'ghost' | 'link';
 export type ButtonSize = 'small' | 'medium' | 'large';
 export interface ButtonDefinition {
   readonly variants: readonly ButtonVariant[];
