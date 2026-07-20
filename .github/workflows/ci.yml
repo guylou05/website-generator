@@ -13,19 +13,25 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build
+      - run: pnpm test
   php:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: apps/api } }
     services:
       postgres:
         image: postgres:17-alpine
-        env: { POSTGRES_DB: website_generator, POSTGRES_USER: website_generator, POSTGRES_PASSWORD: password }
-        ports: ["5432:5432"]
+        env:
+          {
+            POSTGRES_DB: website_generator,
+            POSTGRES_USER: website_generator,
+            POSTGRES_PASSWORD: password,
+          }
+        ports: ['5432:5432']
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2

@@ -4,7 +4,10 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   reactStrictMode: true,
-  transpilePackages: ['@website-generator/design-system', '@website-generator/shared'],
+  transpilePackages: [
+    '@website-generator/design-system',
+    '@website-generator/shared',
+  ],
 };
 
 export default nextConfig;
