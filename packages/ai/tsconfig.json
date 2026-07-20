@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
+    "composite": true,
     "module": "ESNext",
     "target": "ES2022"
   },
@@ -14,5 +15,6 @@
     "planner/**/*.ts",
     "prompts/**/*.ts",
     "writer/**/*.ts"
-  ]
+  ],
+  "references": [{ "path": "../shared" }]
 }
