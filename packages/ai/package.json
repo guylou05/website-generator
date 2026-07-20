@@ -5,7 +5,46 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "scripts": { "build": "tsc -p tsconfig.json", "lint": "eslint src", "typecheck": "tsc --noEmit", "test": "echo 'No tests yet'" },
-  "devDependencies": { "typescript": "^5.7.2" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./analyzer": {
+      "types": "./dist/analyzer/index.d.ts",
+      "default": "./dist/analyzer/index.js"
+    },
+    "./designer": {
+      "types": "./dist/designer/index.d.ts",
+      "default": "./dist/designer/index.js"
+    },
+    "./orchestrator": {
+      "types": "./dist/orchestrator/index.d.ts",
+      "default": "./dist/orchestrator/index.js"
+    },
+    "./planner": {
+      "types": "./dist/planner/index.d.ts",
+      "default": "./dist/planner/index.js"
+    },
+    "./prompts": {
+      "types": "./dist/prompts/index.d.ts",
+      "default": "./dist/prompts/index.js"
+    },
+    "./writer": {
+      "types": "./dist/writer/index.d.ts",
+      "default": "./dist/writer/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint analyzer designer orchestrator planner prompts writer index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'No tests yet'"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@website-generator/shared": "workspace:*"
+  }
 }
