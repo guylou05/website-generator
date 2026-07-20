@@ -1,0 +1,34 @@
+{
+  "id": "maintenance-benefits",
+  "type": "features",
+  "label": "Benefits",
+  "layout": {
+    "container": "standard",
+    "columns": 3,
+    "spacing": "large",
+    "background": "default"
+  },
+  "components": [
+    {
+      "id": "maintenance-benefits-title",
+      "type": "heading",
+      "level": 2,
+      "text": "What this service does for your business"
+    },
+    {
+      "id": "maintenance-benefit-1",
+      "type": "text",
+      "text": "Reduce downtime and security risk"
+    },
+    {
+      "id": "maintenance-benefit-2",
+      "type": "text",
+      "text": "Keep software and integrations current"
+    },
+    {
+      "id": "maintenance-benefit-3",
+      "type": "text",
+      "text": "Know who to contact when questions arise"
+    }
+  ]
+}

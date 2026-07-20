@@ -1,0 +1,390 @@
+{
+  "id": "page-home",
+  "title": "Home",
+  "slug": "",
+  "description": "Website maintenance, emergency repairs, migrations, security, and domain or email support without the technical runaround.",
+  "showInNavigation": true,
+  "seo": {
+    "title": "WebcareLeader | Website Support Without the Stress",
+    "description": "Website maintenance, emergency repairs, migrations, security, and domain or email support without the technical runaround.",
+    "canonicalUrl": "https://webcareleader.example.com/",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": ["website support", "website maintenance", "WebcareLeader"]
+  },
+  "sections": [
+    {
+      "id": "home-hero",
+      "type": "hero",
+      "label": "Your website should support your business\u2014not slow it down. introduction",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "home-hero-eyebrow",
+          "type": "text",
+          "text": "Reliable website support for growing businesses",
+          "style": {
+            "variant": "eyebrow"
+          }
+        },
+        {
+          "id": "home-hero-title",
+          "type": "heading",
+          "level": 1,
+          "text": "Your website should support your business\u2014not slow it down."
+        },
+        {
+          "id": "home-hero-copy",
+          "type": "text",
+          "text": "WebcareLeader handles maintenance, repairs, migrations, security, domains, DNS, and email so your team can stay focused."
+        },
+        {
+          "id": "home-hero-cta",
+          "type": "button",
+          "label": "Get reliable website help",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "home-trust-bar",
+      "type": "custom",
+      "label": "Trust bar",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "small",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "home-trust-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Trusted support for business-critical websites"
+        },
+        {
+          "id": "home-trust-copy",
+          "type": "text",
+          "text": "Clear communication \u2022 Practical solutions \u2022 Security-minded work \u2022 No confusing handoffs",
+          "style": {
+            "align": "center"
+          }
+        }
+      ]
+    },
+    {
+      "id": "home-services",
+      "type": "services",
+      "label": "Services grid",
+      "layout": {
+        "container": "standard",
+        "columns": 3,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "home-services-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Practical help for every website challenge"
+        },
+        {
+          "id": "home-services-copy",
+          "type": "text",
+          "text": "Choose ongoing care or focused technical help when something needs attention."
+        },
+        {
+          "id": "home-service-1",
+          "type": "text",
+          "text": "Maintenance plans that prevent avoidable problems"
+        },
+        {
+          "id": "home-service-2",
+          "type": "text",
+          "text": "Emergency website repair when your site cannot wait"
+        },
+        {
+          "id": "home-service-3",
+          "type": "text",
+          "text": "Domain, DNS, and email troubleshooting"
+        },
+        {
+          "id": "home-service-4",
+          "type": "text",
+          "text": "Careful website and email migrations"
+        },
+        {
+          "id": "home-service-5",
+          "type": "text",
+          "text": "Security hardening and malware cleanup"
+        }
+      ]
+    },
+    {
+      "id": "home-why",
+      "type": "features",
+      "label": "Why choose us",
+      "layout": {
+        "container": "standard",
+        "columns": 3,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "home-why-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Calm, accountable technical support"
+        },
+        {
+          "id": "home-why-1",
+          "type": "text",
+          "text": "You get clear explanations, documented work, and a defined owner for every request."
+        },
+        {
+          "id": "home-why-2",
+          "type": "text",
+          "text": "We prioritize business impact, security, recoverability, and long-term maintainability."
+        },
+        {
+          "id": "home-why-3",
+          "type": "text",
+          "text": "Recommendations are practical and proportionate\u2014never a sales pitch disguised as support."
+        }
+      ]
+    },
+    {
+      "id": "home-plans",
+      "type": "services",
+      "label": "Maintenance plans preview",
+      "layout": {
+        "container": "standard",
+        "columns": 2,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "home-plans-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Maintenance that works quietly in the background"
+        },
+        {
+          "id": "home-plan-care",
+          "type": "text",
+          "text": "Essential Care \u2014 updates, backups, uptime checks, and a monthly health report."
+        },
+        {
+          "id": "home-plan-growth",
+          "type": "text",
+          "text": "Growth Care \u2014 everything in Essential plus priority support and content assistance."
+        },
+        {
+          "id": "home-plans-button",
+          "type": "button",
+          "label": "Compare maintenance plans",
+          "href": "/maintenance-plans",
+          "intent": "secondary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "home-emergency",
+      "type": "cta",
+      "label": "Emergency repair banner",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "medium",
+        "background": "accent"
+      },
+      "components": [
+        {
+          "id": "home-emergency-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Website down, hacked, or behaving strangely?"
+        },
+        {
+          "id": "home-emergency-copy",
+          "type": "text",
+          "text": "We will assess the incident, stabilize the site, and explain the safest path forward."
+        },
+        {
+          "id": "home-emergency-button",
+          "type": "button",
+          "label": "Request emergency help",
+          "href": "/emergency-website-repair",
+          "intent": "primary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "home-testimonials",
+      "type": "testimonials",
+      "label": "Client testimonials",
+      "layout": {
+        "container": "standard",
+        "columns": 2,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "home-testimonials-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Support clients can count on"
+        },
+        {
+          "id": "home-quote-1",
+          "type": "text",
+          "text": "\u201cWebcareLeader explained the issue in plain English and had our booking site stable before our next campaign.\u201d \u2014 Operations Director, Northstar Wellness"
+        },
+        {
+          "id": "home-quote-2",
+          "type": "text",
+          "text": "\u201cOur migration was organized, thoroughly tested, and completed without disrupting the team.\u201d \u2014 Founder, Harbour & Field"
+        }
+      ]
+    },
+    {
+      "id": "home-faq",
+      "type": "custom",
+      "label": "Frequently asked questions",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "home-faq-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Frequently asked questions"
+        },
+        {
+          "id": "home-faq-q1",
+          "type": "heading",
+          "level": 3,
+          "text": "Can you support a website you did not build?"
+        },
+        {
+          "id": "home-faq-a1",
+          "type": "text",
+          "text": "Yes. We begin with a technical review so we can understand the platform, hosting, integrations, and current risks."
+        },
+        {
+          "id": "home-faq-q2",
+          "type": "heading",
+          "level": 3,
+          "text": "Do you offer one-time help?"
+        },
+        {
+          "id": "home-faq-a2",
+          "type": "text",
+          "text": "Yes. Emergency repairs, migrations, security cleanups, and DNS or email projects can be handled as defined engagements."
+        },
+        {
+          "id": "home-faq-q3",
+          "type": "heading",
+          "level": 3,
+          "text": "Which platforms do you support?"
+        },
+        {
+          "id": "home-faq-a3",
+          "type": "text",
+          "text": "We primarily support established content-managed and business websites. We confirm compatibility during the initial review."
+        }
+      ]
+    },
+    {
+      "id": "home-final-cta",
+      "type": "cta",
+      "label": "Call to action",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "primary"
+      },
+      "components": [
+        {
+          "id": "home-final-cta-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Stop worrying about your website",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "home-final-cta-copy",
+          "type": "text",
+          "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "home-final-cta-button",
+          "type": "button",
+          "label": "Request website support",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false,
+          "style": {
+            "align": "center"
+          }
+        }
+      ]
+    },
+    {
+      "id": "home-footer",
+      "type": "custom",
+      "label": "Site footer",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "medium",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "home-footer-title",
+          "type": "heading",
+          "level": 2,
+          "text": "WebcareLeader"
+        },
+        {
+          "id": "home-footer-copy",
+          "type": "text",
+          "text": "Website care, repairs, migrations, and technical support for organizations that need a dependable partner."
+        },
+        {
+          "id": "home-footer-contact",
+          "type": "button",
+          "label": "Contact support",
+          "href": "/contact",
+          "intent": "link",
+          "external": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "maintenance-included",
+  "type": "services",
+  "label": "What's included",
+  "layout": {
+    "container": "standard",
+    "columns": 2,
+    "spacing": "large",
+    "background": "surface"
+  },
+  "components": [
+    {
+      "id": "maintenance-included-title",
+      "type": "heading",
+      "level": 2,
+      "text": "What's included"
+    },
+    {
+      "id": "maintenance-included-1",
+      "type": "text",
+      "text": "Managed updates with compatibility checks"
+    },
+    {
+      "id": "maintenance-included-2",
+      "type": "text",
+      "text": "Scheduled off-site backups and restore checks"
+    },
+    {
+      "id": "maintenance-included-3",
+      "type": "text",
+      "text": "Uptime and security monitoring"
+    },
+    {
+      "id": "maintenance-included-4",
+      "type": "text",
+      "text": "Monthly health reporting"
+    },
+    {
+      "id": "maintenance-included-5",
+      "type": "text",
+      "text": "Defined support time"
+    }
+  ]
+}

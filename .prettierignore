@@ -1,0 +1,8 @@
+.next
+vendor
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+apps/api/bootstrap/cache
+apps/api/storage

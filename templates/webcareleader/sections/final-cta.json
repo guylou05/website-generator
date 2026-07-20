@@ -1,0 +1,41 @@
+{
+  "id": "home-final-cta",
+  "type": "cta",
+  "label": "Call to action",
+  "layout": {
+    "container": "narrow",
+    "columns": 1,
+    "spacing": "large",
+    "background": "primary"
+  },
+  "components": [
+    {
+      "id": "home-final-cta-title",
+      "type": "heading",
+      "level": 2,
+      "text": "Stop worrying about your website",
+      "style": {
+        "align": "center"
+      }
+    },
+    {
+      "id": "home-final-cta-copy",
+      "type": "text",
+      "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+      "style": {
+        "align": "center"
+      }
+    },
+    {
+      "id": "home-final-cta-button",
+      "type": "button",
+      "label": "Request website support",
+      "href": "/contact",
+      "intent": "primary",
+      "external": false,
+      "style": {
+        "align": "center"
+      }
+    }
+  ]
+}
