@@ -1,0 +1,390 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Northstar IT Solutions",
+    "description": "Managed IT and cybersecurity services for growing businesses.",
+    "language": "en-US",
+    "baseUrl": "https://northstar-it.example.com",
+    "createdAt": "2026-07-20T00:00:00.000Z",
+    "updatedAt": "2026-07-20T00:00:00.000Z"
+  },
+  "branding": {
+    "name": "Northstar IT Solutions",
+    "tagline": "Technology that keeps your business moving",
+    "logo": {
+      "url": "https://northstar-it.example.com/assets/logo.svg",
+      "alt": "Northstar IT Solutions",
+      "width": 240,
+      "height": 64
+    },
+    "mark": {
+      "url": "https://northstar-it.example.com/assets/mark.svg",
+      "alt": "Northstar star mark",
+      "width": 64,
+      "height": 64
+    },
+    "colors": {
+      "primary": "#123B5D",
+      "secondary": "#236B8E",
+      "accent": "#31C3A2",
+      "background": "#FFFFFF",
+      "surface": "#F2F7FA",
+      "text": "#13212B",
+      "mutedText": "#526672"
+    },
+    "typography": {
+      "headingFont": "Manrope",
+      "bodyFont": "Inter",
+      "baseSize": "1rem"
+    }
+  },
+  "globalStyles": {
+    "borderRadius": "medium",
+    "contentWidth": "standard",
+    "spacingScale": "comfortable",
+    "buttonStyle": "solid",
+    "imageStyle": "rounded"
+  },
+  "navigation": {
+    "ariaLabel": "Primary navigation",
+    "items": [
+      {
+        "id": "nav-home",
+        "label": "Home",
+        "href": "/",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-services",
+        "label": "Services",
+        "href": "/services",
+        "external": false,
+        "children": [
+          {
+            "id": "nav-managed-it",
+            "label": "Managed IT",
+            "href": "/services#managed-it",
+            "external": false,
+            "children": []
+          },
+          {
+            "id": "nav-security",
+            "label": "Cybersecurity",
+            "href": "/services#cybersecurity",
+            "external": false,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "nav-contact",
+        "label": "Contact",
+        "href": "/contact",
+        "external": false,
+        "children": []
+      }
+    ],
+    "cta": {
+      "label": "Book a consultation",
+      "href": "/contact",
+      "external": false
+    }
+  },
+  "defaultSeo": {
+    "title": "Northstar IT Solutions | Managed IT & Cybersecurity",
+    "description": "Reliable managed IT, cloud, help desk, and cybersecurity services for growing organizations.",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": ["managed IT", "cybersecurity", "cloud services"],
+    "openGraph": {
+      "title": "Northstar IT Solutions",
+      "description": "Technology that keeps your business moving.",
+      "imageUrl": "https://northstar-it.example.com/assets/social.jpg",
+      "imageAlt": "Northstar IT engineers collaborating",
+      "type": "website"
+    }
+  },
+  "pages": [
+    {
+      "id": "page-home",
+      "title": "Home",
+      "slug": "",
+      "description": "Northstar IT overview",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Northstar IT Solutions",
+        "description": "Proactive technology support and security for growing businesses.",
+        "canonicalUrl": "https://northstar-it.example.com/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["IT support", "managed services"]
+      },
+      "sections": [
+        {
+          "id": "home-hero",
+          "type": "hero",
+          "label": "Introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 2,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "hero-heading",
+              "type": "heading",
+              "level": 1,
+              "text": "Confident technology. Resilient business."
+            },
+            {
+              "id": "hero-copy",
+              "type": "text",
+              "text": "Northstar keeps your team productive and your systems protected with proactive IT expertise."
+            },
+            {
+              "id": "hero-cta",
+              "type": "button",
+              "label": "Book a consultation",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            },
+            {
+              "id": "hero-image",
+              "type": "image",
+              "url": "https://northstar-it.example.com/assets/team.jpg",
+              "alt": "Northstar engineer helping a client",
+              "width": 1200,
+              "height": 800,
+              "loading": "eager"
+            }
+          ]
+        },
+        {
+          "id": "home-services",
+          "type": "services",
+          "label": "Core services",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "services-heading",
+              "type": "heading",
+              "level": 2,
+              "text": "IT built around your business"
+            },
+            {
+              "id": "managed-copy",
+              "type": "text",
+              "text": "Managed support, monitoring, and strategic guidance in one accountable partnership."
+            },
+            {
+              "id": "security-copy",
+              "type": "text",
+              "text": "Layered security, staff readiness, and rapid incident response reduce operational risk."
+            }
+          ]
+        },
+        {
+          "id": "home-cta",
+          "type": "cta",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "cta-heading",
+              "type": "heading",
+              "level": 2,
+              "text": "Ready for IT that works ahead?",
+              "style": { "align": "center", "variant": "inverse" }
+            },
+            {
+              "id": "cta-button",
+              "type": "button",
+              "label": "Talk with an expert",
+              "href": "/contact",
+              "intent": "secondary",
+              "external": false,
+              "style": { "align": "center" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-services",
+      "title": "Services",
+      "slug": "services",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Managed IT Services | Northstar",
+        "description": "Explore Northstar managed IT, cloud, help desk, and cybersecurity services.",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["managed IT services", "cybersecurity"]
+      },
+      "sections": [
+        {
+          "id": "services-overview",
+          "type": "content",
+          "layout": {
+            "container": "standard",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "services-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Services that scale with you"
+            },
+            {
+              "id": "services-intro",
+              "type": "text",
+              "text": "Choose a complete managed partnership or focused expertise for your highest-priority initiatives."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-contact",
+      "title": "Contact",
+      "slug": "contact",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Contact Northstar IT Solutions",
+        "description": "Tell Northstar about your technology goals and schedule an introductory consultation.",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["IT consultation"]
+      },
+      "sections": [
+        {
+          "id": "contact-form",
+          "type": "contact",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "contact-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Let's solve what is next"
+            },
+            {
+              "id": "inquiry-form",
+              "type": "form",
+              "name": "consultation-request",
+              "action": "/api/contact",
+              "method": "POST",
+              "fields": [
+                {
+                  "id": "field-name",
+                  "name": "name",
+                  "label": "Name",
+                  "type": "text",
+                  "required": true,
+                  "placeholder": "Your name"
+                },
+                {
+                  "id": "field-email",
+                  "name": "email",
+                  "label": "Work email",
+                  "type": "email",
+                  "required": true,
+                  "placeholder": "you@company.com"
+                },
+                {
+                  "id": "field-interest",
+                  "name": "interest",
+                  "label": "How can we help?",
+                  "type": "select",
+                  "required": true,
+                  "options": [
+                    { "label": "Managed IT", "value": "managed-it" },
+                    { "label": "Cybersecurity", "value": "cybersecurity" },
+                    { "label": "Cloud services", "value": "cloud" }
+                  ]
+                },
+                {
+                  "id": "field-message",
+                  "name": "message",
+                  "label": "Message",
+                  "type": "textarea",
+                  "required": true
+                }
+              ],
+              "submitLabel": "Request consultation",
+              "successMessage": "Thanks. A Northstar specialist will contact you shortly.",
+              "consentText": "By submitting, you agree that Northstar may contact you about this request."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "tagline": "Technology that keeps your business moving",
+    "columns": [
+      {
+        "title": "Company",
+        "links": [
+          {
+            "id": "footer-contact",
+            "label": "Contact",
+            "href": "/contact",
+            "external": false,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "Legal",
+        "links": [
+          {
+            "id": "footer-privacy",
+            "label": "Privacy",
+            "href": "/privacy",
+            "external": false,
+            "children": []
+          }
+        ]
+      }
+    ],
+    "socialLinks": [
+      {
+        "platform": "LinkedIn",
+        "href": "https://www.linkedin.com/company/northstar-it-example",
+        "label": "Northstar IT on LinkedIn"
+      }
+    ],
+    "components": [
+      {
+        "id": "footer-cta",
+        "type": "button",
+        "label": "Book a consultation",
+        "href": "/contact",
+        "intent": "primary",
+        "external": false
+      }
+    ],
+    "copyright": "© 2026 Northstar IT Solutions. All rights reserved."
+  }
+}

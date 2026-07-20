@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "ESNext",
+    "target": "ES2022"
+  },
+  "include": [
+    "*.ts",
+    "analyzer/**/*.ts",
+    "designer/**/*.ts",
+    "orchestrator/**/*.ts",
+    "planner/**/*.ts",
+    "prompts/**/*.ts",
+    "writer/**/*.ts"
+  ]
+}

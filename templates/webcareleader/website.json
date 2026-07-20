@@ -1,0 +1,2509 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "WebcareLeader",
+    "description": "Professional website maintenance, repair, migration, security, domain, DNS, and email support.",
+    "language": "en-US",
+    "baseUrl": "https://webcareleader.example.com",
+    "createdAt": "2026-07-20T00:00:00.000Z",
+    "updatedAt": "2026-07-20T00:00:00.000Z"
+  },
+  "branding": {
+    "name": "WebcareLeader",
+    "tagline": "Website support without the stress",
+    "logo": {
+      "url": "https://webcareleader.example.com/assets/webcareleader-logo.svg",
+      "alt": "WebcareLeader",
+      "width": 240,
+      "height": 56
+    },
+    "colors": {
+      "primary": "#155EEF",
+      "secondary": "#0E7490",
+      "accent": "#14B8A6",
+      "background": "#FFFFFF",
+      "surface": "#F8FAFC",
+      "text": "#0F172A",
+      "mutedText": "#475569"
+    },
+    "typography": {
+      "headingFont": "Inter",
+      "bodyFont": "Inter",
+      "baseSize": "1rem"
+    }
+  },
+  "globalStyles": {
+    "borderRadius": "large",
+    "contentWidth": "standard",
+    "spacingScale": "spacious",
+    "buttonStyle": "solid",
+    "imageStyle": "rounded"
+  },
+  "navigation": {
+    "ariaLabel": "Primary navigation",
+    "items": [
+      {
+        "id": "nav-home",
+        "label": "Home",
+        "href": "/",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-maintenance",
+        "label": "Maintenance Plans",
+        "href": "/maintenance-plans",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-emergency-repair",
+        "label": "Emergency Website Repair",
+        "href": "/emergency-website-repair",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-domain-support",
+        "label": "Domain, DNS & Email Support",
+        "href": "/domain-dns-email-support",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-website-migration",
+        "label": "Website Migration",
+        "href": "/website-migration",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-security",
+        "label": "Security & Malware Removal",
+        "href": "/security-malware-removal",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-email-migration",
+        "label": "Email Migration",
+        "href": "/email-migration",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-about",
+        "label": "About",
+        "href": "/about",
+        "external": false,
+        "children": []
+      },
+      {
+        "id": "nav-contact",
+        "label": "Contact",
+        "href": "/contact",
+        "external": false,
+        "children": []
+      }
+    ],
+    "cta": {
+      "label": "Get website help",
+      "href": "/contact",
+      "external": false
+    }
+  },
+  "defaultSeo": {
+    "title": "WebcareLeader | Professional Website Support",
+    "description": "Website maintenance, emergency repair, migration, security, domain, DNS, and email support for growing organizations.",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": [
+      "website support",
+      "website maintenance",
+      "emergency website repair"
+    ],
+    "openGraph": {
+      "title": "WebcareLeader",
+      "description": "Website support without the stress.",
+      "imageUrl": "https://webcareleader.example.com/assets/social-card.jpg",
+      "imageAlt": "WebcareLeader website support",
+      "type": "website"
+    }
+  },
+  "pages": [
+    {
+      "id": "page-home",
+      "title": "Home",
+      "slug": "",
+      "description": "Website maintenance, emergency repairs, migrations, security, and domain or email support without the technical runaround.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "WebcareLeader | Website Support Without the Stress",
+        "description": "Website maintenance, emergency repairs, migrations, security, and domain or email support without the technical runaround.",
+        "canonicalUrl": "https://webcareleader.example.com/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "home-hero",
+          "type": "hero",
+          "label": "Your website should support your business\u2014not slow it down. introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "home-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "home-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Your website should support your business\u2014not slow it down."
+            },
+            {
+              "id": "home-hero-copy",
+              "type": "text",
+              "text": "WebcareLeader handles maintenance, repairs, migrations, security, domains, DNS, and email so your team can stay focused."
+            },
+            {
+              "id": "home-hero-cta",
+              "type": "button",
+              "label": "Get reliable website help",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "home-trust-bar",
+          "type": "custom",
+          "label": "Trust bar",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "small",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "home-trust-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Trusted support for business-critical websites"
+            },
+            {
+              "id": "home-trust-copy",
+              "type": "text",
+              "text": "Clear communication \u2022 Practical solutions \u2022 Security-minded work \u2022 No confusing handoffs",
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        },
+        {
+          "id": "home-services",
+          "type": "services",
+          "label": "Services grid",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "home-services-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Practical help for every website challenge"
+            },
+            {
+              "id": "home-services-copy",
+              "type": "text",
+              "text": "Choose ongoing care or focused technical help when something needs attention."
+            },
+            {
+              "id": "home-service-1",
+              "type": "text",
+              "text": "Maintenance plans that prevent avoidable problems"
+            },
+            {
+              "id": "home-service-2",
+              "type": "text",
+              "text": "Emergency website repair when your site cannot wait"
+            },
+            {
+              "id": "home-service-3",
+              "type": "text",
+              "text": "Domain, DNS, and email troubleshooting"
+            },
+            {
+              "id": "home-service-4",
+              "type": "text",
+              "text": "Careful website and email migrations"
+            },
+            {
+              "id": "home-service-5",
+              "type": "text",
+              "text": "Security hardening and malware cleanup"
+            }
+          ]
+        },
+        {
+          "id": "home-why",
+          "type": "features",
+          "label": "Why choose us",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "home-why-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Calm, accountable technical support"
+            },
+            {
+              "id": "home-why-1",
+              "type": "text",
+              "text": "You get clear explanations, documented work, and a defined owner for every request."
+            },
+            {
+              "id": "home-why-2",
+              "type": "text",
+              "text": "We prioritize business impact, security, recoverability, and long-term maintainability."
+            },
+            {
+              "id": "home-why-3",
+              "type": "text",
+              "text": "Recommendations are practical and proportionate\u2014never a sales pitch disguised as support."
+            }
+          ]
+        },
+        {
+          "id": "home-plans",
+          "type": "services",
+          "label": "Maintenance plans preview",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "home-plans-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Maintenance that works quietly in the background"
+            },
+            {
+              "id": "home-plan-care",
+              "type": "text",
+              "text": "Essential Care \u2014 updates, backups, uptime checks, and a monthly health report."
+            },
+            {
+              "id": "home-plan-growth",
+              "type": "text",
+              "text": "Growth Care \u2014 everything in Essential plus priority support and content assistance."
+            },
+            {
+              "id": "home-plans-button",
+              "type": "button",
+              "label": "Compare maintenance plans",
+              "href": "/maintenance-plans",
+              "intent": "secondary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "home-emergency",
+          "type": "cta",
+          "label": "Emergency repair banner",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "medium",
+            "background": "accent"
+          },
+          "components": [
+            {
+              "id": "home-emergency-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Website down, hacked, or behaving strangely?"
+            },
+            {
+              "id": "home-emergency-copy",
+              "type": "text",
+              "text": "We will assess the incident, stabilize the site, and explain the safest path forward."
+            },
+            {
+              "id": "home-emergency-button",
+              "type": "button",
+              "label": "Request emergency help",
+              "href": "/emergency-website-repair",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "home-testimonials",
+          "type": "testimonials",
+          "label": "Client testimonials",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "home-testimonials-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Support clients can count on"
+            },
+            {
+              "id": "home-quote-1",
+              "type": "text",
+              "text": "\u201cWebcareLeader explained the issue in plain English and had our booking site stable before our next campaign.\u201d \u2014 Operations Director, Northstar Wellness"
+            },
+            {
+              "id": "home-quote-2",
+              "type": "text",
+              "text": "\u201cOur migration was organized, thoroughly tested, and completed without disrupting the team.\u201d \u2014 Founder, Harbour & Field"
+            }
+          ]
+        },
+        {
+          "id": "home-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "home-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "home-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "Can you support a website you did not build?"
+            },
+            {
+              "id": "home-faq-a1",
+              "type": "text",
+              "text": "Yes. We begin with a technical review so we can understand the platform, hosting, integrations, and current risks."
+            },
+            {
+              "id": "home-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Do you offer one-time help?"
+            },
+            {
+              "id": "home-faq-a2",
+              "type": "text",
+              "text": "Yes. Emergency repairs, migrations, security cleanups, and DNS or email projects can be handled as defined engagements."
+            },
+            {
+              "id": "home-faq-q3",
+              "type": "heading",
+              "level": 3,
+              "text": "Which platforms do you support?"
+            },
+            {
+              "id": "home-faq-a3",
+              "type": "text",
+              "text": "We primarily support established content-managed and business websites. We confirm compatibility during the initial review."
+            }
+          ]
+        },
+        {
+          "id": "home-final-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "home-final-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Stop worrying about your website",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "home-final-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "home-final-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        },
+        {
+          "id": "home-footer",
+          "type": "custom",
+          "label": "Site footer",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "medium",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "home-footer-title",
+              "type": "heading",
+              "level": 2,
+              "text": "WebcareLeader"
+            },
+            {
+              "id": "home-footer-copy",
+              "type": "text",
+              "text": "Website care, repairs, migrations, and technical support for organizations that need a dependable partner."
+            },
+            {
+              "id": "home-footer-contact",
+              "type": "button",
+              "label": "Contact support",
+              "href": "/contact",
+              "intent": "link",
+              "external": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-maintenance",
+      "title": "Maintenance Plans",
+      "slug": "maintenance-plans",
+      "description": "Proactive website care with backups, updates, monitoring, and expert support included.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Maintenance Plans | WebcareLeader",
+        "description": "Proactive website care with backups, updates, monitoring, and expert support included.",
+        "canonicalUrl": "https://webcareleader.example.com/maintenance-plans/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "maintenance-hero",
+          "type": "hero",
+          "label": "Maintenance Plans introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "maintenance-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "maintenance-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Maintenance Plans"
+            },
+            {
+              "id": "maintenance-hero-copy",
+              "type": "text",
+              "text": "Proactive website care with backups, updates, monitoring, and expert support included."
+            },
+            {
+              "id": "maintenance-hero-cta",
+              "type": "button",
+              "label": "Talk to a website expert",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "maintenance-benefits",
+          "type": "features",
+          "label": "Benefits",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "maintenance-benefits-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What this service does for your business"
+            },
+            {
+              "id": "maintenance-benefit-1",
+              "type": "text",
+              "text": "Reduce downtime and security risk"
+            },
+            {
+              "id": "maintenance-benefit-2",
+              "type": "text",
+              "text": "Keep software and integrations current"
+            },
+            {
+              "id": "maintenance-benefit-3",
+              "type": "text",
+              "text": "Know who to contact when questions arise"
+            }
+          ]
+        },
+        {
+          "id": "maintenance-included",
+          "type": "services",
+          "label": "What's included",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "maintenance-included-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What's included"
+            },
+            {
+              "id": "maintenance-included-1",
+              "type": "text",
+              "text": "Managed updates with compatibility checks"
+            },
+            {
+              "id": "maintenance-included-2",
+              "type": "text",
+              "text": "Scheduled off-site backups and restore checks"
+            },
+            {
+              "id": "maintenance-included-3",
+              "type": "text",
+              "text": "Uptime and security monitoring"
+            },
+            {
+              "id": "maintenance-included-4",
+              "type": "text",
+              "text": "Monthly health reporting"
+            },
+            {
+              "id": "maintenance-included-5",
+              "type": "text",
+              "text": "Defined support time"
+            }
+          ]
+        },
+        {
+          "id": "maintenance-process",
+          "type": "content",
+          "label": "Our process",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "maintenance-process-title",
+              "type": "heading",
+              "level": 2,
+              "text": "A clear process from first review to completion"
+            },
+            {
+              "id": "maintenance-process-1",
+              "type": "text",
+              "text": "1. Review the website and hosting environment"
+            },
+            {
+              "id": "maintenance-process-2",
+              "type": "text",
+              "text": "2. Recommend the right care level"
+            },
+            {
+              "id": "maintenance-process-3",
+              "type": "text",
+              "text": "3. Create baselines and verified backups"
+            },
+            {
+              "id": "maintenance-process-4",
+              "type": "text",
+              "text": "4. Maintain, monitor, and report"
+            }
+          ]
+        },
+        {
+          "id": "maintenance-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "maintenance-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "maintenance-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "Will updates break my site?"
+            },
+            {
+              "id": "maintenance-faq-a1",
+              "type": "text",
+              "text": "Updates are assessed and checked, with recovery options prepared before higher-risk work."
+            },
+            {
+              "id": "maintenance-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Can I change plans later?"
+            },
+            {
+              "id": "maintenance-faq-a2",
+              "type": "text",
+              "text": "Yes. Care levels can change as your website, integrations, and support needs evolve."
+            }
+          ]
+        },
+        {
+          "id": "maintenance-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "maintenance-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Get dependable website help today",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "maintenance-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "maintenance-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-emergency-repair",
+      "title": "Emergency Website Repair",
+      "slug": "emergency-website-repair",
+      "description": "Fast, methodical support for outages, broken pages, failed updates, and urgent website errors.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Emergency Website Repair | WebcareLeader",
+        "description": "Fast, methodical support for outages, broken pages, failed updates, and urgent website errors.",
+        "canonicalUrl": "https://webcareleader.example.com/emergency-website-repair/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "emergency-repair-hero",
+          "type": "hero",
+          "label": "Emergency Website Repair introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "emergency-repair-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "emergency-repair-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Emergency Website Repair"
+            },
+            {
+              "id": "emergency-repair-hero-copy",
+              "type": "text",
+              "text": "Fast, methodical support for outages, broken pages, failed updates, and urgent website errors."
+            },
+            {
+              "id": "emergency-repair-hero-cta",
+              "type": "button",
+              "label": "Talk to a website expert",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "emergency-repair-benefits",
+          "type": "features",
+          "label": "Benefits",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "emergency-repair-benefits-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What this service does for your business"
+            },
+            {
+              "id": "emergency-repair-benefit-1",
+              "type": "text",
+              "text": "Restore critical customer journeys quickly"
+            },
+            {
+              "id": "emergency-repair-benefit-2",
+              "type": "text",
+              "text": "Protect evidence and avoid making the incident worse"
+            },
+            {
+              "id": "emergency-repair-benefit-3",
+              "type": "text",
+              "text": "Receive a clear explanation of the cause"
+            }
+          ]
+        },
+        {
+          "id": "emergency-repair-included",
+          "type": "services",
+          "label": "What's included",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "emergency-repair-included-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What's included"
+            },
+            {
+              "id": "emergency-repair-included-1",
+              "type": "text",
+              "text": "Rapid triage and impact assessment"
+            },
+            {
+              "id": "emergency-repair-included-2",
+              "type": "text",
+              "text": "Safe backup before corrective work where possible"
+            },
+            {
+              "id": "emergency-repair-included-3",
+              "type": "text",
+              "text": "Error, integration, and hosting investigation"
+            },
+            {
+              "id": "emergency-repair-included-4",
+              "type": "text",
+              "text": "Stabilization and recovery recommendations"
+            }
+          ]
+        },
+        {
+          "id": "emergency-repair-process",
+          "type": "content",
+          "label": "Our process",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "emergency-repair-process-title",
+              "type": "heading",
+              "level": 2,
+              "text": "A clear process from first review to completion"
+            },
+            {
+              "id": "emergency-repair-process-1",
+              "type": "text",
+              "text": "1. Collect symptoms, timing, and access details"
+            },
+            {
+              "id": "emergency-repair-process-2",
+              "type": "text",
+              "text": "2. Triage business impact and immediate risks"
+            },
+            {
+              "id": "emergency-repair-process-3",
+              "type": "text",
+              "text": "3. Stabilize the website"
+            },
+            {
+              "id": "emergency-repair-process-4",
+              "type": "text",
+              "text": "4. Repair, test, and document the outcome"
+            }
+          ]
+        },
+        {
+          "id": "emergency-repair-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "emergency-repair-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "emergency-repair-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "How quickly can you begin?"
+            },
+            {
+              "id": "emergency-repair-faq-a1",
+              "type": "text",
+              "text": "Availability depends on current incident volume, but emergency requests are reviewed and prioritized promptly."
+            },
+            {
+              "id": "emergency-repair-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Can every site be recovered?"
+            },
+            {
+              "id": "emergency-repair-faq-a2",
+              "type": "text",
+              "text": "Not always. Recovery depends on available backups, hosting access, and the extent of damage. We explain options before major work."
+            }
+          ]
+        },
+        {
+          "id": "emergency-repair-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "emergency-repair-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Get dependable website help today",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "emergency-repair-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "emergency-repair-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-domain-support",
+      "title": "Domain, DNS & Email Support",
+      "slug": "domain-dns-email-support",
+      "description": "Straightforward help with domain settings, DNS records, email delivery, verification, and renewals.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Domain, DNS & Email Support | WebcareLeader",
+        "description": "Straightforward help with domain settings, DNS records, email delivery, verification, and renewals.",
+        "canonicalUrl": "https://webcareleader.example.com/domain-dns-email-support/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "domain-support-hero",
+          "type": "hero",
+          "label": "Domain, DNS & Email Support introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "domain-support-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "domain-support-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Domain, DNS & Email Support"
+            },
+            {
+              "id": "domain-support-hero-copy",
+              "type": "text",
+              "text": "Straightforward help with domain settings, DNS records, email delivery, verification, and renewals."
+            },
+            {
+              "id": "domain-support-hero-cta",
+              "type": "button",
+              "label": "Talk to a website expert",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "domain-support-benefits",
+          "type": "features",
+          "label": "Benefits",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "domain-support-benefits-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What this service does for your business"
+            },
+            {
+              "id": "domain-support-benefit-1",
+              "type": "text",
+              "text": "Prevent configuration mistakes that interrupt service"
+            },
+            {
+              "id": "domain-support-benefit-2",
+              "type": "text",
+              "text": "Restore email and website routing with less guesswork"
+            },
+            {
+              "id": "domain-support-benefit-3",
+              "type": "text",
+              "text": "Document ownership and critical records"
+            }
+          ]
+        },
+        {
+          "id": "domain-support-included",
+          "type": "services",
+          "label": "What's included",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "domain-support-included-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What's included"
+            },
+            {
+              "id": "domain-support-included-1",
+              "type": "text",
+              "text": "DNS record review and correction"
+            },
+            {
+              "id": "domain-support-included-2",
+              "type": "text",
+              "text": "Domain verification and nameserver guidance"
+            },
+            {
+              "id": "domain-support-included-3",
+              "type": "text",
+              "text": "SPF, DKIM, and DMARC assistance"
+            },
+            {
+              "id": "domain-support-included-4",
+              "type": "text",
+              "text": "Email delivery troubleshooting"
+            },
+            {
+              "id": "domain-support-included-5",
+              "type": "text",
+              "text": "Renewal and access review"
+            }
+          ]
+        },
+        {
+          "id": "domain-support-process",
+          "type": "content",
+          "label": "Our process",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "domain-support-process-title",
+              "type": "heading",
+              "level": 2,
+              "text": "A clear process from first review to completion"
+            },
+            {
+              "id": "domain-support-process-1",
+              "type": "text",
+              "text": "1. Confirm ownership and affected services"
+            },
+            {
+              "id": "domain-support-process-2",
+              "type": "text",
+              "text": "2. Capture the current DNS state"
+            },
+            {
+              "id": "domain-support-process-3",
+              "type": "text",
+              "text": "3. Plan changes and lower risk where possible"
+            },
+            {
+              "id": "domain-support-process-4",
+              "type": "text",
+              "text": "4. Apply, verify, and document records"
+            }
+          ]
+        },
+        {
+          "id": "domain-support-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "domain-support-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "domain-support-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "How long do DNS changes take?"
+            },
+            {
+              "id": "domain-support-faq-a1",
+              "type": "text",
+              "text": "Many changes appear quickly, but caching and provider settings can extend propagation. We monitor the expected records."
+            },
+            {
+              "id": "domain-support-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Can you recover an expired domain?"
+            },
+            {
+              "id": "domain-support-faq-a2",
+              "type": "text",
+              "text": "Recovery depends on the registrar and expiry stage. We help identify available options but cannot guarantee recovery."
+            }
+          ]
+        },
+        {
+          "id": "domain-support-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "domain-support-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Get dependable website help today",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "domain-support-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "domain-support-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-website-migration",
+      "title": "Website Migration",
+      "slug": "website-migration",
+      "description": "Move your website to new hosting or infrastructure with a tested plan and controlled cutover.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Website Migration | WebcareLeader",
+        "description": "Move your website to new hosting or infrastructure with a tested plan and controlled cutover.",
+        "canonicalUrl": "https://webcareleader.example.com/website-migration/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "website-migration-hero",
+          "type": "hero",
+          "label": "Website Migration introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "website-migration-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "website-migration-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Website Migration"
+            },
+            {
+              "id": "website-migration-hero-copy",
+              "type": "text",
+              "text": "Move your website to new hosting or infrastructure with a tested plan and controlled cutover."
+            },
+            {
+              "id": "website-migration-hero-cta",
+              "type": "button",
+              "label": "Talk to a website expert",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "website-migration-benefits",
+          "type": "features",
+          "label": "Benefits",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "website-migration-benefits-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What this service does for your business"
+            },
+            {
+              "id": "website-migration-benefit-1",
+              "type": "text",
+              "text": "Improve reliability or hosting fit"
+            },
+            {
+              "id": "website-migration-benefit-2",
+              "type": "text",
+              "text": "Minimize disruption during launch"
+            },
+            {
+              "id": "website-migration-benefit-3",
+              "type": "text",
+              "text": "Preserve content, URLs, analytics, and integrations"
+            }
+          ]
+        },
+        {
+          "id": "website-migration-included",
+          "type": "services",
+          "label": "What's included",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "website-migration-included-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What's included"
+            },
+            {
+              "id": "website-migration-included-1",
+              "type": "text",
+              "text": "Source and destination environment review"
+            },
+            {
+              "id": "website-migration-included-2",
+              "type": "text",
+              "text": "Files and database migration"
+            },
+            {
+              "id": "website-migration-included-3",
+              "type": "text",
+              "text": "Redirect and DNS planning"
+            },
+            {
+              "id": "website-migration-included-4",
+              "type": "text",
+              "text": "Functional and visual checks"
+            },
+            {
+              "id": "website-migration-included-5",
+              "type": "text",
+              "text": "Launch and rollback planning"
+            }
+          ]
+        },
+        {
+          "id": "website-migration-process",
+          "type": "content",
+          "label": "Our process",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "website-migration-process-title",
+              "type": "heading",
+              "level": 2,
+              "text": "A clear process from first review to completion"
+            },
+            {
+              "id": "website-migration-process-1",
+              "type": "text",
+              "text": "1. Audit the current website"
+            },
+            {
+              "id": "website-migration-process-2",
+              "type": "text",
+              "text": "2. Prepare and test the destination"
+            },
+            {
+              "id": "website-migration-process-3",
+              "type": "text",
+              "text": "3. Rehearse migration and document checks"
+            },
+            {
+              "id": "website-migration-process-4",
+              "type": "text",
+              "text": "4. Schedule cutover and monitor launch"
+            }
+          ]
+        },
+        {
+          "id": "website-migration-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "website-migration-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "website-migration-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "Will the site be offline?"
+            },
+            {
+              "id": "website-migration-faq-a1",
+              "type": "text",
+              "text": "Most migrations can be planned for minimal interruption. The exact window depends on platform and DNS constraints."
+            },
+            {
+              "id": "website-migration-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Do you migrate email too?"
+            },
+            {
+              "id": "website-migration-faq-a2",
+              "type": "text",
+              "text": "Email migration is available as a separate coordinated service when mailboxes or providers also need to move."
+            }
+          ]
+        },
+        {
+          "id": "website-migration-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "website-migration-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Get dependable website help today",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "website-migration-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "website-migration-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-security",
+      "title": "Security & Malware Removal",
+      "slug": "security-malware-removal",
+      "description": "Contain website threats, remove malicious changes, and strengthen the site against repeat compromise.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Security & Malware Removal | WebcareLeader",
+        "description": "Contain website threats, remove malicious changes, and strengthen the site against repeat compromise.",
+        "canonicalUrl": "https://webcareleader.example.com/security-malware-removal/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "security-hero",
+          "type": "hero",
+          "label": "Security & Malware Removal introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "security-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "security-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Security & Malware Removal"
+            },
+            {
+              "id": "security-hero-copy",
+              "type": "text",
+              "text": "Contain website threats, remove malicious changes, and strengthen the site against repeat compromise."
+            },
+            {
+              "id": "security-hero-cta",
+              "type": "button",
+              "label": "Talk to a website expert",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "security-benefits",
+          "type": "features",
+          "label": "Benefits",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "security-benefits-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What this service does for your business"
+            },
+            {
+              "id": "security-benefit-1",
+              "type": "text",
+              "text": "Protect visitors and business reputation"
+            },
+            {
+              "id": "security-benefit-2",
+              "type": "text",
+              "text": "Restore a clean, controlled website state"
+            },
+            {
+              "id": "security-benefit-3",
+              "type": "text",
+              "text": "Understand and reduce likely entry points"
+            }
+          ]
+        },
+        {
+          "id": "security-included",
+          "type": "services",
+          "label": "What's included",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "security-included-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What's included"
+            },
+            {
+              "id": "security-included-1",
+              "type": "text",
+              "text": "Incident triage and containment"
+            },
+            {
+              "id": "security-included-2",
+              "type": "text",
+              "text": "Malware and unauthorized account review"
+            },
+            {
+              "id": "security-included-3",
+              "type": "text",
+              "text": "Clean restore or targeted remediation"
+            },
+            {
+              "id": "security-included-4",
+              "type": "text",
+              "text": "Credential and access recommendations"
+            },
+            {
+              "id": "security-included-5",
+              "type": "text",
+              "text": "Post-cleanup hardening and monitoring"
+            }
+          ]
+        },
+        {
+          "id": "security-process",
+          "type": "content",
+          "label": "Our process",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "security-process-title",
+              "type": "heading",
+              "level": 2,
+              "text": "A clear process from first review to completion"
+            },
+            {
+              "id": "security-process-1",
+              "type": "text",
+              "text": "1. Preserve evidence and establish safe access"
+            },
+            {
+              "id": "security-process-2",
+              "type": "text",
+              "text": "2. Contain the affected website"
+            },
+            {
+              "id": "security-process-3",
+              "type": "text",
+              "text": "3. Clean or restore and verify key functions"
+            },
+            {
+              "id": "security-process-4",
+              "type": "text",
+              "text": "4. Harden, monitor, and document"
+            }
+          ]
+        },
+        {
+          "id": "security-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "security-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "security-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "Can you guarantee malware will never return?"
+            },
+            {
+              "id": "security-faq-a1",
+              "type": "text",
+              "text": "No responsible provider can. We remove identified threats and reduce risk through updates, access controls, monitoring, and clear recommendations."
+            },
+            {
+              "id": "security-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Should the website be taken offline?"
+            },
+            {
+              "id": "security-faq-a2",
+              "type": "text",
+              "text": "Sometimes containment is necessary to protect visitors or data. We make that recommendation based on observed risk and business impact."
+            }
+          ]
+        },
+        {
+          "id": "security-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "security-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Get dependable website help today",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "security-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "security-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-email-migration",
+      "title": "Email Migration",
+      "slug": "email-migration",
+      "description": "Move business mailboxes, calendars, and contacts with careful preparation and user-focused support.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Email Migration | WebcareLeader",
+        "description": "Move business mailboxes, calendars, and contacts with careful preparation and user-focused support.",
+        "canonicalUrl": "https://webcareleader.example.com/email-migration/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "email-migration-hero",
+          "type": "hero",
+          "label": "Email Migration introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "email-migration-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "email-migration-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Email Migration"
+            },
+            {
+              "id": "email-migration-hero-copy",
+              "type": "text",
+              "text": "Move business mailboxes, calendars, and contacts with careful preparation and user-focused support."
+            },
+            {
+              "id": "email-migration-hero-cta",
+              "type": "button",
+              "label": "Talk to a website expert",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "email-migration-benefits",
+          "type": "features",
+          "label": "Benefits",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "email-migration-benefits-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What this service does for your business"
+            },
+            {
+              "id": "email-migration-benefit-1",
+              "type": "text",
+              "text": "Reduce lost mail and user disruption"
+            },
+            {
+              "id": "email-migration-benefit-2",
+              "type": "text",
+              "text": "Coordinate DNS and mailbox cutover"
+            },
+            {
+              "id": "email-migration-benefit-3",
+              "type": "text",
+              "text": "Give users clear instructions before and after launch"
+            }
+          ]
+        },
+        {
+          "id": "email-migration-included",
+          "type": "services",
+          "label": "What's included",
+          "layout": {
+            "container": "standard",
+            "columns": 2,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "email-migration-included-title",
+              "type": "heading",
+              "level": 2,
+              "text": "What's included"
+            },
+            {
+              "id": "email-migration-included-1",
+              "type": "text",
+              "text": "Mailbox and domain inventory"
+            },
+            {
+              "id": "email-migration-included-2",
+              "type": "text",
+              "text": "Destination tenant preparation"
+            },
+            {
+              "id": "email-migration-included-3",
+              "type": "text",
+              "text": "Data migration planning and execution"
+            },
+            {
+              "id": "email-migration-included-4",
+              "type": "text",
+              "text": "DNS authentication updates"
+            },
+            {
+              "id": "email-migration-included-5",
+              "type": "text",
+              "text": "Cutover support and verification"
+            }
+          ]
+        },
+        {
+          "id": "email-migration-process",
+          "type": "content",
+          "label": "Our process",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "email-migration-process-title",
+              "type": "heading",
+              "level": 2,
+              "text": "A clear process from first review to completion"
+            },
+            {
+              "id": "email-migration-process-1",
+              "type": "text",
+              "text": "1. Inventory users, aliases, and dependencies"
+            },
+            {
+              "id": "email-migration-process-2",
+              "type": "text",
+              "text": "2. Prepare accounts and migration batches"
+            },
+            {
+              "id": "email-migration-process-3",
+              "type": "text",
+              "text": "3. Run pilot and pre-stage data"
+            },
+            {
+              "id": "email-migration-process-4",
+              "type": "text",
+              "text": "4. Cut over, verify, and support users"
+            }
+          ]
+        },
+        {
+          "id": "email-migration-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "email-migration-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "email-migration-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "Will old email be preserved?"
+            },
+            {
+              "id": "email-migration-faq-a1",
+              "type": "text",
+              "text": "The migration scope identifies which mail, calendars, and contacts can be transferred from the source platform."
+            },
+            {
+              "id": "email-migration-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Can users keep their addresses?"
+            },
+            {
+              "id": "email-migration-faq-a2",
+              "type": "text",
+              "text": "Usually yes when the same domain remains in use. Account naming and aliases are confirmed during planning."
+            }
+          ]
+        },
+        {
+          "id": "email-migration-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "email-migration-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Get dependable website help today",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "email-migration-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "email-migration-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-about",
+      "title": "About",
+      "slug": "about",
+      "description": "Meet the practical, security-minded website support partner behind WebcareLeader.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "About | WebcareLeader",
+        "description": "Meet the practical, security-minded website support partner behind WebcareLeader.",
+        "canonicalUrl": "https://webcareleader.example.com/about/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "about-hero",
+          "type": "hero",
+          "label": "Website support built on clarity and care introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "about-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "about-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Website support built on clarity and care"
+            },
+            {
+              "id": "about-hero-copy",
+              "type": "text",
+              "text": "WebcareLeader helps organizations operate dependable websites without maintaining a large in-house technical team."
+            },
+            {
+              "id": "about-hero-cta",
+              "type": "button",
+              "label": "Start a conversation",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "about-approach",
+          "type": "content",
+          "label": "Our approach",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "about-approach-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Good support makes complexity manageable"
+            },
+            {
+              "id": "about-approach-copy",
+              "type": "text",
+              "text": "We investigate carefully, communicate plainly, document important decisions, and recommend solutions that fit the actual risk and business need."
+            },
+            {
+              "id": "about-values",
+              "type": "text",
+              "text": "Our working principles are ownership, transparency, recoverability, security, and respect for the people using the technology."
+            }
+          ]
+        },
+        {
+          "id": "about-difference",
+          "type": "features",
+          "label": "How we work",
+          "layout": {
+            "container": "standard",
+            "columns": 3,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "about-difference-title",
+              "type": "heading",
+              "level": 2,
+              "text": "A dependable extension of your team"
+            },
+            {
+              "id": "about-difference-1",
+              "type": "text",
+              "text": "One accountable support partner"
+            },
+            {
+              "id": "about-difference-2",
+              "type": "text",
+              "text": "Clear scope and practical next steps"
+            },
+            {
+              "id": "about-difference-3",
+              "type": "text",
+              "text": "Security and recovery considered from the start"
+            }
+          ]
+        },
+        {
+          "id": "about-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "about-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Let\u2019s make your website easier to manage",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "about-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "about-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-contact",
+      "title": "Contact",
+      "slug": "contact",
+      "description": "Contact WebcareLeader for website maintenance, repairs, migrations, security, domain, DNS, or email support.",
+      "showInNavigation": true,
+      "seo": {
+        "title": "Contact | WebcareLeader",
+        "description": "Contact WebcareLeader for website maintenance, repairs, migrations, security, domain, DNS, or email support.",
+        "canonicalUrl": "https://webcareleader.example.com/contact/",
+        "noIndex": false,
+        "noFollow": false,
+        "keywords": ["website support", "website maintenance", "WebcareLeader"]
+      },
+      "sections": [
+        {
+          "id": "contact-hero",
+          "type": "hero",
+          "label": "Tell us how we can help introduction",
+          "layout": {
+            "container": "wide",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "contact-hero-eyebrow",
+              "type": "text",
+              "text": "Reliable website support for growing businesses",
+              "style": {
+                "variant": "eyebrow"
+              }
+            },
+            {
+              "id": "contact-hero-title",
+              "type": "heading",
+              "level": 1,
+              "text": "Tell us how we can help"
+            },
+            {
+              "id": "contact-hero-copy",
+              "type": "text",
+              "text": "Share what you are trying to accomplish, what is currently happening, and how urgent the request is."
+            },
+            {
+              "id": "contact-hero-cta",
+              "type": "button",
+              "label": "Send a support request",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false
+            }
+          ]
+        },
+        {
+          "id": "contact-form",
+          "type": "contact",
+          "label": "Support request form",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "surface"
+          },
+          "components": [
+            {
+              "id": "contact-form-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Request website support"
+            },
+            {
+              "id": "contact-form-component",
+              "type": "form",
+              "name": "support-request",
+              "action": "/api/contact",
+              "method": "POST",
+              "fields": [
+                {
+                  "id": "contact-name",
+                  "name": "name",
+                  "label": "Name",
+                  "type": "text",
+                  "required": true,
+                  "placeholder": "Your name"
+                },
+                {
+                  "id": "contact-email",
+                  "name": "email",
+                  "label": "Work email",
+                  "type": "email",
+                  "required": true,
+                  "placeholder": "you@company.com"
+                },
+                {
+                  "id": "contact-service",
+                  "name": "service",
+                  "label": "Service needed",
+                  "type": "select",
+                  "required": true,
+                  "options": [
+                    {
+                      "label": "Maintenance plans",
+                      "value": "maintenance"
+                    },
+                    {
+                      "label": "Emergency repair",
+                      "value": "emergency"
+                    },
+                    {
+                      "label": "Domain, DNS, or email support",
+                      "value": "domain-email"
+                    },
+                    {
+                      "label": "Website migration",
+                      "value": "website-migration"
+                    },
+                    {
+                      "label": "Security and malware removal",
+                      "value": "security"
+                    },
+                    {
+                      "label": "Email migration",
+                      "value": "email-migration"
+                    },
+                    {
+                      "label": "Not sure yet",
+                      "value": "unsure"
+                    }
+                  ]
+                },
+                {
+                  "id": "contact-message",
+                  "name": "message",
+                  "label": "What is happening?",
+                  "type": "textarea",
+                  "required": true,
+                  "placeholder": "Include any errors, timing, and business impact."
+                }
+              ],
+              "submitLabel": "Send support request",
+              "successMessage": "Thank you. We will review your request and respond with the next step.",
+              "consentText": "By submitting, you agree that WebcareLeader may contact you about this request."
+            }
+          ]
+        },
+        {
+          "id": "contact-faq",
+          "type": "custom",
+          "label": "Frequently asked questions",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "default"
+          },
+          "components": [
+            {
+              "id": "contact-faq-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Frequently asked questions"
+            },
+            {
+              "id": "contact-faq-q1",
+              "type": "heading",
+              "level": 3,
+              "text": "What should I include in my request?"
+            },
+            {
+              "id": "contact-faq-a1",
+              "type": "text",
+              "text": "Include the website address, what changed, any exact error message, when the problem began, and how it affects customers or staff."
+            },
+            {
+              "id": "contact-faq-q2",
+              "type": "heading",
+              "level": 3,
+              "text": "Should I send passwords through this form?"
+            },
+            {
+              "id": "contact-faq-a2",
+              "type": "text",
+              "text": "No. Never send passwords in the initial request. We will provide a safer access process if credentials are needed."
+            }
+          ]
+        },
+        {
+          "id": "contact-cta",
+          "type": "cta",
+          "label": "Call to action",
+          "layout": {
+            "container": "narrow",
+            "columns": 1,
+            "spacing": "large",
+            "background": "primary"
+          },
+          "components": [
+            {
+              "id": "contact-cta-title",
+              "type": "heading",
+              "level": 2,
+              "text": "Prefer a planned consultation?",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "contact-cta-copy",
+              "type": "text",
+              "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+              "style": {
+                "align": "center"
+              }
+            },
+            {
+              "id": "contact-cta-button",
+              "type": "button",
+              "label": "Request website support",
+              "href": "/contact",
+              "intent": "primary",
+              "external": false,
+              "style": {
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "tagline": "Website support without the stress",
+    "columns": [
+      {
+        "title": "Services",
+        "links": [
+          {
+            "id": "footer-maintenance",
+            "label": "Maintenance Plans",
+            "href": "/maintenance-plans",
+            "external": false,
+            "children": []
+          },
+          {
+            "id": "footer-emergency",
+            "label": "Emergency Repair",
+            "href": "/emergency-website-repair",
+            "external": false,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "Company",
+        "links": [
+          {
+            "id": "footer-about",
+            "label": "About",
+            "href": "/about",
+            "external": false,
+            "children": []
+          },
+          {
+            "id": "footer-contact",
+            "label": "Contact",
+            "href": "/contact",
+            "external": false,
+            "children": []
+          }
+        ]
+      }
+    ],
+    "socialLinks": [
+      {
+        "platform": "LinkedIn",
+        "href": "https://www.linkedin.com/company/webcareleader-example",
+        "label": "WebcareLeader on LinkedIn"
+      }
+    ],
+    "components": [
+      {
+        "id": "global-footer-cta",
+        "type": "button",
+        "label": "Request website support",
+        "href": "/contact",
+        "intent": "primary",
+        "external": false
+      }
+    ],
+    "copyright": "\u00a9 2026 WebcareLeader. All rights reserved."
+  }
+}

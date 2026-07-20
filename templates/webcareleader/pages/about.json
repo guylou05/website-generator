@@ -1,0 +1,161 @@
+{
+  "id": "page-about",
+  "title": "About",
+  "slug": "about",
+  "description": "Meet the practical, security-minded website support partner behind WebcareLeader.",
+  "showInNavigation": true,
+  "seo": {
+    "title": "About | WebcareLeader",
+    "description": "Meet the practical, security-minded website support partner behind WebcareLeader.",
+    "canonicalUrl": "https://webcareleader.example.com/about/",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": ["website support", "website maintenance", "WebcareLeader"]
+  },
+  "sections": [
+    {
+      "id": "about-hero",
+      "type": "hero",
+      "label": "Website support built on clarity and care introduction",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "about-hero-eyebrow",
+          "type": "text",
+          "text": "Reliable website support for growing businesses",
+          "style": {
+            "variant": "eyebrow"
+          }
+        },
+        {
+          "id": "about-hero-title",
+          "type": "heading",
+          "level": 1,
+          "text": "Website support built on clarity and care"
+        },
+        {
+          "id": "about-hero-copy",
+          "type": "text",
+          "text": "WebcareLeader helps organizations operate dependable websites without maintaining a large in-house technical team."
+        },
+        {
+          "id": "about-hero-cta",
+          "type": "button",
+          "label": "Start a conversation",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "about-approach",
+      "type": "content",
+      "label": "Our approach",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "about-approach-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Good support makes complexity manageable"
+        },
+        {
+          "id": "about-approach-copy",
+          "type": "text",
+          "text": "We investigate carefully, communicate plainly, document important decisions, and recommend solutions that fit the actual risk and business need."
+        },
+        {
+          "id": "about-values",
+          "type": "text",
+          "text": "Our working principles are ownership, transparency, recoverability, security, and respect for the people using the technology."
+        }
+      ]
+    },
+    {
+      "id": "about-difference",
+      "type": "features",
+      "label": "How we work",
+      "layout": {
+        "container": "standard",
+        "columns": 3,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "about-difference-title",
+          "type": "heading",
+          "level": 2,
+          "text": "A dependable extension of your team"
+        },
+        {
+          "id": "about-difference-1",
+          "type": "text",
+          "text": "One accountable support partner"
+        },
+        {
+          "id": "about-difference-2",
+          "type": "text",
+          "text": "Clear scope and practical next steps"
+        },
+        {
+          "id": "about-difference-3",
+          "type": "text",
+          "text": "Security and recovery considered from the start"
+        }
+      ]
+    },
+    {
+      "id": "about-cta",
+      "type": "cta",
+      "label": "Call to action",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "primary"
+      },
+      "components": [
+        {
+          "id": "about-cta-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Let\u2019s make your website easier to manage",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "about-cta-copy",
+          "type": "text",
+          "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "about-cta-button",
+          "type": "button",
+          "label": "Request website support",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false,
+          "style": {
+            "align": "center"
+          }
+        }
+      ]
+    }
+  ]
+}

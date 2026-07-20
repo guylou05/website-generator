@@ -1,0 +1,256 @@
+{
+  "id": "page-website-migration",
+  "title": "Website Migration",
+  "slug": "website-migration",
+  "description": "Move your website to new hosting or infrastructure with a tested plan and controlled cutover.",
+  "showInNavigation": true,
+  "seo": {
+    "title": "Website Migration | WebcareLeader",
+    "description": "Move your website to new hosting or infrastructure with a tested plan and controlled cutover.",
+    "canonicalUrl": "https://webcareleader.example.com/website-migration/",
+    "noIndex": false,
+    "noFollow": false,
+    "keywords": ["website support", "website maintenance", "WebcareLeader"]
+  },
+  "sections": [
+    {
+      "id": "website-migration-hero",
+      "type": "hero",
+      "label": "Website Migration introduction",
+      "layout": {
+        "container": "wide",
+        "columns": 1,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "website-migration-hero-eyebrow",
+          "type": "text",
+          "text": "Reliable website support for growing businesses",
+          "style": {
+            "variant": "eyebrow"
+          }
+        },
+        {
+          "id": "website-migration-hero-title",
+          "type": "heading",
+          "level": 1,
+          "text": "Website Migration"
+        },
+        {
+          "id": "website-migration-hero-copy",
+          "type": "text",
+          "text": "Move your website to new hosting or infrastructure with a tested plan and controlled cutover."
+        },
+        {
+          "id": "website-migration-hero-cta",
+          "type": "button",
+          "label": "Talk to a website expert",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false
+        }
+      ]
+    },
+    {
+      "id": "website-migration-benefits",
+      "type": "features",
+      "label": "Benefits",
+      "layout": {
+        "container": "standard",
+        "columns": 3,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "website-migration-benefits-title",
+          "type": "heading",
+          "level": 2,
+          "text": "What this service does for your business"
+        },
+        {
+          "id": "website-migration-benefit-1",
+          "type": "text",
+          "text": "Improve reliability or hosting fit"
+        },
+        {
+          "id": "website-migration-benefit-2",
+          "type": "text",
+          "text": "Minimize disruption during launch"
+        },
+        {
+          "id": "website-migration-benefit-3",
+          "type": "text",
+          "text": "Preserve content, URLs, analytics, and integrations"
+        }
+      ]
+    },
+    {
+      "id": "website-migration-included",
+      "type": "services",
+      "label": "What's included",
+      "layout": {
+        "container": "standard",
+        "columns": 2,
+        "spacing": "large",
+        "background": "surface"
+      },
+      "components": [
+        {
+          "id": "website-migration-included-title",
+          "type": "heading",
+          "level": 2,
+          "text": "What's included"
+        },
+        {
+          "id": "website-migration-included-1",
+          "type": "text",
+          "text": "Source and destination environment review"
+        },
+        {
+          "id": "website-migration-included-2",
+          "type": "text",
+          "text": "Files and database migration"
+        },
+        {
+          "id": "website-migration-included-3",
+          "type": "text",
+          "text": "Redirect and DNS planning"
+        },
+        {
+          "id": "website-migration-included-4",
+          "type": "text",
+          "text": "Functional and visual checks"
+        },
+        {
+          "id": "website-migration-included-5",
+          "type": "text",
+          "text": "Launch and rollback planning"
+        }
+      ]
+    },
+    {
+      "id": "website-migration-process",
+      "type": "content",
+      "label": "Our process",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "website-migration-process-title",
+          "type": "heading",
+          "level": 2,
+          "text": "A clear process from first review to completion"
+        },
+        {
+          "id": "website-migration-process-1",
+          "type": "text",
+          "text": "1. Audit the current website"
+        },
+        {
+          "id": "website-migration-process-2",
+          "type": "text",
+          "text": "2. Prepare and test the destination"
+        },
+        {
+          "id": "website-migration-process-3",
+          "type": "text",
+          "text": "3. Rehearse migration and document checks"
+        },
+        {
+          "id": "website-migration-process-4",
+          "type": "text",
+          "text": "4. Schedule cutover and monitor launch"
+        }
+      ]
+    },
+    {
+      "id": "website-migration-faq",
+      "type": "custom",
+      "label": "Frequently asked questions",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "default"
+      },
+      "components": [
+        {
+          "id": "website-migration-faq-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Frequently asked questions"
+        },
+        {
+          "id": "website-migration-faq-q1",
+          "type": "heading",
+          "level": 3,
+          "text": "Will the site be offline?"
+        },
+        {
+          "id": "website-migration-faq-a1",
+          "type": "text",
+          "text": "Most migrations can be planned for minimal interruption. The exact window depends on platform and DNS constraints."
+        },
+        {
+          "id": "website-migration-faq-q2",
+          "type": "heading",
+          "level": 3,
+          "text": "Do you migrate email too?"
+        },
+        {
+          "id": "website-migration-faq-a2",
+          "type": "text",
+          "text": "Email migration is available as a separate coordinated service when mailboxes or providers also need to move."
+        }
+      ]
+    },
+    {
+      "id": "website-migration-cta",
+      "type": "cta",
+      "label": "Call to action",
+      "layout": {
+        "container": "narrow",
+        "columns": 1,
+        "spacing": "large",
+        "background": "primary"
+      },
+      "components": [
+        {
+          "id": "website-migration-cta-title",
+          "type": "heading",
+          "level": 2,
+          "text": "Get dependable website help today",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "website-migration-cta-copy",
+          "type": "text",
+          "text": "Tell us what is happening and we will recommend a clear, practical next step.",
+          "style": {
+            "align": "center"
+          }
+        },
+        {
+          "id": "website-migration-cta-button",
+          "type": "button",
+          "label": "Request website support",
+          "href": "/contact",
+          "intent": "primary",
+          "external": false,
+          "style": {
+            "align": "center"
+          }
+        }
+      ]
+    }
+  ]
+}

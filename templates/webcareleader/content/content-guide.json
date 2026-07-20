@@ -1,0 +1,16 @@
+{
+  "voice": {
+    "tone": ["calm", "capable", "plain-spoken", "professional"],
+    "avoid": [
+      "fear-based selling",
+      "unverifiable guarantees",
+      "unexplained jargon"
+    ]
+  },
+  "messages": {
+    "tagline": "Website support without the stress",
+    "primaryCta": "Request website support",
+    "emergencyCta": "Request emergency help"
+  },
+  "disclaimer": "All company names and testimonials in this template are fictional placeholder content."
+}

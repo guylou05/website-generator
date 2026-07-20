@@ -1,0 +1,41 @@
+{
+  "id": "maintenance-faq",
+  "type": "custom",
+  "label": "Frequently asked questions",
+  "layout": {
+    "container": "narrow",
+    "columns": 1,
+    "spacing": "large",
+    "background": "default"
+  },
+  "components": [
+    {
+      "id": "maintenance-faq-title",
+      "type": "heading",
+      "level": 2,
+      "text": "Frequently asked questions"
+    },
+    {
+      "id": "maintenance-faq-q1",
+      "type": "heading",
+      "level": 3,
+      "text": "Will updates break my site?"
+    },
+    {
+      "id": "maintenance-faq-a1",
+      "type": "text",
+      "text": "Updates are assessed and checked, with recovery options prepared before higher-risk work."
+    },
+    {
+      "id": "maintenance-faq-q2",
+      "type": "heading",
+      "level": 3,
+      "text": "Can I change plans later?"
+    },
+    {
+      "id": "maintenance-faq-a2",
+      "type": "text",
+      "text": "Yes. Care levels can change as your website, integrations, and support needs evolve."
+    }
+  ]
+}

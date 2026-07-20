@@ -1,0 +1,2783 @@
+{
+  "version": "0.4",
+  "title": "Home",
+  "type": "page",
+  "page_settings": {
+    "custom_colors": [
+      {
+        "_id": "primary",
+        "title": "primary",
+        "color": "#155EEF"
+      },
+      {
+        "_id": "secondary",
+        "title": "secondary",
+        "color": "#0E7490"
+      },
+      {
+        "_id": "accent",
+        "title": "accent",
+        "color": "#14B8A6"
+      },
+      {
+        "_id": "background",
+        "title": "background",
+        "color": "#FFFFFF"
+      },
+      {
+        "_id": "surface",
+        "title": "surface",
+        "color": "#F8FAFC"
+      },
+      {
+        "_id": "text",
+        "title": "text",
+        "color": "#0F172A"
+      },
+      {
+        "_id": "mutedText",
+        "title": "mutedText",
+        "color": "#475569"
+      },
+      {
+        "_id": "border",
+        "title": "border",
+        "color": "#DCE5EE"
+      },
+      {
+        "_id": "success",
+        "title": "success",
+        "color": "#15803D"
+      },
+      {
+        "_id": "warning",
+        "title": "warning",
+        "color": "#B45309"
+      },
+      {
+        "_id": "danger",
+        "title": "danger",
+        "color": "#B91C1C"
+      }
+    ],
+    "custom_typography": [
+      {
+        "_id": "heading",
+        "title": "Heading",
+        "typography_font_family": "Inter",
+        "typography_font_weight": "700"
+      },
+      {
+        "_id": "body",
+        "title": "Body",
+        "typography_font_family": "Inter",
+        "typography_font_weight": "400"
+      }
+    ],
+    "website_generator_tokens": {
+      "spacing": {
+        "scale": {
+          "0": "0",
+          "1": "0.25rem",
+          "2": "0.5rem",
+          "3": "0.75rem",
+          "4": "1rem",
+          "6": "1.5rem",
+          "8": "2rem",
+          "12": "3rem",
+          "16": "4rem",
+          "20": "5rem",
+          "24": "6rem",
+          "32": "8rem"
+        },
+        "section": {
+          "base": "4.5rem",
+          "md": "7rem",
+          "lg": "9rem"
+        },
+        "sectionCompact": {
+          "base": "3rem",
+          "md": "4.5rem",
+          "lg": "6rem"
+        },
+        "containerGutter": {
+          "base": "1rem",
+          "md": "2rem",
+          "xl": "3rem"
+        },
+        "gridGap": {
+          "base": "1rem",
+          "md": "1.5rem",
+          "lg": "2rem"
+        }
+      },
+      "radius": {
+        "none": "0",
+        "small": "0.375rem",
+        "medium": "0.75rem",
+        "large": "1.25rem",
+        "xl": "1.75rem",
+        "pill": "9999px"
+      },
+      "shadows": {
+        "none": "none",
+        "subtle": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "card": "0 10px 30px rgb(15 23 42 / 0.07)",
+        "elevated": "0 20px 50px rgb(15 23 42 / 0.14)",
+        "focus": "0 0 0 3px rgb(37 99 235 / 0.35)"
+      },
+      "breakpoints": {
+        "sm": 640,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280,
+        "2xl": 1536
+      },
+      "dark_colors": {
+        "primary": "#6EA8FE",
+        "secondary": "#22D3EE",
+        "accent": "#5EEAD4",
+        "background": "#07111F",
+        "surface": "#0F172A",
+        "text": "#F8FAFC",
+        "mutedText": "#94A3B8",
+        "border": "#26364A",
+        "success": "#4ADE80",
+        "warning": "#FBBF24",
+        "danger": "#F87171"
+      }
+    },
+    "hide_title": "yes",
+    "page_layout": "elementor_canvas",
+    "website_generator": {
+      "renderer": "elementor",
+      "schemaVersion": "1.0",
+      "sourcePageId": "page-home"
+    }
+  },
+  "content": [
+    {
+      "id": "b96f0757",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "row",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "20",
+          "right": "32",
+          "bottom": "20",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#FFFFFF",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "header"
+      },
+      "elements": [
+        {
+          "id": "a9630750",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "WebcareLeader",
+            "header_size": "h3",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "251a19f5",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Home",
+            "link": {
+              "url": "/",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "fe11e0a5",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Maintenance Plans",
+            "link": {
+              "url": "/maintenance-plans",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "0d7ba7c7",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Emergency Website Repair",
+            "link": {
+              "url": "/emergency-website-repair",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "3fff3864",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Domain, DNS & Email Support",
+            "link": {
+              "url": "/domain-dns-email-support",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "8b021c66",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Website Migration",
+            "link": {
+              "url": "/website-migration",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "992721ac",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Security & Malware Removal",
+            "link": {
+              "url": "/security-malware-removal",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "036260c3",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Email Migration",
+            "link": {
+              "url": "/email-migration",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "67a66287",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "About",
+            "link": {
+              "url": "/about",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "c5102036",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Contact",
+            "link": {
+              "url": "/contact",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        },
+        {
+          "id": "89015717",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Get website help",
+            "link": {
+              "url": "/contact",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "primary",
+            "background_color": "#155EEF",
+            "button_text_color": "#FFFFFF",
+            "border_border": "solid",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        }
+      ]
+    },
+    {
+      "id": "e598ae86",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "column",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#F8FAFC",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "hero",
+        "website_generator_source_id": "home-hero"
+      },
+      "elements": [
+        {
+          "id": "6d571305",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+            "editor": "Reliable website support for growing businesses",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "text_color": "#475569",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18
+            },
+            "typography_font_size_tablet": {
+              "unit": "px",
+              "size": 17
+            },
+            "typography_font_size_mobile": {
+              "unit": "px",
+              "size": 16
+            },
+            "typography_line_height": {
+              "unit": "em",
+              "size": 1.7
+            }
+          },
+          "elements": []
+        },
+        {
+          "id": "aeedaf78",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Your website should support your business—not slow it down.",
+            "header_size": "h1",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "2b5bf3fb",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+            "editor": "WebcareLeader handles maintenance, repairs, migrations, security, domains, DNS, and email so your team can stay focused.",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "text_color": "#475569",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18
+            },
+            "typography_font_size_tablet": {
+              "unit": "px",
+              "size": 17
+            },
+            "typography_font_size_mobile": {
+              "unit": "px",
+              "size": 16
+            },
+            "typography_line_height": {
+              "unit": "em",
+              "size": 1.7
+            }
+          },
+          "elements": []
+        },
+        {
+          "id": "72b1274c",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Get reliable website help",
+            "link": {
+              "url": "/contact",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "primary",
+            "background_color": "#155EEF",
+            "button_text_color": "#FFFFFF",
+            "border_border": "solid",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        }
+      ]
+    },
+    {
+      "id": "18a45e74",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "column",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#F8FAFC",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "trust-bar",
+        "website_generator_source_id": "home-trust-bar"
+      },
+      "elements": [
+        {
+          "id": "9c617b8e",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Trusted support for business-critical websites",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "3863d08a",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "9a15b109",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Trusted capability",
+                "description_text": "Clear communication • Practical solutions • Security-minded work • No confusing handoffs",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "37f0901e",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "row",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#FFFFFF",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "services",
+        "website_generator_source_id": "home-services"
+      },
+      "elements": [
+        {
+          "id": "0cb03884",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Practical help for every website challenge",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "ada6eb08",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "41382a13",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Services grid 1",
+                "description_text": "Choose ongoing care or focused technical help when something needs attention.",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "a4480877",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "90f6d36e",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Services grid 2",
+                "description_text": "Maintenance plans that prevent avoidable problems",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "c76cacc6",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "9d5705c5",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Services grid 3",
+                "description_text": "Emergency website repair when your site cannot wait",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "cdfa5bad",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "89f30600",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Services grid 4",
+                "description_text": "Domain, DNS, and email troubleshooting",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "711e367c",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "2fafcd97",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Services grid 5",
+                "description_text": "Careful website and email migrations",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "68d578fb",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "41bf0042",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Services grid 6",
+                "description_text": "Security hardening and malware cleanup",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4de6081c",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "row",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#F8FAFC",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "features",
+        "website_generator_source_id": "home-why"
+      },
+      "elements": [
+        {
+          "id": "aa86957e",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Calm, accountable technical support",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "3d47cc82",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "edff4d61",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Why choose us 1",
+                "description_text": "You get clear explanations, documented work, and a defined owner for every request.",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "23d54909",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "c29e0afc",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Why choose us 2",
+                "description_text": "We prioritize business impact, security, recoverability, and long-term maintainability.",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "a26caf34",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "f1f13c6f",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Why choose us 3",
+                "description_text": "Recommendations are practical and proportionate—never a sales pitch disguised as support.",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e77bf6fe",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "row",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#FFFFFF",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "services",
+        "website_generator_source_id": "home-plans"
+      },
+      "elements": [
+        {
+          "id": "c4216e96",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Maintenance that works quietly in the background",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "ab4a1968",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "79705773",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Maintenance plans preview 1",
+                "description_text": "Essential Care — updates, backups, uptime checks, and a monthly health report.",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "a1eb36d7",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "ce9471ce",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-check-circle",
+                  "library": "fa-solid"
+                },
+                "title_text": "Maintenance plans preview 2",
+                "description_text": "Growth Care — everything in Essential plus priority support and content assistance.",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "450f11a6",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "39407ab0",
+              "elType": "widget",
+              "widgetType": "button",
+              "settings": {
+                "text": "Compare maintenance plans",
+                "link": {
+                  "url": "/maintenance-plans",
+                  "is_external": false,
+                  "nofollow": false
+                },
+                "align": "start",
+                "align_tablet": "start",
+                "align_mobile": "center",
+                "button_type": "secondary",
+                "background_color": "#0E7490",
+                "button_text_color": "#FFFFFF",
+                "border_border": "solid",
+                "border_color": "#0E7490",
+                "border_radius": {
+                  "unit": "px",
+                  "top": "10",
+                  "right": "10",
+                  "bottom": "10",
+                  "left": "10",
+                  "isLinked": true
+                },
+                "typography_typography": "custom",
+                "typography_font_family": "Inter",
+                "typography_font_weight": "600"
+              },
+              "elements": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d50edd83",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "column",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#14B8A6",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "cta",
+        "website_generator_source_id": "home-emergency"
+      },
+      "elements": [
+        {
+          "id": "5ce9164c",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Website down, hacked, or behaving strangely?",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "199288ff",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+            "editor": "We will assess the incident, stabilize the site, and explain the safest path forward.",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "text_color": "#475569",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18
+            },
+            "typography_font_size_tablet": {
+              "unit": "px",
+              "size": 17
+            },
+            "typography_font_size_mobile": {
+              "unit": "px",
+              "size": 16
+            },
+            "typography_line_height": {
+              "unit": "em",
+              "size": 1.7
+            }
+          },
+          "elements": []
+        },
+        {
+          "id": "1a67c3de",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Request emergency help",
+            "link": {
+              "url": "/emergency-website-repair",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "primary",
+            "background_color": "#155EEF",
+            "button_text_color": "#FFFFFF",
+            "border_border": "solid",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        }
+      ]
+    },
+    {
+      "id": "b3b26e2a",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "row",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#FFFFFF",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "testimonials",
+        "website_generator_source_id": "home-testimonials"
+      },
+      "elements": [
+        {
+          "id": "17038ffc",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Support clients can count on",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "0e370194",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "a31e674f",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-quote-left",
+                  "library": "fa-solid"
+                },
+                "title_text": "Client story 1",
+                "description_text": "“WebcareLeader explained the issue in plain English and had our booking site stable before our next campaign.” — Operations Director, Northstar Wellness",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        },
+        {
+          "id": "e4b0dd33",
+          "elType": "container",
+          "isInner": true,
+          "settings": {
+            "padding": {
+              "unit": "px",
+              "top": "24",
+              "right": "24",
+              "bottom": "24",
+              "left": "24",
+              "isLinked": true
+            },
+            "background_background": "classic",
+            "background_color": "#F8FAFC",
+            "border_border": "solid",
+            "border_width": {
+              "unit": "px",
+              "top": "1",
+              "right": "1",
+              "bottom": "1",
+              "left": "1",
+              "isLinked": true
+            },
+            "border_color": "#DCE5EE",
+            "border_radius": {
+              "unit": "px",
+              "top": "16",
+              "right": "16",
+              "bottom": "16",
+              "left": "16",
+              "isLinked": true
+            },
+            "box_shadow_box_shadow_type": "yes",
+            "box_shadow_box_shadow": "0 10px 30px rgb(15 23 42 / 0.07)"
+          },
+          "elements": [
+            {
+              "id": "7d66fa7a",
+              "elType": "widget",
+              "widgetType": "icon-box",
+              "settings": {
+                "selected_icon": {
+                  "value": "fas fa-quote-left",
+                  "library": "fa-solid"
+                },
+                "title_text": "Client story 2",
+                "description_text": "“Our migration was organized, thoroughly tested, and completed without disrupting the team.” — Founder, Harbour & Field",
+                "position": "top",
+                "title_color": "#0F172A",
+                "description_color": "#475569",
+                "primary_color": "#155EEF",
+                "title_typography_typography": "custom",
+                "title_typography_font_family": "Inter",
+                "description_typography_typography": "custom",
+                "description_typography_font_family": "Inter"
+              },
+              "elements": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "68a9512e",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "column",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#FFFFFF",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "faq",
+        "website_generator_source_id": "home-faq"
+      },
+      "elements": [
+        {
+          "id": "f15d7c6e",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Frequently asked questions",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "3761785e",
+          "elType": "widget",
+          "widgetType": "accordion",
+          "settings": {
+            "tabs": [
+              {
+                "_id": "fcc9ed59",
+                "tab_title": "Can you support a website you did not build?",
+                "tab_content": "Yes. We begin with a technical review so we can understand the platform, hosting, integrations, and current risks."
+              },
+              {
+                "_id": "163c70d2",
+                "tab_title": "Do you offer one-time help?",
+                "tab_content": "Yes. Emergency repairs, migrations, security cleanups, and DNS or email projects can be handled as defined engagements."
+              },
+              {
+                "_id": "531863a3",
+                "tab_title": "Which platforms do you support?",
+                "tab_content": "We primarily support established content-managed and business websites. We confirm compatibility during the initial review."
+              }
+            ],
+            "selected_icon": {
+              "value": "fas fa-plus",
+              "library": "fa-solid"
+            },
+            "selected_active_icon": {
+              "value": "fas fa-minus",
+              "library": "fa-solid"
+            },
+            "title_color": "#0F172A",
+            "content_color": "#475569",
+            "border_color": "#DCE5EE"
+          },
+          "elements": []
+        }
+      ]
+    },
+    {
+      "id": "7aafb21d",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "column",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#155EEF",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "cta",
+        "website_generator_source_id": "home-final-cta"
+      },
+      "elements": [
+        {
+          "id": "96f0e710",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "Stop worrying about your website",
+            "header_size": "h2",
+            "align": "center",
+            "align_tablet": "center",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "1cb1c843",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+            "editor": "Tell us what is happening and we will recommend a clear, practical next step.",
+            "align": "center",
+            "align_tablet": "center",
+            "align_mobile": "center",
+            "text_color": "#475569",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18
+            },
+            "typography_font_size_tablet": {
+              "unit": "px",
+              "size": 17
+            },
+            "typography_font_size_mobile": {
+              "unit": "px",
+              "size": 16
+            },
+            "typography_line_height": {
+              "unit": "em",
+              "size": 1.7
+            }
+          },
+          "elements": []
+        },
+        {
+          "id": "ff94d0a2",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Request website support",
+            "link": {
+              "url": "/contact",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "center",
+            "align_tablet": "center",
+            "align_mobile": "center",
+            "button_type": "primary",
+            "background_color": "#155EEF",
+            "button_text_color": "#FFFFFF",
+            "border_border": "solid",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        }
+      ]
+    },
+    {
+      "id": "5f98c815",
+      "elType": "container",
+      "isInner": false,
+      "settings": {
+        "content_width": "boxed",
+        "boxed_width": {
+          "unit": "px",
+          "size": 1152
+        },
+        "flex_direction": "column",
+        "flex_direction_tablet": "column",
+        "flex_direction_mobile": "column",
+        "flex_wrap": "wrap",
+        "gap": {
+          "unit": "px",
+          "size": 32
+        },
+        "gap_tablet": {
+          "unit": "px",
+          "size": 24
+        },
+        "gap_mobile": {
+          "unit": "px",
+          "size": 16
+        },
+        "padding": {
+          "unit": "px",
+          "top": "96",
+          "right": "32",
+          "bottom": "96",
+          "left": "32",
+          "isLinked": false
+        },
+        "padding_tablet": {
+          "unit": "px",
+          "top": "72",
+          "right": "24",
+          "bottom": "72",
+          "left": "24",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "48",
+          "right": "16",
+          "bottom": "48",
+          "left": "16",
+          "isLinked": false
+        },
+        "background_background": "classic",
+        "background_color": "#F8FAFC",
+        "border_border": "solid",
+        "border_width": {
+          "unit": "px",
+          "top": "1",
+          "right": "1",
+          "bottom": "1",
+          "left": "1",
+          "isLinked": true
+        },
+        "border_color": "#DCE5EE",
+        "border_radius": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+        },
+        "box_shadow_box_shadow_type": "yes",
+        "box_shadow_box_shadow": "0 1px 3px rgb(15 23 42 / 0.06)",
+        "website_generator_section": "footer",
+        "website_generator_source_id": "home-footer"
+      },
+      "elements": [
+        {
+          "id": "f98714f8",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+            "title": "WebcareLeader",
+            "header_size": "h2",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "title_color": "#0F172A",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "700"
+          },
+          "elements": []
+        },
+        {
+          "id": "6f32687b",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+            "editor": "Website care, repairs, migrations, and technical support for organizations that need a dependable partner.",
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "text_color": "#475569",
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_size": {
+              "unit": "px",
+              "size": 18
+            },
+            "typography_font_size_tablet": {
+              "unit": "px",
+              "size": 17
+            },
+            "typography_font_size_mobile": {
+              "unit": "px",
+              "size": 16
+            },
+            "typography_line_height": {
+              "unit": "em",
+              "size": 1.7
+            }
+          },
+          "elements": []
+        },
+        {
+          "id": "f922d122",
+          "elType": "widget",
+          "widgetType": "button",
+          "settings": {
+            "text": "Contact support",
+            "link": {
+              "url": "/contact",
+              "is_external": false,
+              "nofollow": false
+            },
+            "align": "start",
+            "align_tablet": "start",
+            "align_mobile": "center",
+            "button_type": "info",
+            "background_color": "transparent",
+            "button_text_color": "#155EEF",
+            "border_border": "",
+            "border_color": "#155EEF",
+            "border_radius": {
+              "unit": "px",
+              "top": "10",
+              "right": "10",
+              "bottom": "10",
+              "left": "10",
+              "isLinked": true
+            },
+            "typography_typography": "custom",
+            "typography_font_family": "Inter",
+            "typography_font_weight": "600"
+          },
+          "elements": []
+        }
+      ]
+    }
+  ]
+}
