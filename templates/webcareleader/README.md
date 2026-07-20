@@ -22,3 +22,13 @@ node templates/webcareleader/validate.mjs
 ```
 
 The validator parses `website.json`, every page, and every reusable section with the existing Zod schemas. It also verifies that standalone page files exactly match the pages embedded in `website.json`.
+
+## Elementor demonstration
+
+`output/home.elementor.json` demonstrates the first builder-specific rendering of this template. It is generated from the validated `website.json`; it is not a second content source. After building the shared, design-system, and renderer packages, regenerate it with:
+
+```bash
+node templates/webcareleader/output/generate.mjs
+```
+
+See [`packages/renderer/README.md`](../../packages/renderer/README.md) for import and compatibility guidance. No WordPress deployment is performed.
