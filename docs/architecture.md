@@ -32,3 +32,7 @@ Packages are intentionally empty public entry points at initialization. New code
 - Generated sites and model outputs should be treated as untrusted input and validated before storage or rendering.
 - Provider calls should eventually include timeouts, bounded retries, observability, cost attribution, and tenant-aware rate limits.
 - CI is the minimum quality gate for formatting, linting, type checking, builds, and tests.
+
+## AI generation pipeline
+
+The provider-neutral generation pipeline is documented in [`packages/ai/README.md`](../packages/ai/README.md). Applications inject each asynchronous stage, logging, and retry behavior. The final stage produces the shared Website Blueprint; provider SDK types and renderer-specific output must remain outside the pipeline contracts.
