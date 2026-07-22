@@ -51,6 +51,15 @@ Services are available at:
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 
+## AI generation
+
+Generation uses `AI_PROVIDER=mock` by default, including in development and
+tests. To use OpenAI, set `AI_PROVIDER=openai` and the four server-only
+`OPENAI_*` variables documented in `.env.example`. The dashboard starts an
+in-memory generation through `POST /api/generations`; persistence, WordPress
+deployment, and image generation are intentionally not part of this flow yet.
+Never expose `OPENAI_API_KEY` through a `NEXT_PUBLIC_` variable.
+
 The example credentials are intended only for local development. Use secret management and rotated credentials in deployed environments.
 
 ## Common commands

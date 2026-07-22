@@ -33,11 +33,15 @@
     "./writer": {
       "types": "./dist/writer/index.d.ts",
       "default": "./dist/writer/index.js"
+    },
+    "./providers/openai": {
+      "types": "./dist/providers/openai/index.d.ts",
+      "default": "./dist/providers/openai/index.js"
     }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint analyzer designer orchestrator planner prompts writer index.ts",
+    "lint": "eslint analyzer designer orchestrator planner prompts providers writer index.ts",
     "typecheck": "tsc --build --pretty false",
     "test": "pnpm run build && node --test tests/*.test.mjs"
   },
@@ -45,6 +49,8 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "@website-generator/shared": "workspace:*"
+    "@website-generator/shared": "workspace:*",
+    "openai": "^5.23.2",
+    "zod": "^3.25.76"
   }
 }

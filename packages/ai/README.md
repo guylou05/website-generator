@@ -1,6 +1,22 @@
 # AI Generation Pipeline
 
-This package defines the asynchronous, provider-neutral pipeline that converts a business profile into the shared Website Blueprint. It contains contracts, orchestration, retry/error infrastructure, prompt abstractions, and deliberately unconfigured placeholder services. It does **not** call an AI model.
+This package defines the asynchronous, provider-neutral pipeline that converts a business profile into the shared Website Blueprint. It includes deterministic mock adapters and a server-only OpenAI adapter using the official JavaScript SDK and Zod structured outputs.
+
+## Providers
+
+`AI_PROVIDER=mock` is the default when unset and performs no network I/O. Set
+`AI_PROVIDER=openai` at the server to enable OpenAI and configure
+`OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_TIMEOUT_MS`, and
+`OPENAI_MAX_RETRIES`. Never prefix these variables with `NEXT_PUBLIC_` or import
+the provider into a client component. The dashboard `POST /api/generations`
+route is the server-side composition boundary.
+
+The OpenAI provider implements analysis, sitemap planning, conversion copy,
+local SEO, semantic design planning, and builder-neutral blueprint generation.
+Every response is parsed as a structured output and validated by Zod. The SDK
+handles transient retries and rate limits; timeouts, refusals, malformed output,
+authentication failures, and provider failures are converted to safe messages.
+Token usage is available on `provider.client.usage` when returned by OpenAI.
 
 ## Pipeline
 
@@ -146,7 +162,7 @@ Each failed stage is wrapped in `PipelineStageError`, including the run ID, stag
 
 Logging is vendor-neutral through `PipelineLogger`. Events contain structured `runId`, `stage`, and `attempt` context, while the default logger is intentionally silent. Avoid placing business secrets, complete prompts, or generated content in log context.
 
-## Adding an AI provider later
+## Adding another AI provider
 
 1. Implement one or more stage interfaces in an adapter package.
 2. Translate the neutral `PromptMessage` contract into the provider request format.
