@@ -44,3 +44,11 @@ Laravel is the sole owner of project persistence. `projects` stores business and
 ## WordPress deployment boundary
 
 Laravel normalizes destinations, rejects unsafe production network targets, encrypts Application Passwords, verifies WordPress, Elementor, connector endpoints, and administrator capabilities, then records every deployment stage. A successful dry run is required before mutation. Page lookup by slug and connector upserts make retries idempotent. Next.js orchestrates these endpoints but never receives stored credentials.
+
+## Durable job boundary
+
+Laravel/PostgreSQL are authoritative. Public controllers only validate, create `queued` records/events, and enqueue marker jobs containing one UUID. The TypeScript worker reserves Laravel Redis queue messages, uses a per-job distributed lock, and calls authenticated internal APIs for execution context, progress, heartbeat, cancellation and idempotent terminal callbacks. Event UUID uniqueness makes replay safe.
+
+States are `queued`, `running`, `cancelling`, `cancelled`, `succeeded`, `failed`, and `stale`. Retry creates a new record for public retries; automatic stale recovery increments the existing attempt and redispatches while attempts remain. `php artisan jobs:recover-stale` is scheduled every minute. The dashboard should poll the persisted resource/event timeline with backoff (immediate while connected, slower on errors), reconnect after network loss, and redirect only after observing `succeeded`.
+
+The internal bearer token is compared in constant time. Execution contexts are never public; deployment credentials are decrypted only for the authenticated worker. Rotate the token with a coordinated API/worker restart. Cancellation is cooperative; an already-running remote HTTP request may finish.

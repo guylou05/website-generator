@@ -11,11 +11,11 @@ class GenerationRun extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['project_id', 'provider', 'status', 'current_stage', 'progress', 'input', 'output', 'error', 'started_at', 'completed_at'];
+    protected $fillable = ['project_id', 'provider', 'status', 'current_stage', 'progress', 'input', 'output', 'error', 'queued_at', 'heartbeat_at', 'cancellation_requested_at', 'attempt', 'max_attempts', 'worker_id', 'started_at', 'completed_at'];
 
     protected function casts(): array
     {
-        return ['input' => 'array', 'output' => 'array', 'error' => 'array', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['input' => 'array', 'output' => 'array', 'error' => 'array', 'queued_at' => 'datetime', 'heartbeat_at' => 'datetime', 'cancellation_requested_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
     public function project(): BelongsTo

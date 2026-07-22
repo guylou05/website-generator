@@ -12,7 +12,7 @@ class GenerationEvent extends Model
 
     public const UPDATED_AT = null;
 
-    protected $fillable = ['stage', 'event_type', 'progress', 'message', 'metadata'];
+    protected $fillable = ['event_uuid', 'stage', 'event_type', 'progress', 'message', 'metadata'];
 
     protected function casts(): array
     {
