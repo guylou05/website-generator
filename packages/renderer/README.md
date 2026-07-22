@@ -44,3 +44,7 @@ Elementor and installed add-ons may alter import screens or widget availability.
 - IDs are stable for the same blueprint paths and collision-checked within a document.
 - Unknown sections fail descriptively instead of being silently dropped.
 - Snapshot changes must be reviewed because they represent a builder-output contract change.
+
+## Builder-neutral preview
+
+The `preview` entry point normalizes stable IDs, sanitizes content, exposes responsive viewport widths, and creates a deterministic strict component tree from Website Blueprint data. Unknown sections become placeholders only in editor mode and fail elsewhere. Browser code must never render Elementor JSON.

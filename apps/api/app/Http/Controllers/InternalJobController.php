@@ -6,6 +6,7 @@ use App\Models\Deployment;
 use App\Models\GenerationRun;
 use App\Models\Organization;
 use App\Services\EntitlementService;
+use App\Services\WebsiteRevisionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -142,6 +143,13 @@ class InternalJobController extends Controller
         $job->update($data + ['status' => 'succeeded', 'progress' => 100, 'current_stage' => null, 'completed_at' => now()]);
         if ($job instanceof GenerationRun) {
             $job->project()->update(['status' => 'ready']);
+            $output = $data['output'] ?? [];
+            if (! $job->project->websiteRevisions()->where('generation_run_id', $job->id)->exists() && ! empty($output['blueprint'])) {
+                $service = app(WebsiteRevisionService::class);
+                $revision = $service->create($job->project, $output['blueprint'], 'generation', null, $job->id);
+                $validation = $service->validate($revision);
+                $revision->update(['elementor_output' => $output['elementor'] ?? null, 'status' => $validation['valid'] && ! empty($output['elementor']) ? 'ready' : 'invalid']);
+            }
         }
 
         return response()->json(['data' => $job->fresh('events')]);

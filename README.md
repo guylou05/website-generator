@@ -1,5 +1,7 @@
 # Website Generator
 
+Generated sites use immutable, numbered Website Blueprint revisions. Editors work on safe drafts in the dashboard, render them deterministically, and explicitly approve one revision before WordPress preview or deployment. See [the editor guide](docs/editor.md).
+
 Production-oriented monorepo foundation for an AI-assisted website generation platform. It intentionally contains infrastructure and package boundaries only—business and generation logic will be added incrementally.
 
 ## Stack

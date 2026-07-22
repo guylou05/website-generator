@@ -12,19 +12,18 @@ class DeploymentService
 
     public function execute(Deployment $deployment, bool $bypassPreview = false): Deployment
     {
-        if (! $deployment->dry_run && ! $bypassPreview && ! Deployment::where(['project_id' => $deployment->project_id, 'generation_run_id' => $deployment->generation_run_id, 'wordpress_connection_id' => $deployment->wordpress_connection_id, 'dry_run' => true, 'status' => 'completed'])->exists()) {
+        if (! $deployment->dry_run && ! $bypassPreview && ! Deployment::where(['project_id' => $deployment->project_id, 'website_revision_id' => $deployment->website_revision_id, 'wordpress_connection_id' => $deployment->wordpress_connection_id, 'dry_run' => true, 'status' => 'completed'])->exists()) {
             return $this->fail($deployment, 'preview_required', 'Run a successful deployment preview first.');
         }
         $deployment->update(['status' => 'running', 'started_at' => now(), 'completed_at' => null, 'error' => null]);
         try {
-            $run = $deployment->generationRun;
-            $output = $run->output;
-            if ($run->status !== 'completed' || empty($output['blueprint']['pages']) || ($output['elementor']['status'] ?? null) !== 'ready') {
-                throw new \RuntimeException('Generated output is incomplete or invalid.');
+            $revision = $deployment->websiteRevision;
+            if (! $revision || $revision->status !== 'approved' || empty($revision->blueprint['pages']) || empty($revision->elementor_output)) {
+                throw new \RuntimeException('Approved revision output is incomplete or invalid.');
             }
             $connection = $deployment->connection;
-            $pages = $output['blueprint']['pages'];
-            $documents = collect($output['elementor']['documents'] ?? [])->keyBy('page');
+            $pages = $revision->blueprint['pages'];
+            $documents = collect($revision->elementor_output['documents'] ?? [])->keyBy('page');
             $operations = [];
             $ids = [];
             foreach (self::STAGES as $index => $stage) {
@@ -76,7 +75,7 @@ class DeploymentService
                 }
                 $deployment->events()->create(['stage' => $stage, 'event_type' => 'stage.completed', 'progress' => $progress, 'message' => $stage.' completed', 'created_at' => now()]);
             }
-            $result = ['site_url' => $connection->site_url, 'admin_url' => $connection->site_url.'/wp-admin/', 'pages' => count($pages), 'dry_run' => $deployment->dry_run];
+            $result = ['site_url' => $connection->site_url, 'admin_url' => $connection->site_url.'/wp-admin/', 'pages' => count($pages), 'dry_run' => $deployment->dry_run, 'revision_id' => $revision->id, 'revision_number' => $revision->revision_number];
             $deployment->update(['status' => 'completed', 'progress' => 100, 'current_stage' => null, 'operations' => $operations, 'result' => $result, 'completed_at' => now()]);
 
             return $deployment->fresh('events');
