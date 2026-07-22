@@ -36,3 +36,7 @@ Packages are intentionally empty public entry points at initialization. New code
 ## AI generation pipeline
 
 The provider-neutral generation pipeline is documented in [`packages/ai/README.md`](../packages/ai/README.md). Applications inject each asynchronous stage, logging, and retry behavior. The final stage produces the shared Website Blueprint; provider SDK types and renderer-specific output must remain outside the pipeline contracts.
+
+## Project and generation persistence
+
+Laravel is the sole owner of project persistence. `projects` stores business and brand inputs; UUID-addressed `generation_runs` stores provider-neutral input, lifecycle state, safe errors, blueprint output, and Elementor output; append-only `generation_events` provides the timeline. The dashboard only accesses these records through typed HTTP resources. Generation is synchronous for the current mock provider, while the data model and event stream allow a queue worker to be introduced without changing dashboard routes. Provider keys are environment-only server secrets and are excluded from every persisted input and resource. Authentication, image generation, and WordPress deployment are deliberately outside this boundary.

@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useReducer, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,9 +17,9 @@ import {
   generationReducer,
   generationStages,
   initialGenerationState,
-  runMockWebsiteGeneration,
   type WebsiteWizardData,
 } from '@/lib/website-generation';
+import { dashboardApi } from '@/lib/api-client';
 
 const steps = [
   'Business name',
@@ -47,15 +48,35 @@ export default function NewWebsite() {
     initialGenerationState,
   );
   const controller = useRef<AbortController | null>(null);
+  const router = useRouter();
   const start = () => {
-    controller.current?.abort();
-    controller.current = new AbortController();
-    void runMockWebsiteGeneration(form, dispatch, {
-      signal: controller.current.signal,
-    }).catch((error: unknown) => {
-      if (error instanceof DOMException && error.name === 'AbortError')
-        dispatch({ type: 'cancel' });
-    });
+    dispatch({ type: 'start', stage: 'analysis' });
+    void (async () => {
+      try {
+        const project = await dashboardApi.createProject({
+          name: form.businessName,
+          business_profile: { ...form },
+          brand_settings: { colors: form.brandColors },
+        });
+        const run = await dashboardApi.createGeneration(project.id, {
+          ...form,
+        });
+        if (run.status === 'completed')
+          router.push(`/dashboard/projects/${project.id}`);
+        else
+          dispatch({
+            type: 'fail',
+            stage: 'analysis',
+            error: run.error?.message ?? 'Generation failed.',
+          });
+      } catch (error) {
+        dispatch({
+          type: 'fail',
+          stage: 'analysis',
+          error: error instanceof Error ? error.message : 'Generation failed.',
+        });
+      }
+    })();
   };
   if (generation.status !== 'idle')
     return (

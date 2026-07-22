@@ -11,9 +11,16 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import { projects, templates } from '@/lib/mock-data';
+import { templates } from '@/lib/mock-data';
+import { dashboardApi, type Project } from '@/lib/api-client';
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  let projects: Project[] = [];
+  try {
+    projects = await dashboardApi.projects();
+  } catch {
+    /* The projects page exposes connection errors. */
+  }
   return (
     <div className="space-y-8">
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -38,7 +45,7 @@ export default function Dashboard() {
         {[
           {
             label: 'Total websites',
-            value: '12',
+            value: String(projects.length),
             note: '+2 this month',
             Icon: Globe2,
           },
@@ -91,25 +98,25 @@ export default function Dashboard() {
           </div>
           <div className="divide-y">
             {projects.slice(0, 3).map((p) => (
-              <div key={p.name} className="flex items-center gap-3 p-4 sm:px-5">
+              <div key={p.id} className="flex items-center gap-3 p-4 sm:px-5">
                 <div
-                  className={`grid size-10 place-items-center rounded-lg bg-gradient-to-br ${p.color} text-sm font-bold text-white`}
+                  className={`grid size-10 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white`}
                 >
                   {p.name[0]}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{p.name}</p>
                   <p className="text-muted-foreground truncate text-xs">
-                    {p.domain}
+                    {p.slug}
                   </p>
                 </div>
                 <span
-                  className={`hidden rounded-full px-2.5 py-1 text-xs sm:block ${p.status === 'Live' ? 'bg-emerald-500/10 text-emerald-600' : p.status === 'Generating' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+                  className={`hidden rounded-full px-2.5 py-1 text-xs sm:block ${p.status === 'ready' ? 'bg-emerald-500/10 text-emerald-600' : p.status === 'generating' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
                 >
-                  {p.status}
+                  {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
                 </span>
                 <span className="text-muted-foreground hidden text-xs md:block">
-                  {p.updated}
+                  {new Date(p.updatedAt).toLocaleDateString()}
                 </span>
                 <MoreHorizontal className="text-muted-foreground size-4" />
               </div>
