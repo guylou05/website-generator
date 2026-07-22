@@ -29,7 +29,7 @@ class WordPressConnectionController extends Controller
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => ['code' => 'invalid_site_url', 'message' => $e->getMessage()]], 422);
         }
-        $connection = $project->wordpressConnections()->create(['site_url' => $data['site_url'], 'username' => $data['username'], 'encrypted_application_password' => $data['application_password']]);
+        $connection = $project->wordpressConnections()->create(['organization_id' => $project->organization_id, 'site_url' => $data['site_url'], 'username' => $data['username'], 'encrypted_application_password' => $data['application_password']]);
 
         return response()->json(['data' => $connection], 201);
     }

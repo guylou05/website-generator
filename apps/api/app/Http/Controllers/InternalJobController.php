@@ -11,14 +11,14 @@ class InternalJobController extends Controller
 {
     public function generationContext(GenerationRun $generationRun): JsonResponse
     {
-        return response()->json(['data' => ['id' => $generationRun->id, 'project_id' => $generationRun->project_id, 'provider' => $generationRun->provider, 'input' => $generationRun->input, 'business_profile' => $generationRun->project->business_profile, 'attempt' => $generationRun->attempt]]);
+        return response()->json(['data' => ['id' => $generationRun->id, 'organization_id' => $generationRun->organization_id, 'project_id' => $generationRun->project_id, 'provider' => $generationRun->provider, 'input' => $generationRun->input, 'business_profile' => $generationRun->project->business_profile, 'attempt' => $generationRun->attempt]]);
     }
 
     public function deploymentContext(Deployment $deployment): JsonResponse
     {
         $c = $deployment->connection;
 
-        return response()->json(['data' => ['id' => $deployment->id, 'dry_run' => $deployment->dry_run, 'generation_output' => $deployment->generationRun->output, 'wordpress' => ['url' => $c->site_url, 'username' => $c->username, 'application_password' => $c->encrypted_application_password]]]);
+        return response()->json(['data' => ['id' => $deployment->id, 'organization_id' => $deployment->organization_id, 'dry_run' => $deployment->dry_run, 'generation_output' => $deployment->generationRun->output, 'wordpress' => ['url' => $c->site_url, 'username' => $c->username, 'application_password' => $c->encrypted_application_password]]]);
     }
 
     public function generationCancellation(GenerationRun $generationRun): JsonResponse

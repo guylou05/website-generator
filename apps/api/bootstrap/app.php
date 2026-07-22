@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthenticateInternalWorker;
+use App\Http\Middleware\EnsureTenantAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -10,7 +11,10 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(web: __DIR__.'/../routes/web.php', api: __DIR__.'/../routes/api.php', commands: __DIR__.'/../routes/console.php', health: '/up')
-    ->withMiddleware(fn (Middleware $middleware) => $middleware->alias(['internal.worker' => AuthenticateInternalWorker::class]))
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->statefulApi();
+        $middleware->alias(['internal.worker' => AuthenticateInternalWorker::class, 'tenant.access' => EnsureTenantAccess::class]);
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (ValidationException $exception, Request $request) {
             if ($request->is('api/*')) {
