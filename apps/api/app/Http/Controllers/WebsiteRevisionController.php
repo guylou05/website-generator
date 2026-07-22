@@ -50,7 +50,7 @@ class WebsiteRevisionController extends Controller
             }throw $e;
         }
 
-return response()->json(['data' => $saved]);
+        return response()->json(['data' => $saved]);
     }
 
     public function validateRevision(Request $request, WebsiteRevision $revision): JsonResponse
