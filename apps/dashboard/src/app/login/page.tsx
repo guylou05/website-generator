@@ -1,116 +1,102 @@
 'use client';
 import Link from 'next/link';
-import { ArrowRight, Check, Eye, LockKeyhole } from 'lucide-react';
+import { FormEvent, Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Logo } from '@/components/logo';
-
-export default function Login() {
+import { dashboardApi, DashboardApiError } from '@/lib/api-client';
+function LoginForm() {
+  const router = useRouter(),
+    params = useSearchParams();
+  const [error, setError] = useState(''),
+    [busy, setBusy] = useState(false);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    const f = new FormData(e.currentTarget);
+    try {
+      await dashboardApi.login({
+        email: String(f.get('email')),
+        password: String(f.get('password')),
+        remember: f.get('remember') === 'on',
+      });
+      const intended = params.get('next');
+      router.replace(
+        intended?.startsWith('/') && !intended.startsWith('//')
+          ? intended
+          : '/dashboard',
+      );
+    } catch (e) {
+      setError(
+        e instanceof DashboardApiError ? e.message : 'Unable to sign in.',
+      );
+      setBusy(false);
+    }
+  }
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
-      <section className="flex flex-col p-6 sm:p-10">
+    <main className="grid min-h-screen place-items-center p-6">
+      <section className="w-full max-w-sm">
         <Logo />
-        <div className="m-auto w-full max-w-sm py-12">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Welcome back
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Sign in to continue building remarkable websites.
-          </p>
-          <button className="bg-card mt-8 flex w-full items-center justify-center gap-3 rounded-lg border py-2.5 text-sm font-medium shadow-sm">
-            <span className="text-lg font-bold text-blue-500">G</span>Continue
-            with Google
-          </button>
-          <div className="text-muted-foreground my-6 flex items-center gap-3 text-xs">
-            <span className="bg-border h-px flex-1" />
-            or continue with email
-            <span className="bg-border h-px flex-1" />
-          </div>
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-            <label className="block text-sm font-medium">
-              Email address
-              <input
-                className="field mt-2"
-                type="email"
-                placeholder="you@company.com"
-              />
-            </label>
-            <label className="block text-sm font-medium">
-              Password
-              <div className="relative mt-2">
-                <input
-                  className="field pr-10"
-                  type="password"
-                  placeholder="Enter your password"
-                />
-                <Eye className="text-muted-foreground absolute right-3 top-3 size-4" />
-              </div>
-            </label>
-            <div className="flex justify-between text-sm">
-              <label className="text-muted-foreground flex items-center gap-2">
-                <input type="checkbox" />
-                Remember me
-              </label>
-              <button className="text-primary font-medium">
-                Forgot password?
-              </button>
-            </div>
-            <Link
-              href="/dashboard"
-              className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium"
-            >
-              Sign in <ArrowRight className="size-4" />
-            </Link>
-          </form>
-          <p className="text-muted-foreground mt-7 text-center text-sm">
-            New to SiteFoundry?{' '}
-            <button className="text-primary font-medium">
-              Create an account
-            </button>
-          </p>
-        </div>
-        <p className="text-muted-foreground text-xs">
-          © 2026 SiteFoundry. All rights reserved.
+        <h1 className="mt-10 text-3xl font-semibold">Welcome back</h1>
+        <p className="text-muted-foreground mt-2">
+          Sign in to your organization.
         </p>
-      </section>
-      <section className="relative hidden overflow-hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute -right-32 -top-32 size-96 rounded-full bg-violet-600/30 blur-3xl" />
-        <div className="relative">
-          <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs">
-            AI-powered website creation
-          </span>
-          <h2 className="mt-8 max-w-xl text-5xl font-semibold leading-tight tracking-tight">
-            From idea to live website in minutes.
-          </h2>
-          <p className="mt-5 max-w-lg text-lg text-slate-400">
-            Create beautiful, conversion-ready websites tailored to your
-            business—without touching a line of code.
-          </p>
-        </div>
-        <div className="card relative border-white/10 bg-white/5 p-6 backdrop-blur">
-          <div className="flex gap-3">
-            <span className="grid size-10 place-items-center rounded-full bg-violet-500/20">
-              <LockKeyhole className="size-5 text-violet-300" />
-            </span>
-            <div>
-              <p className="font-medium">
-                Built for speed. Designed for growth.
-              </p>
-              {[
-                'Smart content and design generation',
-                'Production-ready WordPress websites',
-                'Publish whenever you’re ready',
-              ].map((x) => (
-                <p
-                  key={x}
-                  className="mt-3 flex items-center gap-2 text-sm text-slate-400"
-                >
-                  <Check className="size-4 text-emerald-400" />
-                  {x}
-                </p>
-              ))}
-            </div>
-          </div>
+        <form onSubmit={submit} className="mt-8 space-y-4">
+          <label className="block text-sm font-medium">
+            Email
+            <input
+              required
+              name="email"
+              type="email"
+              className="field mt-2"
+              autoComplete="email"
+            />
+          </label>
+          <label className="block text-sm font-medium">
+            Password
+            <input
+              required
+              name="password"
+              type="password"
+              className="field mt-2"
+              autoComplete="current-password"
+            />
+          </label>
+          <label className="flex gap-2 text-sm">
+            <input name="remember" type="checkbox" />
+            Remember me
+          </label>
+          {error && (
+            <p role="alert" className="text-sm text-red-600">
+              {error}
+            </p>
+          )}
+          <button
+            disabled={busy}
+            className="bg-primary text-primary-foreground w-full rounded-lg py-2.5"
+          >
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+        <div className="mt-5 flex justify-between text-sm">
+          <Link href="/forgot-password">Forgot password?</Link>
+          <Link href="/register">Create account</Link>
         </div>
       </section>
     </main>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense
+      fallback={
+        <main className="grid min-h-screen place-items-center">
+          Loading sign in…
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

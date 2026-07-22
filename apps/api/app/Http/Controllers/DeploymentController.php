@@ -44,7 +44,7 @@ class DeploymentController extends Controller
         if (! $dryRun && ! Deployment::where(['project_id' => $project->id, 'generation_run_id' => $run->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => true, 'status' => 'succeeded'])->exists()) {
             return response()->json(['error' => ['code' => 'preview_required', 'message' => 'Run a successful deployment preview first.']], 409);
         }
-        $deployment = $project->deployments()->create(['generation_run_id' => $run->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
+        $deployment = $project->deployments()->create(['organization_id' => $project->organization_id, 'generation_run_id' => $run->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
         $deployment->events()->create(['stage' => 'system', 'event_type' => 'deployment.queued', 'progress' => 0, 'message' => 'Deployment queued.', 'created_at' => now()]);
         DeployWebsite::dispatch($deployment->id);
 

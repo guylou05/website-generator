@@ -19,6 +19,12 @@ import {
 } from 'lucide-react';
 import { Logo } from './logo';
 import { cn } from '@/lib/utils';
+import {
+  dashboardApi,
+  type AuthUser,
+  type Organization,
+} from '@/lib/api-client';
+import { useRouter } from 'next/navigation';
 
 const nav = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -31,10 +37,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const router = useRouter();
   useEffect(() => {
     const value = localStorage.getItem('theme') === 'dark';
     setDark(value);
     document.documentElement.classList.toggle('dark', value);
+    void Promise.all([
+      dashboardApi.currentUser(),
+      dashboardApi.organizations(),
+    ]).then(([current, list]) => {
+      setUser(current);
+      setOrganizations(list);
+    });
   }, []);
   const toggleTheme = () => {
     const value = !dark;
@@ -64,6 +80,24 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <nav className="mt-8 space-y-1">
+          <label className="text-muted-foreground mb-4 block px-2 text-xs font-medium">
+            Organization
+            <select
+              aria-label="Current organization"
+              className="field mt-2"
+              value={user?.current_organization?.id ?? ''}
+              onChange={async (e) => {
+                await dashboardApi.switchOrganization(e.target.value);
+                location.reload();
+              }}
+            >
+              {organizations.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </label>
           {nav.map((item) => {
             const active =
               item.href === '/dashboard'
@@ -144,9 +178,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 AM
               </span>
               <span className="hidden text-sm font-medium sm:block">
-                Alex Morgan
+                {user?.name ?? 'Account'}
               </span>
               <ChevronDown className="text-muted-foreground hidden size-3.5 sm:block" />
+              <button
+                className="text-muted-foreground text-xs"
+                onClick={async () => {
+                  await dashboardApi.logout();
+                  router.replace('/login');
+                }}
+              >
+                Log out
+              </button>
             </div>
           </div>
         </header>

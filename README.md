@@ -112,3 +112,11 @@ docker compose exec api php artisan schedule:work
 ```
 
 Run a local mock flow by creating a project with `POST /api/projects`, then `POST /api/projects/{id}/generations` with `{"provider":"mock","input":{"businessName":"Acme"}}`; poll `GET /api/generations/{id}`. Generation and deployment creation return 202.
+
+## Authentication and organizations
+
+The dashboard uses Laravel Sanctum's cookie-based SPA authentication. Open `http://localhost:3000/register` to create a user and its first organization, then verify mail and password-reset links through Mailpit at `http://localhost:8025`. Sessions are HttpOnly and CSRF-protected; no bearer token is stored by the dashboard.
+
+Organization owners and admins can invite members from organization settings. A user may switch among active memberships from the dashboard navigation. Owners must transfer ownership before they can be removed, and organization deletion requires password confirmation.
+
+Run `docker compose up --build` for PostgreSQL, Redis, Laravel API and scheduler, Next.js dashboard, worker, Nginx, and Mailpit. Existing pre-tenancy records are assigned by migration to a locked, seeded **Default Organization** and legacy owner; administrators should create a real owner and transfer/import those records before production use.

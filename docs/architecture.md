@@ -52,3 +52,9 @@ Laravel/PostgreSQL are authoritative. Public controllers only validate, create `
 States are `queued`, `running`, `cancelling`, `cancelled`, `succeeded`, `failed`, and `stale`. Retry creates a new record for public retries; automatic stale recovery increments the existing attempt and redispatches while attempts remain. `php artisan jobs:recover-stale` is scheduled every minute. The dashboard should poll the persisted resource/event timeline with backoff (immediate while connected, slower on errors), reconnect after network loss, and redirect only after observing `succeeded`.
 
 The internal bearer token is compared in constant time. Execution contexts are never public; deployment credentials are decrypted only for the authenticated worker. Rotate the token with a coordinated API/worker restart. Cancellation is cooperative; an already-running remote HTTP request may finish.
+
+## Identity and tenant boundary
+
+Laravel is the identity and authorization authority. Sanctum stateful SPA middleware authenticates the Next.js dashboard with an encrypted, HttpOnly, SameSite cookie and CSRF double-submit protection. Public domain APIs require an authenticated active membership; organization IDs are derived from `User.current_organization_id`, never request data. Tenant-aware route binding filters projects, generation runs, WordPress connections, and deployments before controllers execute, producing a non-disclosing 404 across tenants.
+
+Roles are centralized in `OrganizationPolicy` and tenant middleware: owners control ownership/deletion, admins manage organization resources and members, members manage workload resources, and viewers are read-only. Internal execution routes remain isolated behind `INTERNAL_WORKER_TOKEN`; worker authentication is independent of browser sessions.

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 abstract class Controller
 {
-    // Base controller for the JSON API.
+    use AuthorizesRequests;
 }

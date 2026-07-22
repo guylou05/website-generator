@@ -69,6 +69,38 @@ export interface Deployment {
   error: { code: string; message: string } | null;
   events: GenerationEvent[];
 }
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  email_verified_at: string | null;
+  current_organization: Organization | null;
+  current_role: MembershipRole | null;
+}
+export type MembershipRole = 'owner' | 'admin' | 'member' | 'viewer';
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  owner_user_id: string;
+  memberships?: OrganizationMembership[];
+}
+export interface OrganizationMembership {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: MembershipRole;
+  status: string;
+  user?: Pick<AuthUser, 'id' | 'name' | 'email'>;
+}
+export interface OrganizationInvitation {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: Exclude<MembershipRole, 'owner'>;
+  expires_at: string;
+  invitation_url?: string;
+}
 interface Wire {
   id: string | number;
   name: string;
@@ -166,6 +198,8 @@ export class DashboardApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code = 'request_failed',
+    readonly details?: Record<string, string[]>,
   ) {
     super(message);
   }
@@ -176,24 +210,121 @@ export class DashboardApiClient {
       'http://localhost:8080/api',
     private readonly request: typeof fetch = fetch,
   ) {}
+  private csrfReady = false;
+  async initializeCsrf(): Promise<void> {
+    if (this.csrfReady) return;
+    const origin = this.baseUrl.replace(/\/api\/?$/, '');
+    const response = await this.request(`${origin}/sanctum/csrf-cookie`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    if (!response.ok)
+      throw new DashboardApiError(
+        'Could not initialize the secure session.',
+        response.status,
+        'csrf_failed',
+      );
+    this.csrfReady = true;
+  }
   private async call<T>(path: string, init?: RequestInit): Promise<T> {
+    if (init?.method && !['GET', 'HEAD'].includes(init.method))
+      await this.initializeCsrf();
     const response = await this.request(`${this.baseUrl}${path}`, {
       ...init,
       headers: { 'Content-Type': 'application/json', ...init?.headers },
       cache: 'no-store',
+      credentials: 'include',
     });
     if (!response.ok) {
       const body = (await response.json().catch(() => ({}))) as {
-        error?: { message?: string };
+        error?: {
+          message?: string;
+          code?: string;
+          details?: Record<string, string[]>;
+        };
       };
       throw new DashboardApiError(
         body?.error?.message ?? 'API request failed.',
         response.status,
+        body.error?.code,
+        body.error?.details,
       );
     }
     if (response.status === 204) return null as T;
     const envelope = (await response.json()) as { data: T };
     return envelope.data;
+  }
+  register(input: {
+    name: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+    organization_name?: string;
+  }): Promise<AuthUser> {
+    return this.call('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  login(input: {
+    email: string;
+    password: string;
+    remember?: boolean;
+  }): Promise<AuthUser> {
+    return this.call('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  logout(): Promise<null> {
+    return this.call('/auth/logout', { method: 'POST' });
+  }
+  currentUser(): Promise<AuthUser> {
+    return this.call('/auth/user');
+  }
+  forgotPassword(email: string) {
+    return this.call<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+  resetPassword(input: {
+    email: string;
+    token: string;
+    password: string;
+    password_confirmation: string;
+  }) {
+    return this.call<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  organizations(): Promise<Organization[]> {
+    return this.call('/organizations');
+  }
+  createOrganization(name: string): Promise<Organization> {
+    return this.call('/organizations', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  }
+  switchOrganization(id: string): Promise<Organization> {
+    return this.call(`/organizations/${id}/switch`, { method: 'POST' });
+  }
+  members(id: string): Promise<OrganizationMembership[]> {
+    return this.call(`/organizations/${id}/members`);
+  }
+  invitations(id: string): Promise<OrganizationInvitation[]> {
+    return this.call(`/organizations/${id}/invitations`);
+  }
+  invite(
+    id: string,
+    input: { email: string; role: Exclude<MembershipRole, 'owner'> },
+  ): Promise<OrganizationInvitation> {
+    return this.call(`/organizations/${id}/invitations`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   }
   async projects(): Promise<Project[]> {
     return (await this.call<Wire[]>('/projects')).map(mapProject);

@@ -14,12 +14,13 @@ class ProjectController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return ProjectResource::collection(Project::with(['generationRuns' => fn ($query) => $query->latest()->limit(1)])->latest()->get());
+        return ProjectResource::collection(Project::where('organization_id', request()->user()->current_organization_id)->with(['generationRuns' => fn ($query) => $query->latest()->limit(1)])->latest()->get());
     }
 
     public function store(StoreProjectRequest $request): ProjectResource
     {
         $data = $request->validated();
+        $data['organization_id'] = $request->user()->current_organization_id;
         $data['slug'] ??= Str::slug($data['name']).'-'.Str::lower(Str::random(6));
 
         return new ProjectResource(Project::create($data));
