@@ -132,6 +132,41 @@ export interface BillingUsage {
   period_end: string;
   metrics: Record<string, { used: number; limit: number; remaining: number }>;
 }
+export interface MediaAsset {
+  id: string;
+  project_id: string | null;
+  source_type: string;
+  status: string;
+  display_name: string;
+  description: string | null;
+  alt_text: string | null;
+  caption: string | null;
+  mime_type: string;
+  size_bytes: number;
+  width: number | null;
+  height: number | null;
+  url: string | null;
+  usage_count?: number;
+  provider_attribution?: Record<string, unknown> | null;
+}
+export interface ImageGenerationJob {
+  id: string;
+  project_id: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'canceled';
+  prompt: string;
+  aspect_ratio: string;
+  requested_count: number;
+  generated_count: number;
+  error: Record<string, unknown> | null;
+}
+export interface BrandKit {
+  id: string;
+  project_id: string | null;
+  name: string;
+  is_default: boolean;
+  primary_color: string;
+  image_style: Record<string, unknown> | null;
+}
 interface Wire {
   id: string | number;
   name: string;
@@ -496,6 +531,130 @@ export class DashboardApiClient {
   }
   resumeSubscription() {
     return this.call('/billing/resume-subscription', { method: 'POST' });
+  }
+  initiateUpload(input: {
+    filename: string;
+    mime_type: string;
+    size_bytes: number;
+    project_id?: string;
+    display_name?: string;
+  }) {
+    return this.call<{
+      asset: MediaAsset;
+      upload: {
+        url: string;
+        headers: Record<string, string>;
+        expires_at: string;
+      };
+    }>('/media/uploads', { method: 'POST', body: JSON.stringify(input) });
+  }
+  completeUpload(id: string) {
+    return this.call<MediaAsset>(`/media/uploads/${id}/complete`, {
+      method: 'POST',
+    });
+  }
+  abortUpload(id: string) {
+    return this.call<null>(`/media/uploads/${id}/abort`, { method: 'POST' });
+  }
+  listMedia(query = '') {
+    return this.call<{ data: MediaAsset[]; next_cursor?: string }>(
+      `/media${query ? `?${query}` : ''}`,
+    );
+  }
+  getMedia(id: string) {
+    return this.call<MediaAsset>(`/media/${id}`);
+  }
+  updateMedia(
+    id: string,
+    input: Partial<
+      Pick<MediaAsset, 'display_name' | 'description' | 'alt_text' | 'caption'>
+    >,
+  ) {
+    return this.call<MediaAsset>(`/media/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  }
+  deleteMedia(id: string) {
+    return this.call<null>(`/media/${id}`, { method: 'DELETE' });
+  }
+  restoreMedia(id: string) {
+    return this.call<MediaAsset>(`/media/${id}/restore`, { method: 'POST' });
+  }
+  reprocessMedia(id: string) {
+    return this.call<MediaAsset>(`/media/${id}/reprocess`, { method: 'POST' });
+  }
+  transformMedia(id: string, input: Record<string, unknown>) {
+    return this.call<MediaAsset>(`/media/${id}/transformations`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  startImageGeneration(projectId: string, input: Record<string, unknown>) {
+    return this.call<ImageGenerationJob>(
+      `/projects/${projectId}/image-generations`,
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  }
+  listImageGenerations(projectId: string) {
+    return this.call<ImageGenerationJob[]>(
+      `/projects/${projectId}/image-generations`,
+    );
+  }
+  getImageGeneration(id: string) {
+    return this.call<ImageGenerationJob>(`/image-generations/${id}`);
+  }
+  cancelImageGeneration(id: string) {
+    return this.call<ImageGenerationJob>(`/image-generations/${id}/cancel`, {
+      method: 'POST',
+    });
+  }
+  retryImageGeneration(id: string) {
+    return this.call<ImageGenerationJob>(`/image-generations/${id}/retry`, {
+      method: 'POST',
+    });
+  }
+  searchStockImages(query: string) {
+    return this.call(`/stock-images/search?${query}`);
+  }
+  importStockImage(input: Record<string, unknown>) {
+    return this.call('/stock-images/import', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  suggestAltText(id: string, input: Record<string, unknown> = {}) {
+    return this.call<{ proposal: string }>(`/media/${id}/suggest-alt-text`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  listBrandKits() {
+    return this.call<BrandKit[]>('/brand-kits');
+  }
+  createBrandKit(input: Partial<BrandKit>) {
+    return this.call<BrandKit>('/brand-kits', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  updateBrandKit(id: string, input: Partial<BrandKit>) {
+    return this.call<BrandKit>(`/brand-kits/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  }
+  assignBrandKit(projectId: string, brand_kit_id: string) {
+    return this.call(`/projects/${projectId}/brand-kit`, {
+      method: 'POST',
+      body: JSON.stringify({ brand_kit_id }),
+    });
+  }
+  manageBrandAssets(id: string, input: Record<string, unknown>) {
+    return this.call(`/brand-kits/${id}/assets`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   }
 }
 export const dashboardApi = new DashboardApiClient();
