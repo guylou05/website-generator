@@ -50,3 +50,7 @@ Create operations are not retried automatically because a timed-out POST could h
 - The connector requires an authenticated user with `manage_options` capability for every route.
 - Deploy through HTTPS and never commit `.env` files or Application Passwords.
 - Review Elementor forms, integrations, links, and assets before publication.
+
+## Server-side deployment
+
+Keep Application Passwords in a trusted server runtime and never bundle them into browser code. `WordPressDeployer.deploy({ dryRun: true })` discovers existing pages and returns planned operations without modifying WordPress. Live page and menu operations use stable slugs and keys so retries update rather than duplicate content.

@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Deployment extends Model
+{
+    use HasUuids;
+
+    protected $fillable = ['project_id', 'generation_run_id', 'wordpress_connection_id', 'status', 'dry_run', 'progress', 'current_stage', 'operations', 'result', 'error', 'started_at', 'completed_at'];
+
+    protected function casts(): array
+    {
+        return ['dry_run' => 'boolean', 'operations' => 'array', 'result' => 'array', 'error' => 'array', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(DeploymentEvent::class);
+    }
+
+    public function connection(): BelongsTo
+    {
+        return $this->belongsTo(WordPressConnection::class, 'wordpress_connection_id');
+    }
+
+    public function generationRun(): BelongsTo
+    {
+        return $this->belongsTo(GenerationRun::class);
+    }
+}

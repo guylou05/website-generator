@@ -8,6 +8,9 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
 
     public function register_routes(): void
     {
+        register_rest_route($this->namespace, '/status', [
+            'methods' => WP_REST_Server::READABLE, 'callback' => [$this, 'status'], 'permission_callback' => [$this, 'permissions_check'],
+        ]);
         register_rest_route($this->namespace, '/pages/(?P<id>\d+)/elementor', [
             'methods' => WP_REST_Server::CREATABLE, 'callback' => [$this, 'save_elementor'],
             'permission_callback' => [$this, 'permissions_check'], 'args' => ['id' => $this->id_arg(), 'data' => ['required' => true, 'validate_callback' => [$this, 'is_array']], 'settings' => ['default' => [], 'validate_callback' => [$this, 'is_array']], 'version' => ['default' => '0.4', 'sanitize_callback' => 'sanitize_text_field']],
@@ -30,6 +33,15 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
             'methods' => WP_REST_Server::CREATABLE, 'callback' => [$this, 'set_homepage'], 'permission_callback' => [$this, 'permissions_check'],
             'args' => ['page_id' => ['required' => true, 'sanitize_callback' => 'absint', 'validate_callback' => [$this, 'valid_page']]],
         ]);
+    }
+
+    public function status(): WP_REST_Response
+    {
+        return new WP_REST_Response([
+            'wordpress' => ['available' => true, 'version' => get_bloginfo('version')],
+            'connector' => ['available' => true, 'version' => defined('WEBSITE_GENERATOR_CONNECTOR_VERSION') ? WEBSITE_GENERATOR_CONNECTOR_VERSION : 'unknown'],
+            'elementor' => ['available' => did_action('elementor/loaded') > 0, 'version' => defined('ELEMENTOR_VERSION') ? ELEMENTOR_VERSION : null],
+        ], 200);
     }
 
     public function permissions_check(): bool|WP_Error

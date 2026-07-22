@@ -21,4 +21,14 @@ class Project extends Model
     {
         return $this->hasMany(GenerationRun::class);
     }
+
+    public function wordpressConnections(): HasMany
+    {
+        return $this->hasMany(WordPressConnection::class);
+    }
+
+    public function deployments(): HasMany
+    {
+        return $this->hasMany(Deployment::class);
+    }
 }

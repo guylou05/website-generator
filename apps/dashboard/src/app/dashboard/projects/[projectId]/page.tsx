@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { dashboardApi } from '@/lib/api-client';
 import { GenerationActions } from '@/components/generation-actions';
+import Link from 'next/link';
 
 export default async function ProjectDetail({
   params,
@@ -8,7 +9,10 @@ export default async function ProjectDetail({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const project = await dashboardApi.project(projectId).catch(() => null);
+  const [project, deployments] = await Promise.all([
+    dashboardApi.project(projectId).catch(() => null),
+    dashboardApi.deployments(projectId).catch(() => []),
+  ]);
   if (!project) notFound();
   const run = project.generationRuns[0];
   const summary = run?.output?.summary;
@@ -26,6 +30,14 @@ export default async function ProjectDetail({
           runId={run?.id}
           retryable={run?.status === 'failed' || run?.status === 'cancelled'}
         />
+        {run?.status === 'completed' && (
+          <Link
+            className="bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium"
+            href={`/dashboard/projects/${projectId}/deploy`}
+          >
+            Prepare Deployment
+          </Link>
+        )}
       </header>
       <section className="grid gap-4 sm:grid-cols-3">
         <Metric
@@ -55,6 +67,25 @@ export default async function ProjectDetail({
             </div>
           ))}
         </dl>
+      </section>
+      <section className="card p-6">
+        <h2 className="font-semibold">Deployment history</h2>
+        <div className="mt-4 space-y-3">
+          {deployments.length === 0 && (
+            <p className="text-muted-foreground text-sm">No deployments yet.</p>
+          )}
+          {deployments.map((deployment) => (
+            <div
+              key={deployment.id}
+              className="flex justify-between border-l-2 pl-4 text-sm"
+            >
+              <span>{deployment.dryRun ? 'Preview' : 'Live deployment'}</span>
+              <span className="capitalize">
+                {deployment.status} · {deployment.progress}%
+              </span>
+            </div>
+          ))}
+        </div>
       </section>
       <section className="card p-6">
         <h2 className="font-semibold">Generation timeline</h2>

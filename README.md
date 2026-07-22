@@ -94,3 +94,7 @@ A complete fictional IT company blueprint is available at `packages/shared/sampl
 ## Persistent projects
 
 Run `php artisan migrate` in `apps/api` before creating a project. The dashboard uses `NEXT_PUBLIC_API_URL` to call the Laravel project and generation endpoints. No authentication boundary exists yet; do not expose this development API publicly. Generation defaults to the deterministic `mock` provider.
+
+## WordPress deployments
+
+Laravel is the system of record for encrypted WordPress connections, mandatory deployment previews, deployments, and event timelines. The dashboard submits an Application Password once; it is redacted from every response. Deployments run server-side through the connector plugin.
