@@ -41,8 +41,12 @@ class DeploymentController extends Controller
         if (! $dryRun && config('billing.enforcement') && ! $entitlements->canStartLiveDeployment($organization)) {
             return response()->json(['error' => $entitlements->denial($organization, 'live_deployments')], 402);
         }
-        $data = $request->validate(['generation_run_id' => 'required|uuid', 'wordpress_connection_id' => 'required|uuid']);
-        $run = $project->generationRuns()->findOrFail($data['generation_run_id']);
+        $data = $request->validate(['wordpress_connection_id' => 'required|uuid']);
+        $revision = $project->approvedRevision;
+        if (! $revision || $revision->status !== 'approved') {
+            return response()->json(['error' => ['code' => 'approved_revision_required', 'message' => 'Approve a rendered website revision before deployment.']], 409);
+        }
+        $run = $revision->generation_run_id ? $project->generationRuns()->findOrFail($revision->generation_run_id) : $project->generationRuns()->whereIn('status', ['succeeded', 'completed'])->latest()->firstOrFail();
         $connection = $project->wordpressConnections()->findOrFail($data['wordpress_connection_id']);
         if (! in_array($run->status, ['succeeded', 'completed'], true)) {
             return response()->json(['error' => ['code' => 'generation_not_ready', 'message' => 'A successful generation is required.']], 409);
@@ -50,10 +54,10 @@ class DeploymentController extends Controller
         if (! $dryRun && Deployment::where('project_id', $project->id)->where('dry_run', false)->whereIn('status', ['queued', 'running', 'cancelling'])->exists()) {
             return response()->json(['error' => ['code' => 'deployment_active', 'message' => 'A live deployment is already active.']], 409);
         }
-        if (! $dryRun && ! Deployment::where(['project_id' => $project->id, 'generation_run_id' => $run->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => true, 'status' => 'succeeded'])->exists()) {
+        if (! $dryRun && ! Deployment::where(['project_id' => $project->id, 'website_revision_id' => $revision->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => true, 'status' => 'succeeded'])->exists()) {
             return response()->json(['error' => ['code' => 'preview_required', 'message' => 'Run a successful deployment preview first.']], 409);
         }
-        $deployment = $project->deployments()->create(['organization_id' => $project->organization_id, 'generation_run_id' => $run->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
+        $deployment = $project->deployments()->create(['organization_id' => $project->organization_id, 'generation_run_id' => $run->id, 'website_revision_id' => $revision->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
         $usage->record($organization, $dryRun ? 'deployment_preview_started' : 'live_deployments', 1, 'deployment', $deployment->id, 'deployment-started-'.$deployment->id);
         $deployment->events()->create(['stage' => 'system', 'event_type' => 'deployment.queued', 'progress' => 0, 'message' => 'Deployment queued.', 'created_at' => now()]);
         DeployWebsite::dispatch($deployment->id);

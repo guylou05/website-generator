@@ -7,13 +7,16 @@ use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\InternalJobController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PreviewSessionController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\WebsiteRevisionController;
 use App\Http\Controllers\WordPressConnectionController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/stripe', StripeWebhookController::class);
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
+Route::get('/preview/{token}', [PreviewSessionController::class, 'public'])->middleware('throttle:30,1');
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
@@ -47,6 +50,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept']);
     Route::middleware('tenant.access')->group(function () {
         Route::apiResource('projects', ProjectController::class);
+        Route::get('/projects/{project}/revisions', [WebsiteRevisionController::class, 'index']);
+        Route::post('/projects/{project}/revisions', [WebsiteRevisionController::class, 'store']);
+        Route::get('/revisions/{revision}', [WebsiteRevisionController::class, 'show']);
+        Route::post('/revisions/{revision}/clone', [WebsiteRevisionController::class, 'clone']);
+        Route::patch('/revisions/{revision}', [WebsiteRevisionController::class, 'update']);
+        Route::post('/revisions/{revision}/validate', [WebsiteRevisionController::class, 'validateRevision']);
+        Route::post('/revisions/{revision}/approve', [WebsiteRevisionController::class, 'approve']);
+        Route::post('/revisions/{revision}/archive', [WebsiteRevisionController::class, 'archive']);
+        Route::post('/revisions/{revision}/rollback', [WebsiteRevisionController::class, 'rollback']);
+        Route::get('/revisions/{revision}/changes', [WebsiteRevisionController::class, 'changes']);
+        Route::get('/revisions/{revision}/compare/{otherRevision}', [WebsiteRevisionController::class, 'compare']);
+        Route::get('/revisions/{revision}/preview-sessions', [PreviewSessionController::class, 'index']);
+        Route::post('/revisions/{revision}/preview-sessions', [PreviewSessionController::class, 'store']);
+        Route::delete('/preview-sessions/{previewSession}', [PreviewSessionController::class, 'destroy']);
         Route::get('/projects/{project}/generations', [GenerationController::class, 'index']);
         Route::post('/projects/{project}/generations', [GenerationController::class, 'store']);
         Route::get('/generations/{generationRun}', [GenerationController::class, 'show']);
