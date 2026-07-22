@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import Link from 'next/link';
+import { useReducer, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -7,10 +8,17 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
-  Palette,
+  RotateCcw,
   Sparkles,
-  Upload,
+  XCircle,
 } from 'lucide-react';
+import {
+  generationReducer,
+  generationStages,
+  initialGenerationState,
+  runMockWebsiteGeneration,
+  type WebsiteWizardData,
+} from '@/lib/website-generation';
 
 const steps = [
   'Business name',
@@ -21,35 +29,43 @@ const steps = [
   'Website goal',
   'Review & generate',
 ];
-const types = [
-  'Professional services',
-  'Health & wellness',
-  'Technology & SaaS',
-  'Creative & design',
-  'Retail & e-commerce',
-  'Food & hospitality',
-];
-const stages = [
-  'Analyzing business',
-  'Building sitemap',
-  'Writing content',
-  'Creating design',
-  'Rendering Elementor',
-  'Preparing deployment',
-];
+const initialForm: WebsiteWizardData = {
+  businessName: 'Northstar Advisory',
+  description: 'Practical strategic guidance for growing companies.',
+  businessType: 'Professional services',
+  services: ['Strategy consulting', 'Market research', 'Growth planning'],
+  brandColors: ['#6658E8', '#141B2D', '#F6F7FB'],
+  targetAudience:
+    'Founders and leadership teams at growing B2B companies with 10–100 employees.',
+  websiteGoal: 'Generate qualified leads',
+};
 export default function NewWebsite() {
   const [step, setStep] = useState(0);
-  const [generating, setGenerating] = useState(false);
-  const [progress, setProgress] = useState(3);
-  const next = () => {
-    if (step === 6) {
-      setGenerating(true);
-      return;
-    }
-    setStep((x) => Math.min(6, x + 1));
+  const [form, setForm] = useState(initialForm);
+  const [generation, dispatch] = useReducer(
+    generationReducer,
+    initialGenerationState,
+  );
+  const controller = useRef<AbortController | null>(null);
+  const start = () => {
+    controller.current?.abort();
+    controller.current = new AbortController();
+    void runMockWebsiteGeneration(form, dispatch, {
+      signal: controller.current.signal,
+    }).catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'AbortError')
+        dispatch({ type: 'cancel' });
+    });
   };
-  if (generating)
-    return <Generation progress={progress} setProgress={setProgress} />;
+  if (generation.status !== 'idle')
+    return (
+      <Generation
+        form={form}
+        state={generation}
+        onRetry={start}
+        onCancel={() => controller.current?.abort()}
+      />
+    );
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-8">
@@ -62,8 +78,8 @@ export default function NewWebsite() {
         </p>
       </div>
       <div className="mb-8 hidden items-center md:flex">
-        {steps.map((s, i) => (
-          <div className="flex flex-1 items-center last:flex-none" key={s}>
+        {steps.map((label, i) => (
+          <div className="flex flex-1 items-center last:flex-none" key={label}>
             <div className="flex flex-col items-center gap-2">
               <span
                 className={`grid size-8 place-items-center rounded-full text-xs font-semibold ${i < step ? 'bg-emerald-500 text-white' : i === step ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground border'}`}
@@ -73,7 +89,7 @@ export default function NewWebsite() {
               <span
                 className={`whitespace-nowrap text-[11px] ${i === step ? 'font-medium' : 'text-muted-foreground'}`}
               >
-                {s}
+                {label}
               </span>
             </div>
             {i < 6 && (
@@ -88,7 +104,7 @@ export default function NewWebsite() {
         <p className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wider">
           Step {step + 1} of 7
         </p>
-        <Step step={step} />
+        <WizardStep step={step} form={form} setForm={setForm} />
         <div className="mt-8 flex items-center justify-between border-t pt-5">
           <button
             disabled={step === 0}
@@ -99,13 +115,13 @@ export default function NewWebsite() {
             Back
           </button>
           <button
-            onClick={next}
-            className="bg-primary text-primary-foreground shadow-primary/20 flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium shadow-lg"
+            onClick={() => (step === 6 ? start() : setStep((x) => x + 1))}
+            className="bg-primary text-primary-foreground flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium shadow-lg"
           >
             {step === 6 ? (
               <>
                 <Sparkles className="size-4" />
-                Generate website
+                Generate Website
               </>
             ) : (
               <>
@@ -119,169 +135,137 @@ export default function NewWebsite() {
     </div>
   );
 }
-function Step({ step }: { step: number }) {
-  const titles = [
+function WizardStep({
+  step,
+  form,
+  setForm,
+}: {
+  step: number;
+  form: WebsiteWizardData;
+  setForm: (data: WebsiteWizardData) => void;
+}) {
+  const headings = [
     [
       'What’s your business called?',
       'This will appear throughout your website.',
     ],
     ['What kind of business is it?', 'Choose the option that fits best.'],
-    ['What services do you offer?', 'Add your primary services or products.'],
-    [
-      'Make it feel like your brand',
-      'Upload a logo and choose your brand colors.',
-    ],
+    ['What services do you offer?', 'Your primary products and services.'],
+    ['Make it feel like your brand', 'Choose your brand colors.'],
     ['Who are you trying to reach?', 'Describe your ideal customers.'],
-    ['What should your website achieve?', 'Pick the primary outcome you want.'],
+    ['What should your website achieve?', 'Choose the primary outcome.'],
     [
       'Ready to create your website?',
       'Review your details before we bring it to life.',
     ],
   ];
+  const update = <K extends keyof WebsiteWizardData>(
+    key: K,
+    value: WebsiteWizardData[K],
+  ) => setForm({ ...form, [key]: value });
+  const heading = headings[step] ?? headings[0]!;
   return (
     <div>
-      <h2 className="mt-2 text-xl font-semibold">{titles[step]?.[0]}</h2>
-      <p className="text-muted-foreground mt-1 text-sm">{titles[step]?.[1]}</p>
+      <h2 className="mt-2 text-xl font-semibold">{heading[0]}</h2>
+      <p className="text-muted-foreground mt-1 text-sm">{heading[1]}</p>
       <div className="mt-6">
         {step === 0 && (
-          <>
+          <div className="space-y-5">
             <label className="text-sm font-medium">
               Business name
               <input
                 autoFocus
                 className="field mt-2"
-                defaultValue="Northstar Advisory"
+                value={form.businessName}
+                onChange={(e) => update('businessName', e.target.value)}
               />
             </label>
-            <label className="mt-5 block text-sm font-medium">
-              Short description{' '}
-              <span className="text-muted-foreground font-normal">
-                (optional)
-              </span>
+            <label className="block text-sm font-medium">
+              Short description
               <textarea
                 className="field mt-2 min-h-24 resize-none"
-                placeholder="We help growing companies..."
+                value={form.description}
+                onChange={(e) => update('description', e.target.value)}
               />
             </label>
-          </>
-        )}
-        {step === 1 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {types.map((x, i) => (
-              <label
-                key={x}
-                className={`cursor-pointer rounded-lg border p-4 text-sm font-medium transition ${i === 0 ? 'border-primary bg-primary/5' : 'hover:bg-muted'}`}
-              >
-                <input
-                  className="mr-3"
-                  type="radio"
-                  name="type"
-                  defaultChecked={i === 0}
-                />
-                {x}
-              </label>
-            ))}
           </div>
         )}
+        {step === 1 && (
+          <select
+            className="field"
+            value={form.businessType}
+            onChange={(e) => update('businessType', e.target.value)}
+          >
+            {[
+              'Professional services',
+              'Health & wellness',
+              'Technology & SaaS',
+              'Creative & design',
+              'Retail & e-commerce',
+            ].map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+        )}
         {step === 2 && (
-          <>
-            <label className="text-sm font-medium">Services</label>
-            <div className="mt-2 flex flex-wrap gap-2 rounded-lg border p-3">
-              {[
-                'Strategy consulting',
-                'Market research',
-                'Growth planning',
-              ].map((x) => (
-                <span
-                  className="bg-primary/10 text-primary rounded-md px-2.5 py-1.5 text-sm"
-                  key={x}
-                >
-                  {x} ×
-                </span>
-              ))}
-              <input
-                className="min-w-32 flex-1 bg-transparent p-1 text-sm outline-none"
-                placeholder="Add a service..."
-              />
-            </div>
-            <p className="text-muted-foreground mt-2 text-xs">
-              Press enter after each service.
-            </p>
-          </>
+          <textarea
+            className="field min-h-32"
+            value={form.services.join('\n')}
+            onChange={(e) =>
+              update('services', e.target.value.split('\n').filter(Boolean))
+            }
+          />
         )}
         {step === 3 && (
-          <div className="grid gap-6 sm:grid-cols-2">
-            <button className="text-muted-foreground hover:bg-muted grid h-32 place-items-center rounded-xl border border-dashed text-sm">
-              <span className="grid place-items-center gap-2">
-                <Upload className="size-5" />
-                Upload your logo<span className="text-xs">PNG, JPG or SVG</span>
-              </span>
-            </button>
-            <div>
-              <label className="text-sm font-medium">Brand colors</label>
-              <div className="mt-3 flex gap-3">
-                {['#6658E8', '#141B2D', '#F6F7FB'].map((x) => (
-                  <span
-                    key={x}
-                    className="border-card ring-border size-11 rounded-full border-4 shadow ring-1"
-                    style={{ background: x }}
-                  />
-                ))}
-                <button className="grid size-11 place-items-center rounded-full border">
-                  <Palette className="size-4" />
-                </button>
-              </div>
-            </div>
+          <div className="flex gap-3">
+            {form.brandColors.map((color) => (
+              <span
+                key={color}
+                className="border-card ring-border size-12 rounded-full border-4 shadow ring-1"
+                style={{ background: color }}
+              />
+            ))}
           </div>
         )}
         {step === 4 && (
           <textarea
             className="field min-h-36 resize-none"
-            defaultValue="Founders and leadership teams at growing B2B companies with 10–100 employees who value clear, practical strategic guidance."
+            value={form.targetAudience}
+            onChange={(e) => update('targetAudience', e.target.value)}
           />
         )}
         {step === 5 && (
-          <div className="space-y-3">
+          <select
+            className="field"
+            value={form.websiteGoal}
+            onChange={(e) => update('websiteGoal', e.target.value)}
+          >
             {[
               'Generate qualified leads',
               'Book more appointments',
               'Sell products online',
               'Showcase my work',
               'Build brand awareness',
-            ].map((x, i) => (
-              <label
-                key={x}
-                className={`flex cursor-pointer items-center rounded-lg border p-4 text-sm font-medium ${i === 0 ? 'border-primary bg-primary/5' : ''}`}
-              >
-                <input
-                  className="mr-3"
-                  type="radio"
-                  name="goal"
-                  defaultChecked={i === 0}
-                />
-                {x}
-              </label>
+            ].map((x) => (
+              <option key={x}>{x}</option>
             ))}
-          </div>
+          </select>
         )}
         {step === 6 && (
           <div className="space-y-3">
             {[
-              ['Business', 'Northstar Advisory · Professional services'],
-              [
-                'Services',
-                'Strategy consulting, Market research, Growth planning',
-              ],
-              ['Audience', 'B2B founders and leadership teams'],
-              ['Goal', 'Generate qualified leads'],
-              ['Brand', 'Logo uploaded · 3 colors selected'],
-            ].map((x) => (
+              ['Business', `${form.businessName} · ${form.businessType}`],
+              ['Services', form.services.join(', ')],
+              ['Audience', form.targetAudience],
+              ['Goal', form.websiteGoal],
+              ['Brand', `${form.brandColors.length} colors selected`],
+            ].map(([label, value]) => (
               <div
                 className="bg-muted flex justify-between gap-4 rounded-lg p-3"
-                key={x[0]}
+                key={label}
               >
-                <span className="text-muted-foreground text-sm">{x[0]}</span>
-                <span className="text-right text-sm font-medium">{x[1]}</span>
+                <span className="text-muted-foreground text-sm">{label}</span>
+                <span className="text-right text-sm font-medium">{value}</span>
               </div>
             ))}
           </div>
@@ -291,88 +275,153 @@ function Step({ step }: { step: number }) {
   );
 }
 function Generation({
-  progress,
-  setProgress,
+  form,
+  state,
+  onRetry,
+  onCancel,
 }: {
-  progress: number;
-  setProgress: (n: number) => void;
+  form: WebsiteWizardData;
+  state: ReturnType<typeof generationReducer>;
+  onRetry: () => void;
+  onCancel: () => void;
 }) {
+  if (state.status === 'success' && state.result)
+    return (
+      <div className="mx-auto max-w-2xl py-16 text-center">
+        <CheckCircle2 className="mx-auto size-14 text-emerald-500" />
+        <h1 className="mt-5 text-2xl font-semibold">
+          {state.result.websiteName} is ready
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Your mock project was generated successfully.
+        </p>
+        <div className="card mt-8 grid gap-4 p-6 text-left sm:grid-cols-3">
+          <Status
+            label="Pages generated"
+            value={String(state.result.pagesGenerated)}
+          />
+          <Status
+            label="Blueprint"
+            value={state.result.blueprintValid ? 'Validated' : 'Invalid'}
+          />
+          <Status
+            label="Elementor output"
+            value={state.result.elementorReady ? 'Ready' : 'Unavailable'}
+          />
+        </div>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link
+            href="/dashboard/projects"
+            className="rounded-lg border px-5 py-2.5 text-sm font-medium"
+          >
+            View Project
+          </Link>
+          <button className="bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-medium">
+            Prepare Deployment
+          </button>
+        </div>
+      </div>
+    );
   return (
     <div className="mx-auto max-w-2xl py-8 sm:py-16">
       <div className="text-center">
-        <span className="bg-primary/10 text-primary mx-auto grid size-14 place-items-center rounded-2xl">
-          <Sparkles className="size-6" />
-        </span>
+        <Sparkles className="text-primary mx-auto size-10" />
         <h1 className="mt-5 text-2xl font-semibold">
-          Creating Northstar Advisory
+          Creating {form.businessName}
         </h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          We’re turning your ideas into a polished website. This usually takes
-          4–6 minutes.
+          Live progress from the website generation orchestrator.
         </p>
       </div>
       <div className="card mt-8 p-6 sm:p-8">
-        <div className="mb-7 flex items-end justify-between">
+        <div className="mb-5 flex items-end justify-between">
           <div>
-            <p className="text-sm font-medium">Generation progress</p>
+            <p className="text-sm font-medium">
+              {state.failedStage
+                ? 'Generation paused'
+                : state.currentStage
+                  ? generationStages.find(
+                      ([id]) => id === state.currentStage,
+                    )?.[1]
+                  : 'Generation progress'}
+            </p>
             <p className="text-muted-foreground mt-1 text-xs">
-              Stage {progress + 1} of {stages.length}
+              {state.completedStages.length} of {generationStages.length} stages
+              complete
             </p>
           </div>
-          <p className="text-2xl font-semibold">
-            {Math.round(((progress + 0.5) / stages.length) * 100)}%
-          </p>
+          <p className="text-2xl font-semibold">{state.percentage}%</p>
         </div>
-        <div className="bg-muted mb-8 h-2 overflow-hidden rounded-full">
+        <div className="bg-muted mb-6 h-2 overflow-hidden rounded-full">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all"
-            style={{ width: `${((progress + 0.5) / stages.length) * 100}%` }}
+            className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all"
+            style={{ width: `${state.percentage}%` }}
           />
         </div>
         <div className="space-y-1">
-          {stages.map((x, i) => (
-            <div
-              key={x}
-              className={`flex items-center gap-3 rounded-lg p-3 ${i === progress ? 'bg-primary/5' : ''}`}
-            >
-              {i < progress ? (
-                <CheckCircle2 className="size-5 text-emerald-500" />
-              ) : i === progress ? (
-                <Loader2 className="text-primary size-5 animate-spin" />
-              ) : (
-                <Circle className="text-border size-5" />
-              )}
-              <span
-                className={`text-sm ${i === progress ? 'font-medium' : i > progress ? 'text-muted-foreground' : ''}`}
+          {generationStages.map(([id, label]) => {
+            const complete = state.completedStages.includes(id);
+            const active = state.currentStage === id;
+            const failed = state.failedStage === id;
+            return (
+              <div
+                key={id}
+                className={`flex items-center gap-3 rounded-lg p-3 ${active ? 'bg-primary/5' : ''}`}
               >
-                {x}
-              </span>
-              {i < progress && (
+                {complete ? (
+                  <CheckCircle2 className="size-5 text-emerald-500" />
+                ) : failed ? (
+                  <XCircle className="size-5 text-red-500" />
+                ) : active ? (
+                  <Loader2 className="text-primary size-5 animate-spin" />
+                ) : (
+                  <Circle className="text-border size-5" />
+                )}
+                <span className="text-sm">{label}</span>
                 <span className="text-muted-foreground ml-auto text-xs">
-                  Complete
+                  {complete
+                    ? 'Complete'
+                    : failed
+                      ? 'Failed'
+                      : active
+                        ? 'In progress'
+                        : 'Waiting'}
                 </span>
-              )}
-              {i === progress && (
-                <span className="text-primary ml-auto text-xs">
-                  In progress
-                </span>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
-        {progress < 5 && (
-          <button
-            onClick={() => setProgress(progress + 1)}
-            className="text-muted-foreground mt-6 w-full rounded-lg border py-2 text-xs"
-          >
-            Preview next stage
-          </button>
+        {state.error && (
+          <p className="mt-4 text-sm text-red-600">{state.error}</p>
         )}
+        <div className="mt-6 flex gap-3">
+          {state.status === 'failed' || state.status === 'cancelled' ? (
+            <button
+              onClick={onRetry}
+              className="bg-primary text-primary-foreground flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium"
+            >
+              <RotateCcw className="size-4" />
+              Retry
+            </button>
+          ) : (
+            <button
+              onClick={onCancel}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium"
+            >
+              <XCircle className="size-4" />
+              Cancel
+            </button>
+          )}
+        </div>
       </div>
-      <p className="text-muted-foreground mt-5 text-center text-xs">
-        You can safely leave this page. We’ll notify you when your website is
-        ready.
-      </p>
+    </div>
+  );
+}
+function Status({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="mt-1 font-semibold">{value}</p>
     </div>
   );
 }
