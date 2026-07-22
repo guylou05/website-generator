@@ -40,3 +40,7 @@ The provider-neutral generation pipeline is documented in [`packages/ai/README.m
 ## Project and generation persistence
 
 Laravel is the sole owner of project persistence. `projects` stores business and brand inputs; UUID-addressed `generation_runs` stores provider-neutral input, lifecycle state, safe errors, blueprint output, and Elementor output; append-only `generation_events` provides the timeline. The dashboard only accesses these records through typed HTTP resources. Generation is synchronous for the current mock provider, while the data model and event stream allow a queue worker to be introduced without changing dashboard routes. Provider keys are environment-only server secrets and are excluded from every persisted input and resource. Authentication, image generation, and WordPress deployment are deliberately outside this boundary.
+
+## WordPress deployment boundary
+
+Laravel normalizes destinations, rejects unsafe production network targets, encrypts Application Passwords, verifies WordPress, Elementor, connector endpoints, and administrator capabilities, then records every deployment stage. A successful dry run is required before mutation. Page lookup by slug and connector upserts make retries idempotent. Next.js orchestrates these endpoints but never receives stored credentials.

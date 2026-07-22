@@ -39,6 +39,36 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
 }
+export interface WordPressConnection {
+  id: string;
+  projectId: string;
+  siteUrl: string;
+  username: string;
+  status: 'unverified' | 'verified' | 'failed';
+  wordpressVersion: string | null;
+  elementorVersion: string | null;
+  connectorVersion: string | null;
+  lastError: { code: string; message: string } | null;
+}
+export interface Deployment {
+  id: string;
+  projectId: string;
+  generationRunId: string;
+  wordpressConnectionId: string;
+  status: string;
+  dryRun: boolean;
+  progress: number;
+  currentStage: string | null;
+  operations: Array<{
+    action: string;
+    resource: string;
+    identifier: string;
+    details?: Record<string, unknown>;
+  }> | null;
+  result: { site_url?: string; admin_url?: string } | null;
+  error: { code: string; message: string } | null;
+  events: GenerationEvent[];
+}
 interface Wire {
   id: string | number;
   name: string;
@@ -61,6 +91,17 @@ interface Wire {
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  site_url?: string;
+  username?: string;
+  wordpress_version?: string | null;
+  elementor_version?: string | null;
+  connector_version?: string | null;
+  last_error?: WordPressConnection['lastError'];
+  generation_run_id?: string;
+  wordpress_connection_id?: string;
+  dry_run?: boolean;
+  operations?: Deployment['operations'];
+  result?: Deployment['result'];
 }
 const mapEvent = (x: Wire): GenerationEvent => ({
   id: String(x.id),
@@ -94,6 +135,31 @@ export const mapProject = (x: Wire): Project => ({
   generationRuns: (x.generation_runs ?? []).map(mapGeneration),
   createdAt: x.created_at,
   updatedAt: x.updated_at,
+});
+export const mapConnection = (x: Wire): WordPressConnection => ({
+  id: String(x.id),
+  projectId: x.project_id,
+  siteUrl: x.site_url ?? '',
+  username: x.username ?? '',
+  status: x.status as WordPressConnection['status'],
+  wordpressVersion: x.wordpress_version ?? null,
+  elementorVersion: x.elementor_version ?? null,
+  connectorVersion: x.connector_version ?? null,
+  lastError: x.last_error ?? null,
+});
+export const mapDeployment = (x: Wire): Deployment => ({
+  id: String(x.id),
+  projectId: x.project_id,
+  generationRunId: x.generation_run_id ?? '',
+  wordpressConnectionId: x.wordpress_connection_id ?? '',
+  status: x.status,
+  dryRun: x.dry_run ?? false,
+  progress: x.progress,
+  currentStage: x.current_stage,
+  operations: x.operations ?? null,
+  result: x.result ?? null,
+  error: x.error,
+  events: (x.events ?? []).map(mapEvent),
 });
 
 export class DashboardApiError extends Error {
@@ -166,6 +232,66 @@ export class DashboardApiClient {
   async cancelGeneration(id: string): Promise<GenerationRun> {
     return mapGeneration(
       await this.call<Wire>(`/generations/${id}/cancel`, { method: 'POST' }),
+    );
+  }
+  async connections(projectId: string): Promise<WordPressConnection[]> {
+    return (
+      await this.call<Wire[]>(`/projects/${projectId}/wordpress-connections`)
+    ).map(mapConnection);
+  }
+  async createConnection(
+    projectId: string,
+    input: { site_url: string; username: string; application_password: string },
+  ): Promise<WordPressConnection> {
+    return mapConnection(
+      await this.call<Wire>(`/projects/${projectId}/wordpress-connections`, {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    );
+  }
+  async verifyConnection(id: string): Promise<WordPressConnection> {
+    return mapConnection(
+      await this.call<Wire>(`/wordpress-connections/${id}/verify`, {
+        method: 'POST',
+      }),
+    );
+  }
+  async deployments(projectId: string): Promise<Deployment[]> {
+    return (await this.call<Wire[]>(`/projects/${projectId}/deployments`)).map(
+      mapDeployment,
+    );
+  }
+  async previewDeployment(
+    projectId: string,
+    input: { generation_run_id: string; wordpress_connection_id: string },
+  ): Promise<Deployment> {
+    return mapDeployment(
+      await this.call<Wire>(`/projects/${projectId}/deployments/preview`, {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    );
+  }
+  async deploy(
+    projectId: string,
+    input: { generation_run_id: string; wordpress_connection_id: string },
+  ): Promise<Deployment> {
+    return mapDeployment(
+      await this.call<Wire>(`/projects/${projectId}/deployments`, {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    );
+  }
+  async retryDeployment(id: string): Promise<Deployment> {
+    return mapDeployment(
+      await this.call<Wire>(`/deployments/${id}/retry`, { method: 'POST' }),
+    );
+  }
+  async cancelDeployment(id: string): Promise<Deployment> {
+    return mapDeployment(
+      await this.call<Wire>(`/deployments/${id}/cancel`, { method: 'POST' }),
     );
   }
 }

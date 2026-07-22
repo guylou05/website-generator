@@ -23,3 +23,7 @@ All routes use the `website-generator/v1` namespace and accept authenticated RES
 | `POST` | `/settings/homepage`        | Assign a valid page as the static homepage                      |
 
 WordPress handles Application Password authentication before permission callbacks run. The plugin stores no credentials. Page IDs, templates, URLs, menu keys, titles, nested Elementor values, and homepage IDs are validated or sanitized before use.
+
+## Connection verification
+
+Authenticated administrators can call `GET /wp-json/website-generator/v1/status` to inspect WordPress, connector, and Elementor availability and versions. All mutation endpoints require administrator capabilities and are designed for repeatable server-side deployments.
