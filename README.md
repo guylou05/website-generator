@@ -126,3 +126,7 @@ Run `docker compose up --build` for PostgreSQL, Redis, Laravel API and scheduler
 ## Billing
 
 Organization-scoped Stripe subscriptions, centralized entitlements, append-only usage accounting, and the billing dashboard are documented in [`docs/billing.md`](docs/billing.md). Laravel alone receives Stripe secret credentials and authoritative webhooks.
+
+# Website Generator
+
+The platform includes a tenant-safe, revision-aware media pipeline for private uploads, AI and stock imports, optimized responsive variants, and idempotent WordPress attachment deployment. See [the media operations guide](docs/media.md).

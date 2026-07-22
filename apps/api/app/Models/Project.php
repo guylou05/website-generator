@@ -43,4 +43,9 @@ class Project extends Model
     {
         return $this->belongsTo(WebsiteRevision::class, 'approved_revision_id');
     }
+
+    public function mediaAssets(): HasMany
+    {
+        return $this->hasMany(MediaAsset::class);
+    }
 }
