@@ -101,6 +101,37 @@ export interface OrganizationInvitation {
   expires_at: string;
   invitation_url?: string;
 }
+export interface BillingPlan {
+  key: 'free' | 'starter' | 'pro' | 'agency';
+  name: string;
+  recommended: boolean;
+  available: { monthly: boolean; yearly: boolean };
+  entitlements: {
+    members: number;
+    projects: number;
+    generations: number;
+    live_deployments: number;
+    wordpress_connections: number;
+    providers: string[];
+  };
+}
+export interface BillingSummary {
+  current_plan: BillingPlan['key'];
+  subscription: null | {
+    status: string;
+    billing_interval: string;
+    current_period_end: string | null;
+    cancel_at: string | null;
+    trial_ends_at: string | null;
+    grace_ends_at: string | null;
+  };
+  limits: Record<string, number>;
+}
+export interface BillingUsage {
+  period_start: string;
+  period_end: string;
+  metrics: Record<string, { used: number; limit: number; remaining: number }>;
+}
 interface Wire {
   id: string | number;
   name: string;
@@ -199,7 +230,7 @@ export class DashboardApiError extends Error {
     message: string,
     readonly status: number,
     readonly code = 'request_failed',
-    readonly details?: Record<string, string[]>,
+    readonly details?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -424,6 +455,47 @@ export class DashboardApiClient {
     return mapDeployment(
       await this.call<Wire>(`/deployments/${id}/cancel`, { method: 'POST' }),
     );
+  }
+  getPlans(): Promise<BillingPlan[]> {
+    return this.call('/billing/plans');
+  }
+  getBillingSummary(): Promise<BillingSummary> {
+    return this.call('/billing/summary');
+  }
+  getUsage(): Promise<BillingUsage> {
+    return this.call('/billing/usage');
+  }
+  createCheckoutSession(input: {
+    plan_key: BillingPlan['key'];
+    billing_interval: 'monthly' | 'yearly';
+    success_url: string;
+    cancel_url: string;
+  }): Promise<{ url: string; plan_key: string; billing_interval: string }> {
+    return this.call('/billing/checkout-session', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  createPortalSession(return_url: string): Promise<{ url: string }> {
+    return this.call('/billing/portal-session', {
+      method: 'POST',
+      body: JSON.stringify({ return_url }),
+    });
+  }
+  changePlan(
+    plan_key: BillingPlan['key'],
+    billing_interval: 'monthly' | 'yearly',
+  ) {
+    return this.call('/billing/change-plan', {
+      method: 'POST',
+      body: JSON.stringify({ plan_key, billing_interval }),
+    });
+  }
+  cancelSubscription() {
+    return this.call('/billing/cancel-subscription', { method: 'POST' });
+  }
+  resumeSubscription() {
+    return this.call('/billing/resume-subscription', { method: 'POST' });
   }
 }
 export const dashboardApi = new DashboardApiClient();

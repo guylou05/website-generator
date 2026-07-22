@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Http\Resources\ProjectResource;
+use App\Models\Organization;
 use App\Models\Project;
+use App\Services\EntitlementService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -17,8 +20,12 @@ class ProjectController extends Controller
         return ProjectResource::collection(Project::where('organization_id', request()->user()->current_organization_id)->with(['generationRuns' => fn ($query) => $query->latest()->limit(1)])->latest()->get());
     }
 
-    public function store(StoreProjectRequest $request): ProjectResource
+    public function store(StoreProjectRequest $request, EntitlementService $entitlements): ProjectResource|JsonResponse
     {
+        $organization = Organization::findOrFail($request->user()->current_organization_id);
+        if (config('billing.enforcement') && ! $entitlements->canCreateProject($organization)) {
+            return response()->json(['error' => $entitlements->denial($organization, 'projects')], 402);
+        }
         $data = $request->validated();
         $data['organization_id'] = $request->user()->current_organization_id;
         $data['slug'] ??= Str::slug($data['name']).'-'.Str::lower(Str::random(6));

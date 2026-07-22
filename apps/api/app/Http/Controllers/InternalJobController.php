@@ -4,19 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\Deployment;
 use App\Models\GenerationRun;
+use App\Models\Organization;
+use App\Services\EntitlementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class InternalJobController extends Controller
 {
-    public function generationContext(GenerationRun $generationRun): JsonResponse
+    public function generationContext(GenerationRun $generationRun, EntitlementService $entitlements): JsonResponse
     {
-        return response()->json(['data' => ['id' => $generationRun->id, 'organization_id' => $generationRun->organization_id, 'project_id' => $generationRun->project_id, 'provider' => $generationRun->provider, 'input' => $generationRun->input, 'business_profile' => $generationRun->project->business_profile, 'attempt' => $generationRun->attempt]]);
+        $organization = Organization::findOrFail($generationRun->organization_id);
+        $plan = $entitlements->currentPlan($organization);
+        if (config('billing.enforcement') && ! in_array($generationRun->provider, config("billing.plans.$plan.entitlements.providers"), true)) {
+            return response()->json(['error' => $entitlements->denial($organization, 'generations') + ['code' => 'provider_not_entitled']], 402);
+        }
+
+        return response()->json(['data' => ['id' => $generationRun->id, 'organization_id' => $generationRun->organization_id, 'project_id' => $generationRun->project_id, 'provider' => $generationRun->provider, 'allowed_provider' => $generationRun->provider, 'entitlement_snapshot' => ['plan' => $plan, 'generation_remaining' => $entitlements->remainingUsage($organization, 'generations')], 'input' => $generationRun->input, 'business_profile' => $generationRun->project->business_profile, 'attempt' => $generationRun->attempt]]);
     }
 
-    public function deploymentContext(Deployment $deployment): JsonResponse
+    public function deploymentContext(Deployment $deployment, EntitlementService $entitlements): JsonResponse
     {
         $c = $deployment->connection;
+        $organization = Organization::findOrFail($deployment->organization_id);
+        if (! $deployment->dry_run && config('billing.enforcement') && $entitlements->currentPlan($organization) === 'free') {
+            return response()->json(['error' => $entitlements->denial($organization, 'live_deployments')], 402);
+        }
 
         return response()->json(['data' => ['id' => $deployment->id, 'organization_id' => $deployment->organization_id, 'dry_run' => $deployment->dry_run, 'generation_output' => $deployment->generationRun->output, 'wordpress' => ['url' => $c->site_url, 'username' => $c->username, 'application_password' => $c->encrypted_application_password]]]);
     }

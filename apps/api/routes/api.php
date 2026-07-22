@@ -1,15 +1,18 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DeploymentController;
 use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\InternalJobController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\WordPressConnectionController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/webhooks/stripe', StripeWebhookController::class);
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
@@ -18,6 +21,16 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'reset'])->middleware('throttle:5,1');
 });
 Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('billing')->middleware('throttle:20,1')->group(function () {
+        Route::get('/plans', [BillingController::class, 'plans']);
+        Route::get('/summary', [BillingController::class, 'summary']);
+        Route::get('/usage', [BillingController::class, 'usage']);
+        Route::post('/checkout-session', [BillingController::class, 'checkout'])->middleware('throttle:5,1');
+        Route::post('/portal-session', [BillingController::class, 'portal'])->middleware('throttle:10,1');
+        Route::post('/change-plan', [BillingController::class, 'change']);
+        Route::post('/cancel-subscription', [BillingController::class, 'cancel']);
+        Route::post('/resume-subscription', [BillingController::class, 'resume']);
+    });
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/user', [AuthController::class, 'user']);
     Route::post('/auth/email/verification-notification', [AuthController::class, 'verification'])->middleware('throttle:6,1');
