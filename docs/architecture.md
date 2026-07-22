@@ -58,3 +58,7 @@ The internal bearer token is compared in constant time. Execution contexts are n
 Laravel is the identity and authorization authority. Sanctum stateful SPA middleware authenticates the Next.js dashboard with an encrypted, HttpOnly, SameSite cookie and CSRF double-submit protection. Public domain APIs require an authenticated active membership; organization IDs are derived from `User.current_organization_id`, never request data. Tenant-aware route binding filters projects, generation runs, WordPress connections, and deployments before controllers execute, producing a non-disclosing 404 across tenants.
 
 Roles are centralized in `OrganizationPolicy` and tenant middleware: owners control ownership/deletion, admins manage organization resources and members, members manage workload resources, and viewers are read-only. Internal execution routes remain isolated behind `INTERNAL_WORKER_TOKEN`; worker authentication is independent of browser sessions.
+
+## Billing boundary
+
+Laravel maps Stripe prices to stable internal plans and is the subscription/usage system of record. The dashboard only requests hosted Checkout or Portal URLs. Workers retain `INTERNAL_WORKER_TOKEN` authentication and receive an authoritative plan/provider snapshot before external mutations.

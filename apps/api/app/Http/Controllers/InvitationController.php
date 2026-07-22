@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationMembership;
 use App\Services\AuditService;
+use App\Services\EntitlementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,9 +22,12 @@ class InvitationController extends Controller
         return response()->json(['data' => $organization->invitations()->whereNull('accepted_at')->whereNull('revoked_at')->get()]);
     }
 
-    public function store(Request $r, Organization $organization, AuditService $audit): JsonResponse
+    public function store(Request $r, Organization $organization, AuditService $audit, EntitlementService $entitlements): JsonResponse
     {
         $this->authorize('manage', $organization);
+        if (config('billing.enforcement') && ! $entitlements->canInviteMember($organization)) {
+            return response()->json(['error' => $entitlements->denial($organization, 'members')], 402);
+        }
         $d = $r->validate(['email' => 'required|email|max:255', 'role' => 'required|in:admin,member,viewer']);
         $email = Str::lower($d['email']);
         $organization->invitations()->where('email', $email)->whereNull('accepted_at')->whereNull('revoked_at')->update(['revoked_at' => now()]);

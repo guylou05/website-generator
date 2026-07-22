@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Jobs\DeployWebsite;
 use App\Models\Deployment;
+use App\Models\Organization;
 use App\Models\Project;
+use App\Services\EntitlementService;
+use App\Services\UsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,6 +35,12 @@ class DeploymentController extends Controller
 
     private function create(Request $request, Project $project, bool $dryRun): JsonResponse
     {
+        $entitlements = app(EntitlementService::class);
+        $usage = app(UsageService::class);
+        $organization = Organization::findOrFail($project->organization_id);
+        if (! $dryRun && config('billing.enforcement') && ! $entitlements->canStartLiveDeployment($organization)) {
+            return response()->json(['error' => $entitlements->denial($organization, 'live_deployments')], 402);
+        }
         $data = $request->validate(['generation_run_id' => 'required|uuid', 'wordpress_connection_id' => 'required|uuid']);
         $run = $project->generationRuns()->findOrFail($data['generation_run_id']);
         $connection = $project->wordpressConnections()->findOrFail($data['wordpress_connection_id']);
@@ -45,6 +54,7 @@ class DeploymentController extends Controller
             return response()->json(['error' => ['code' => 'preview_required', 'message' => 'Run a successful deployment preview first.']], 409);
         }
         $deployment = $project->deployments()->create(['organization_id' => $project->organization_id, 'generation_run_id' => $run->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
+        $usage->record($organization, $dryRun ? 'deployment_preview_started' : 'live_deployments', 1, 'deployment', $deployment->id, 'deployment-started-'.$deployment->id);
         $deployment->events()->create(['stage' => 'system', 'event_type' => 'deployment.queued', 'progress' => 0, 'message' => 'Deployment queued.', 'created_at' => now()]);
         DeployWebsite::dispatch($deployment->id);
 

@@ -120,3 +120,7 @@ The dashboard uses Laravel Sanctum's cookie-based SPA authentication. Open `http
 Organization owners and admins can invite members from organization settings. A user may switch among active memberships from the dashboard navigation. Owners must transfer ownership before they can be removed, and organization deletion requires password confirmation.
 
 Run `docker compose up --build` for PostgreSQL, Redis, Laravel API and scheduler, Next.js dashboard, worker, Nginx, and Mailpit. Existing pre-tenancy records are assigned by migration to a locked, seeded **Default Organization** and legacy owner; administrators should create a real owner and transfer/import those records before production use.
+
+## Billing
+
+Organization-scoped Stripe subscriptions, centralized entitlements, append-only usage accounting, and the billing dashboard are documented in [`docs/billing.md`](docs/billing.md). Laravel alone receives Stripe secret credentials and authoritative webhooks.

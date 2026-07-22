@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Organization;
 use App\Models\Project;
 use App\Models\WordPressConnection;
+use App\Services\EntitlementService;
 use App\Services\WordPressConnectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,8 +23,12 @@ class WordPressConnectionController extends Controller
         return response()->json(['data' => $connection]);
     }
 
-    public function store(Request $request, Project $project, WordPressConnectionService $service): JsonResponse
+    public function store(Request $request, Project $project, WordPressConnectionService $service, EntitlementService $entitlements): JsonResponse
     {
+        $organization = Organization::findOrFail($project->organization_id);
+        if (config('billing.enforcement') && ! $entitlements->canCreateWordPressConnection($organization)) {
+            return response()->json(['error' => $entitlements->denial($organization, 'wordpress_connections')], 402);
+        }
         $data = $request->validate(['site_url' => 'required|string|max:2048', 'username' => 'required|string|max:255', 'application_password' => 'required|string|max:512']);
         try {
             $data['site_url'] = $service->normalize($data['site_url']);
