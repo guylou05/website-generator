@@ -98,3 +98,17 @@ Run `php artisan migrate` in `apps/api` before creating a project. The dashboard
 ## WordPress deployments
 
 Laravel is the system of record for encrypted WordPress connections, mandatory deployment previews, deployments, and event timelines. The dashboard submits an Application Password once; it is redacted from every response. Deployments run server-side through the connector plugin.
+
+## Asynchronous generation and deployment
+
+Laravel validates public requests, persists the queued job and initial event, dispatches a UUID-only Redis queue payload, and immediately responds with HTTP 202. `apps/worker` owns AI generation and WordPress calls and reports through token-protected internal endpoints. Status and event history remain recoverable from Laravel after a browser refresh.
+
+```bash
+cp .env.example .env && cp apps/api/.env.example apps/api/.env && cp apps/worker/.env.example apps/worker/.env
+docker compose up --build -d
+docker compose exec api php artisan migrate
+docker compose logs -f worker
+docker compose exec api php artisan schedule:work
+```
+
+Run a local mock flow by creating a project with `POST /api/projects`, then `POST /api/projects/{id}/generations` with `{"provider":"mock","input":{"businessName":"Acme"}}`; poll `GET /api/generations/{id}`. Generation and deployment creation return 202.

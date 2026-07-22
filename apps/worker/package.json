@@ -9,13 +9,15 @@
     "start": "node dist/index.js",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'No worker tests yet'"
+    "test": "pnpm run build && node --test tests/*.test.mjs"
   },
   "dependencies": {
     "bullmq": "^5.34.4",
     "ioredis": "^5.4.2",
     "@website-generator/ai": "workspace:*",
-    "@website-generator/renderer": "workspace:*"
+    "@website-generator/renderer": "workspace:*",
+    "@website-generator/wordpress": "workspace:*",
+    "@website-generator/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

@@ -102,6 +102,12 @@ importers:
       '@website-generator/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer
+      '@website-generator/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@website-generator/wordpress':
+        specifier: workspace:*
+        version: link:../../packages/wordpress
       bullmq:
         specifier: ^5.34.4
         version: 5.80.9

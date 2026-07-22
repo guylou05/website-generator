@@ -11,7 +11,7 @@ class DeploymentEvent extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['stage', 'event_type', 'progress', 'message', 'metadata', 'created_at'];
+    protected $fillable = ['event_uuid', 'stage', 'event_type', 'progress', 'message', 'metadata', 'created_at'];
 
     protected function casts(): array
     {
