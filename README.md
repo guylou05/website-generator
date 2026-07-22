@@ -55,9 +55,7 @@ Services are available at:
 
 Generation uses `AI_PROVIDER=mock` by default, including in development and
 tests. To use OpenAI, set `AI_PROVIDER=openai` and the four server-only
-`OPENAI_*` variables documented in `.env.example`. The dashboard starts an
-in-memory generation through `POST /api/generations`; persistence, WordPress
-deployment, and image generation are intentionally not part of this flow yet.
+`OPENAI_*` variables documented in `.env.example`. The wizard creates a persistent project and generation run through the Laravel API. PostgreSQL stores the complete wizard input, stage events, safe errors, the validated blueprint, and Elementor output. Successful runs redirect to the durable project detail route. WordPress deployment and image generation remain intentionally disabled.
 Never expose `OPENAI_API_KEY` through a `NEXT_PUBLIC_` variable.
 
 The example credentials are intended only for local development. Use secret management and rotated credentials in deployed environments.
@@ -92,3 +90,7 @@ The included Dockerfiles optimize for a reproducible development environment. Fo
 The builder-neutral blueprint contract lives in `packages/shared/src/schema` and is exported by `@website-generator/shared` (or the `@website-generator/shared/schema` subpath). It validates metadata, brand tokens, navigation, pages, semantic sections, portable content components, forms, SEO, global styles, and footer content with Zod. Renderers should translate these semantic values into their own implementation details rather than adding Elementor, Gutenberg, React, or HTML concerns to the schema.
 
 A complete fictional IT company blueprint is available at `packages/shared/sample-blueprint.json`. `schemaVersion` is required so future incompatible contract changes can be introduced explicitly.
+
+## Persistent projects
+
+Run `php artisan migrate` in `apps/api` before creating a project. The dashboard uses `NEXT_PUBLIC_API_URL` to call the Laravel project and generation endpoints. No authentication boundary exists yet; do not expose this development API publicly. Generation defaults to the deterministic `mock` provider.
