@@ -34,14 +34,17 @@ export interface GenerationRequest {
   readonly signal?: AbortSignal;
 }
 
-export interface GenerationResult {
+/** @deprecated Use the website orchestrator's GenerationResult for new integrations. */
+export interface PipelineGenerationResult {
   readonly runId: string;
   readonly blueprint: SiteBlueprint;
   readonly completedAt: Date;
 }
 
 export interface GenerationPipeline {
-  generate(request: Readonly<GenerationRequest>): Promise<GenerationResult>;
+  generate(
+    request: Readonly<GenerationRequest>,
+  ): Promise<PipelineGenerationResult>;
 }
 
 export class UnconfiguredBlueprintGenerator implements BlueprintGenerator {

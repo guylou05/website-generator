@@ -72,6 +72,72 @@ const result = await pipeline.generate({
 });
 ```
 
+## Project generation orchestrator
+
+`WebsiteGenerationOrchestrator` is the application-facing coordinator. It loads a
+business profile by project ID and runs the six provider-neutral stages. The
+convenience `generateWebsite(projectId)` function delegates to dependencies
+registered once with `configureWebsiteGenerator` at the application composition
+root.
+
+```ts
+import {
+  configureWebsiteGenerator,
+  generateWebsite,
+} from '@website-generator/ai/orchestrator';
+
+configureWebsiteGenerator({
+  projects,
+  analyzer,
+  planner,
+  writer,
+  seoGenerator,
+  designer,
+  blueprintGenerator,
+  reporter,
+  logger,
+  metrics,
+  defaultTimeoutMs: 30_000,
+  stages: {
+    writing: { timeoutMs: 60_000, retryPolicy: writingRetryPolicy },
+  },
+});
+
+const result = await generateWebsite(projectId);
+```
+
+### Lifecycle and progress
+
+The reporter receives typed `GenerationEvent` values in lifecycle order:
+
+1. `generation.started`
+2. `stage.started`
+3. optionally, `stage.retrying` followed by another `stage.started`
+4. `stage.completed` (or terminal `stage.failed`)
+5. `generation.completed`
+
+Every event includes a `GenerationProgress` snapshot with the project and run
+identifiers, current `GenerationStage`, attempt, completed/total stage counts,
+percentage, status, and timestamp. Reporter calls are awaited, preserving event
+ordering and allowing a queue-backed adapter to provide durable delivery.
+
+Each stage has its own retry and timeout configuration. A failed attempt reruns
+only that stage; completed upstream work remains in the run state. Timeouts abort
+the provider's signal and surface as a `StageTimeoutError` wrapped by
+`PipelineStageError`. Providers should honor the supplied `AbortSignal` and must
+be safe to invoke more than once.
+
+### Observability and test providers
+
+`PipelineLogger` receives structured context (`projectId`, `runId`, `stage`,
+`attempt`, durations, and retry delays) without generated content or secrets.
+`GenerationMetrics` records stage completions, failures, retries, and total run
+duration through a vendor-neutral port. Both default to no-op implementations.
+
+`MockAiProvider` exposes deterministic adapters for every stage, records calls,
+and can fail selected attempts with `failNext`. It is intended for tests and local
+development and never performs network I/O.
+
 The exported `Unconfigured*` implementations fail explicitly and are safe placeholders until concrete adapters are registered. They never fabricate content or make external requests.
 
 ## Failure and retry behavior

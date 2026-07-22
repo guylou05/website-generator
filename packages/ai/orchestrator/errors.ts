@@ -40,3 +40,16 @@ export class PipelineStageError extends PipelineError {
     this.name = 'PipelineStageError';
   }
 }
+
+export class StageTimeoutError extends PipelineError {
+  constructor(
+    readonly runId: string,
+    readonly stage: PipelineStage,
+    readonly timeoutMs: number,
+  ) {
+    super(
+      `Generation pipeline ${runId} timed out during ${stage} after ${timeoutMs}ms`,
+    );
+    this.name = 'StageTimeoutError';
+  }
+}

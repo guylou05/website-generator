@@ -7,7 +7,7 @@ import type {
   GenerationContext,
   GenerationPipeline,
   GenerationRequest,
-  GenerationResult,
+  PipelineGenerationResult,
   PipelineStage,
 } from './contracts.js';
 import type { PipelineLogger } from './logger.js';
@@ -76,7 +76,7 @@ export class AsyncGenerationPipeline implements GenerationPipeline {
 
   async generate(
     request: Readonly<GenerationRequest>,
-  ): Promise<GenerationResult> {
+  ): Promise<PipelineGenerationResult> {
     const runId = request.runId ?? this.runIdFactory.create();
     const context: GenerationContext = {
       runId,
