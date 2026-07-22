@@ -4,3 +4,4 @@ export * from './orchestrator/index.js';
 export * from './planner/index.js';
 export * from './prompts/index.js';
 export * from './writer/index.js';
+export * from './providers/openai/index.js';

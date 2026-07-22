@@ -14,6 +14,7 @@
     "orchestrator/**/*.ts",
     "planner/**/*.ts",
     "prompts/**/*.ts",
+    "providers/**/*.ts",
     "writer/**/*.ts"
   ],
   "references": [{ "path": "../shared" }]
