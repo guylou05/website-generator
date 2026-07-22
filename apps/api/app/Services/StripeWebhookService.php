@@ -39,7 +39,7 @@ class StripeWebhookService
                 OrganizationBillingProfile::updateOrCreate(['organization_id' => $org], ['stripe_customer_id' => $o->id, 'billing_email' => $o->email ?? null, 'billing_name' => $o->name ?? null]);
             }
 
-return;
+            return;
         } if (str_starts_with($event->type, 'customer.subscription.')) {
             $this->syncSubscription($o, $event->type === 'customer.subscription.deleted');
         } if ($event->type === 'checkout.session.completed' && isset($o->customer,$o->client_reference_id)) {

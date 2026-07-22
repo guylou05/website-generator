@@ -23,7 +23,7 @@ class PlanCatalog
             throw ValidationException::withMessages(['plan_key' => ['This plan and interval is unavailable.']]);
         }
 
-return $price;
+        return $price;
     }
 
     public function keyForPrice(string $price): ?array
@@ -36,7 +36,7 @@ return $price;
             }
         }
 
-return null;
+        return null;
     }
 
     public function publicPlans(): array

@@ -49,7 +49,7 @@ class BillingController extends Controller
             $data[$m] = ['used' => $this->usage->used($o, $m), 'limit' => $this->entitlements->limitFor($o, $m), 'remaining' => $this->entitlements->remainingUsage($o, $m)];
         }
 
-return response()->json(['data' => ['period_start' => $start, 'period_end' => $end, 'metrics' => $data]]);
+        return response()->json(['data' => ['period_start' => $start, 'period_end' => $end, 'metrics' => $data]]);
     }
 
     public function checkout(Request $r): JsonResponse

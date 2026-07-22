@@ -20,7 +20,7 @@ class SubscriptionService
             throw ValidationException::withMessages(['billing' => ['Stripe billing is not configured.']]);
         }
 
-return new StripeClient($key);
+        return new StripeClient($key);
     }
 
     public function customer(Organization $org): OrganizationBillingProfile
@@ -32,7 +32,7 @@ return new StripeClient($key);
                 $p->update(['stripe_customer_id' => $c->id]);
             }
 
-return $p->fresh();
+            return $p->fresh();
         });
     }
 
@@ -70,6 +70,6 @@ return $p->fresh();
             $stripe->subscriptions->update($sub->stripe_subscription_id, ['cancel_at_period_end' => false], ['idempotency_key' => 'resume-'.$sub->id]);
         }
 
-return $sub->fresh();
+        return $sub->fresh();
     }
 }
