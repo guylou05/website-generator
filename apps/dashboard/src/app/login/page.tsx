@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Logo } from '@/components/logo';
 import { dashboardApi, DashboardApiError } from '@/lib/api-client';
-export default function Login() {
+function LoginForm() {
   const router = useRouter(),
     params = useSearchParams();
   const [error, setError] = useState(''),
@@ -84,5 +84,19 @@ export default function Login() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense
+      fallback={
+        <main className="grid min-h-screen place-items-center">
+          Loading sign in…
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

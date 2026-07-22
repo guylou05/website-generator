@@ -1,8 +1,8 @@
 'use client';
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { dashboardApi } from '@/lib/api-client';
-export default function Reset() {
+function ResetForm() {
   const q = useSearchParams(),
     router = useRouter(),
     [error, setError] = useState('');
@@ -33,5 +33,19 @@ export default function Reset() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function Reset() {
+  return (
+    <Suspense
+      fallback={
+        <main className="grid min-h-screen place-items-center">
+          Loading password reset…
+        </main>
+      }
+    >
+      <ResetForm />
+    </Suspense>
   );
 }

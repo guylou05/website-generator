@@ -17,6 +17,6 @@ class EnsureTenantAccess
             abort_unless(in_array($membership->role, ['owner', 'admin', 'member'], true), 403, 'This organization role is read-only.');
         }
 
-return $next($request);
+        return $next($request);
     }
 }

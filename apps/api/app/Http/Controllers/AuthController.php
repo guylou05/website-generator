@@ -91,7 +91,7 @@ class AuthController extends Controller
             $request->user()->sendEmailVerificationNotification();
         }
 
-return response()->json(['data' => ['message' => 'If verification is required, a link has been sent.']]);
+        return response()->json(['data' => ['message' => 'If verification is required, a link has been sent.']]);
     }
 
     public function verify(Request $request, string $id, string $hash): JsonResponse
@@ -102,7 +102,7 @@ return response()->json(['data' => ['message' => 'If verification is required, a
             $user->markEmailAsVerified();
         }
 
-return response()->json(['data' => ['verified' => true]]);
+        return response()->json(['data' => ['verified' => true]]);
     }
 
     private function resource(User $user): array

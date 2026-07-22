@@ -108,7 +108,7 @@ class OrganizationController extends Controller
             $next->update(['role' => 'owner']);
             $organization->update(['owner_user_id' => $next->user_id]);
         });
-        $audit->record($r,'ownership.transferred','organization',$organization->id,['new_owner_id' => $next->user_id]);
+        $audit->record($r, 'ownership.transferred', 'organization', $organization->id, ['new_owner_id' => $next->user_id]);
 
         return response()->json(['data' => $organization->fresh()]);
     }

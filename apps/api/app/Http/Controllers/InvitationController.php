@@ -58,7 +58,7 @@ class InvitationController extends Controller
         $this->authorize('manage', $organization);
         abort_unless($invitation->organization_id === $organization->id, 404);
         $invitation->update(['revoked_at' => now()]);
-        $audit->record($r,'invitation.revoked','invitation',$invitation->id);
+        $audit->record($r, 'invitation.revoked', 'invitation', $invitation->id);
 
         return response()->json(['data' => null]);
     }
