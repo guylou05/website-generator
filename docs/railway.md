@@ -12,7 +12,7 @@ The application is deployed as three services from this repository, plus Railway
    - Worker: `/apps/worker/railway.toml`
 4. Generate public domains for the API and dashboard. The worker must not have a public domain.
 
-The API config runs migrations as a pre-deploy command and checks `/api/health`. Every container listens on Railway's injected `PORT` where applicable.
+The API config runs migrations as a pre-deploy command and uses Laravel's dedicated `/up` health endpoint. Every container listens on Railway's injected `PORT` where applicable.
 
 ## 2. Configure variables
 
@@ -71,7 +71,7 @@ Create a fourth private service named `scheduler` from the same repository. Use 
 ## 4. Verify the deployment
 
 1. Confirm the API deployment and migration complete successfully.
-2. Open `https://<api-domain>/api/health` and expect `{"status":"ok"}`.
+2. Open `https://<api-domain>/up` and confirm it returns a successful response.
 3. Open the dashboard, register a user, and confirm authenticated API requests succeed.
 4. Confirm the worker logs contain `Website Generator worker ready` and scheduler logs remain active.
 5. Trigger a mock generation and verify it reaches a terminal successful state.
