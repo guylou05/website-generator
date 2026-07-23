@@ -12,7 +12,9 @@ ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-RUN pnpm --filter @website-generator/dashboard build
+# The dashboard imports workspace packages through their compiled `dist` exports.
+# Build the dashboard and its transitive workspace dependencies in topological order.
+RUN pnpm --filter @website-generator/dashboard... build
 
 FROM node:22-alpine AS runtime
 RUN corepack enable
