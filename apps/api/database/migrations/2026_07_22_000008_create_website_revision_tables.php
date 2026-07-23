@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignUuid('organization_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('project_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('generation_run_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignUuid('parent_revision_id')->nullable()->constrained('website_revisions')->nullOnDelete();
+            $table->uuid('parent_revision_id')->nullable();
             $table->unsignedInteger('revision_number');
             $table->string('status', 24)->default('draft');
             $table->string('source', 32);
@@ -28,6 +28,7 @@ return new class extends Migration
             $table->unique(['project_id', 'revision_number']);
             $table->index(['project_id', 'status']);
         });
+        Schema::table('website_revisions', fn (Blueprint $table) => $table->foreign('parent_revision_id')->references('id')->on('website_revisions')->nullOnDelete());
         Schema::table('projects', fn (Blueprint $table) => $table->foreignUuid('approved_revision_id')->nullable()->constrained('website_revisions')->nullOnDelete());
 
         Schema::create('revision_changes', function (Blueprint $table) {
