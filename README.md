@@ -78,7 +78,9 @@ Commit the generated `pnpm-lock.yaml` and `apps/api/composer.lock` whenever depe
 
 ## Production notes
 
-The included Dockerfiles optimize for a reproducible development environment. For deployment, build immutable images in CI, install production-only dependencies, run Laravel migrations as a release task, terminate TLS at an ingress/load balancer, and inject secrets through the platform rather than `.env` files. Restrict database and Redis ports to private networks.
+The included Dockerfiles create reproducible production images. For deployment, run Laravel migrations as a release task, terminate TLS at an ingress/load balancer, and inject secrets through the platform rather than `.env` files. Restrict database and Redis ports to private networks.
+
+For a Railway deployment, use the production Dockerfiles and per-service configuration described in the [Railway deployment guide](docs/railway.md). The guide covers service layout, migrations, health checks, required variables, durable media storage, the worker, and the scheduler.
 
 ## Contributing
 
