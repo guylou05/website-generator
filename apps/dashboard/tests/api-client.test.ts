@@ -80,3 +80,47 @@ test('client creates a generation and maps its response', async () => {
   ).createGeneration('project', {});
   assert.equal(run.status, 'completed');
 });
+
+test('default browser fetch keeps its required global receiver', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = async function (input) {
+    assert.equal(this, globalThis);
+    calls.push(String(input));
+
+    if (calls.length === 1) return new Response(null, { status: 204 });
+
+    return new Response(
+      JSON.stringify({
+        data: {
+          id: 'user',
+          name: 'Test Owner',
+          email: 'owner@example.com',
+          email_verified_at: null,
+          current_organization: null,
+          current_role: 'owner',
+        },
+      }),
+      { status: 201, headers: { 'Content-Type': 'application/json' } },
+    );
+  };
+
+  try {
+    const user = await new DashboardApiClient(
+      'https://api.example.com/api',
+    ).register({
+      name: 'Test Owner',
+      email: 'owner@example.com',
+      password: 'password',
+      password_confirmation: 'password',
+    });
+
+    assert.equal(user.current_role, 'owner');
+    assert.deepEqual(calls, [
+      'https://api.example.com/sanctum/csrf-cookie',
+      'https://api.example.com/api/auth/register',
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
