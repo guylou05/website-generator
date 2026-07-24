@@ -1,16 +1,17 @@
 # Deploying to Railway
 
-The application is deployed as three services from this repository, plus Railway PostgreSQL and Redis services. All application services must use the **repository root** as their root directory so Docker can access the workspace packages and lockfile.
+The application is deployed as four services from this repository, plus Railway PostgreSQL and Redis services. All application services must use the **repository root** as their root directory so Docker can access the workspace packages and lockfile.
 
 ## 1. Provision the project
 
 1. Create a Railway project and add PostgreSQL and Redis.
-2. Add three services from this GitHub repository: `api`, `dashboard`, and `worker`.
+2. Add four services from this GitHub repository: `api`, `dashboard`, `worker`, and `scheduler`.
 3. Leave each service root directory at `/` and set its config-as-code file to:
    - API: `/apps/api/railway.toml`
    - Dashboard: `/apps/dashboard/railway.toml`
    - Worker: `/apps/worker/railway.toml`
-4. Generate public domains for the API and dashboard. The worker must not have a public domain.
+   - Scheduler: `/apps/api/railway.scheduler.toml`
+4. Generate public domains for the API and dashboard. The worker and scheduler must not have public domains.
 
 The API config runs migrations as a pre-deploy command and uses Laravel's dedicated `/up` health endpoint. Every container listens on Railway's injected `PORT` where applicable.
 
@@ -73,7 +74,7 @@ Copy provider and media variables from `apps/worker/.env.example`. The internal 
 
 ## 3. Run the scheduler
 
-Create a fourth private service named `scheduler` from the same repository. Use `/apps/api/railway.toml`, override its start command with `php artisan schedule:work`, and disable the health check for that service. It should share the API's database, Redis, application key, and worker-token variables. Railway may run the API pre-deploy migration for this service as well; Laravel migrations are idempotent.
+The `scheduler` service uses `/apps/api/railway.scheduler.toml`, which starts `php artisan schedule:work` and deliberately defines no HTTP health check. Do not use the API's `/apps/api/railway.toml` for this service: `/up` is served only by the API web process, so probing it on the scheduler will always fail even while scheduling is healthy. The scheduler should remain private and share the API's database, Redis, application key, and worker-token variables. Railway runs its pre-deploy migration as well; Laravel migrations are idempotent.
 
 ## 4. Verify the deployment
 
