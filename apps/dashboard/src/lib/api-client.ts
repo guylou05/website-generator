@@ -271,14 +271,20 @@ export class DashboardApiError extends Error {
   }
 }
 export class DashboardApiClient {
+  private readonly request: typeof fetch;
+
   constructor(
     private readonly baseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(
       /\/$/,
       '',
     ) || 'http://localhost:8080/api',
-    private readonly request: typeof fetch = (input, init) =>
-      globalThis.fetch(input, init),
-  ) {}
+    request?: typeof fetch,
+  ) {
+    this.request =
+      request ??
+      ((input: RequestInfo | URL, init?: RequestInit) =>
+        globalThis.fetch(input, init));
+  }
   private csrfReady = false;
   async initializeCsrf(): Promise<void> {
     if (this.csrfReady) return;
