@@ -83,7 +83,10 @@ test('client creates a generation and maps its response', async () => {
 
 test('default browser fetch keeps its required global receiver', async () => {
   const originalFetch = globalThis.fetch;
+  const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = 'https://api.example.com/api';
   const calls: string[] = [];
+  process.env.NEXT_PUBLIC_API_URL = apiUrl;
   globalThis.fetch = async function (input) {
     assert.equal(this, globalThis);
     calls.push(String(input));
@@ -106,9 +109,7 @@ test('default browser fetch keeps its required global receiver', async () => {
   };
 
   try {
-    const user = await new DashboardApiClient(
-      'https://api.example.com/api',
-    ).register({
+    const user = await new DashboardApiClient().register({
       name: 'Test Owner',
       email: 'owner@example.com',
       password: 'password',
@@ -118,9 +119,11 @@ test('default browser fetch keeps its required global receiver', async () => {
     assert.equal(user.current_role, 'owner');
     assert.deepEqual(calls, [
       'https://api.example.com/sanctum/csrf-cookie',
-      'https://api.example.com/api/auth/register',
+      `${apiUrl}/auth/register`,
     ]);
   } finally {
     globalThis.fetch = originalFetch;
+    if (originalApiUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL;
+    else process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
   }
 });
