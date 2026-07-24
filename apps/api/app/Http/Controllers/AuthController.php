@@ -18,6 +18,13 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
+    public function csrfToken(Request $request): JsonResponse
+    {
+        return response()
+            ->json(['data' => ['token' => $request->session()->token()]])
+            ->header('Cache-Control', 'no-store');
+    }
+
     public function register(Request $request, AuditService $audit): JsonResponse
     {
         $data = $request->validate(['name' => 'required|string|max:255', 'email' => 'required|email|max:255|unique:users,email', 'password' => ['required', 'confirmed', PasswordRule::defaults()], 'organization_name' => 'nullable|string|max:255']);
