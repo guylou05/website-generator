@@ -40,6 +40,13 @@ DASHBOARD_URL=https://<dashboard-domain>
 INTERNAL_WORKER_TOKEN=<at-least-32-random-characters>
 ```
 
+Set `APP_KEY` to the command's actual output (including its `base64:` prefix), not
+to the example placeholder. The API also normalizes a non-empty Railway-managed
+plain-text secret into a stable AES-256 key, so an existing plain-text value no
+longer causes the `/up` health check to return HTTP 500. Keep the value unchanged
+after launch: changing it invalidates encrypted cookies and stored WordPress
+credentials.
+
 Add production mail, Stripe, OpenAI, and S3-compatible media variables from `apps/api/.env.example` when those features are enabled. Do not use the local filesystem for durable media because Railway service filesystems are ephemeral; configure `MEDIA_DISK=media-s3` and the `MEDIA_S3_*` variables.
 
 ### Dashboard
