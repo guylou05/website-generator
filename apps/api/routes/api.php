@@ -20,6 +20,7 @@ Route::post('/webhooks/stripe', StripeWebhookController::class);
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
 Route::get('/preview/{token}', [PreviewSessionController::class, 'public'])->middleware('throttle:30,1');
 Route::prefix('auth')->group(function () {
+    Route::get('/csrf-token', [AuthController::class, 'csrfToken'])->middleware('throttle:60,1');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
     Route::post('/forgot-password', [AuthController::class, 'forgot'])->middleware('throttle:5,1');

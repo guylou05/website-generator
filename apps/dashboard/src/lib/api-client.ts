@@ -285,11 +285,10 @@ export class DashboardApiClient {
       ((input: RequestInfo | URL, init?: RequestInit) =>
         globalThis.fetch(input, init));
   }
-  private csrfReady = false;
+  private csrfToken: string | null = null;
   async initializeCsrf(): Promise<void> {
-    if (this.csrfReady) return;
-    const origin = this.baseUrl.replace(/\/api\/?$/, '');
-    const response = await this.request(`${origin}/sanctum/csrf-cookie`, {
+    if (this.csrfToken) return;
+    const response = await this.request(`${this.baseUrl}/auth/csrf-token`, {
       credentials: 'include',
       cache: 'no-store',
     });
@@ -299,14 +298,25 @@ export class DashboardApiClient {
         response.status,
         'csrf_failed',
       );
-    this.csrfReady = true;
+    const envelope = (await response.json()) as { data?: { token?: string } };
+    if (!envelope.data?.token)
+      throw new DashboardApiError(
+        'Could not initialize the secure session.',
+        response.status,
+        'csrf_failed',
+      );
+    this.csrfToken = envelope.data.token;
   }
   private async call<T>(path: string, init?: RequestInit): Promise<T> {
     if (init?.method && !['GET', 'HEAD'].includes(init.method))
       await this.initializeCsrf();
     const response = await this.request(`${this.baseUrl}${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.csrfToken ? { 'X-CSRF-TOKEN': this.csrfToken } : {}),
+        ...init?.headers,
+      },
       cache: 'no-store',
       credentials: 'include',
     });
@@ -351,8 +361,10 @@ export class DashboardApiClient {
       body: JSON.stringify(input),
     });
   }
-  logout(): Promise<null> {
-    return this.call('/auth/logout', { method: 'POST' });
+  async logout(): Promise<null> {
+    const result = await this.call<null>('/auth/logout', { method: 'POST' });
+    this.csrfToken = null;
+    return result;
   }
   currentUser(): Promise<AuthUser> {
     return this.call('/auth/user');

@@ -55,8 +55,11 @@ test('maps Laravel snake_case resources to dashboard types', () => {
 });
 
 test('client creates a generation and maps its response', async () => {
-  const fakeFetch: typeof fetch = async () =>
-    new Response(
+  const fakeFetch: typeof fetch = async (input) => {
+    if (String(input).endsWith('/auth/csrf-token'))
+      return Response.json({ data: { token: 'test-csrf-token' } });
+
+    return new Response(
       JSON.stringify({
         data: {
           id: 'run',
@@ -74,6 +77,7 @@ test('client creates a generation and maps its response', async () => {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
+  };
   const run = await new DashboardApiClient(
     'http://api.test',
     fakeFetch,
@@ -87,11 +91,17 @@ test('default browser fetch keeps its required global receiver', async () => {
   const apiUrl = 'https://api.example.com/api';
   const calls: string[] = [];
   process.env.NEXT_PUBLIC_API_URL = apiUrl;
-  globalThis.fetch = async function (input) {
+  globalThis.fetch = async function (input, init) {
     assert.equal(this, globalThis);
     calls.push(String(input));
 
-    if (calls.length === 1) return new Response(null, { status: 204 });
+    if (calls.length === 1)
+      return Response.json({ data: { token: 'browser-csrf-token' } });
+
+    assert.equal(
+      new Headers(init?.headers).get('X-CSRF-TOKEN'),
+      'browser-csrf-token',
+    );
 
     return new Response(
       JSON.stringify({
@@ -118,7 +128,7 @@ test('default browser fetch keeps its required global receiver', async () => {
 
     assert.equal(user.current_role, 'owner');
     assert.deepEqual(calls, [
-      'https://api.example.com/sanctum/csrf-cookie',
+      `${apiUrl}/auth/csrf-token`,
       `${apiUrl}/auth/register`,
     ]);
   } finally {
