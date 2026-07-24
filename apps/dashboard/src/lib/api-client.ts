@@ -270,6 +270,18 @@ export class DashboardApiError extends Error {
     super(message);
   }
 }
+
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+
+  const prefix = `${name}=`;
+  const cookie = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith(prefix));
+
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+}
+
 export class DashboardApiClient {
   private readonly request: typeof fetch;
 
@@ -285,10 +297,11 @@ export class DashboardApiClient {
       ((input: RequestInfo | URL, init?: RequestInit) =>
         globalThis.fetch(input, init));
   }
-  private csrfToken: string | null = null;
+  private csrfInitialized = false;
   async initializeCsrf(): Promise<void> {
-    if (this.csrfToken) return;
-    const response = await this.request(`${this.baseUrl}/auth/csrf-token`, {
+    if (this.csrfInitialized) return;
+    const apiOrigin = this.baseUrl.replace(/\/api$/, '');
+    const response = await this.request(`${apiOrigin}/sanctum/csrf-cookie`, {
       credentials: 'include',
       cache: 'no-store',
     });
@@ -298,25 +311,24 @@ export class DashboardApiClient {
         response.status,
         'csrf_failed',
       );
-    const envelope = (await response.json()) as { data?: { token?: string } };
-    if (!envelope.data?.token)
-      throw new DashboardApiError(
-        'Could not initialize the secure session.',
-        response.status,
-        'csrf_failed',
-      );
-    this.csrfToken = envelope.data.token;
+    this.csrfInitialized = true;
   }
   private async call<T>(path: string, init?: RequestInit): Promise<T> {
-    if (init?.method && !['GET', 'HEAD'].includes(init.method))
+    const isStateChangingRequest =
+      !!init?.method && !['GET', 'HEAD'].includes(init.method.toUpperCase());
+    const headers = new Headers(init?.headers);
+    headers.set('Content-Type', 'application/json');
+
+    if (isStateChangingRequest) {
       await this.initializeCsrf();
+      const xsrfToken = getCookie('XSRF-TOKEN');
+
+      if (xsrfToken) headers.set('X-XSRF-TOKEN', xsrfToken);
+    }
+
     const response = await this.request(`${this.baseUrl}${path}`, {
       ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.csrfToken ? { 'X-CSRF-TOKEN': this.csrfToken } : {}),
-        ...init?.headers,
-      },
+      headers,
       cache: 'no-store',
       credentials: 'include',
     });
@@ -363,7 +375,7 @@ export class DashboardApiClient {
   }
   async logout(): Promise<null> {
     const result = await this.call<null>('/auth/logout', { method: 'POST' });
-    this.csrfToken = null;
+    this.csrfInitialized = false;
     return result;
   }
   currentUser(): Promise<AuthUser> {
