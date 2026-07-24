@@ -56,8 +56,8 @@ test('maps Laravel snake_case resources to dashboard types', () => {
 
 test('client creates a generation and maps its response', async () => {
   const fakeFetch: typeof fetch = async (input) => {
-    if (String(input).endsWith('/auth/csrf-token'))
-      return Response.json({ data: { token: 'test-csrf-token' } });
+    if (String(input).endsWith('/sanctum/csrf-cookie'))
+      return new Response(null, { status: 204 });
 
     return new Response(
       JSON.stringify({
@@ -85,22 +85,34 @@ test('client creates a generation and maps its response', async () => {
   assert.equal(run.status, 'completed');
 });
 
-test('default browser fetch keeps its required global receiver', async () => {
+test('registration initializes Sanctum and sends the decoded XSRF cookie', async () => {
   const originalFetch = globalThis.fetch;
   const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const originalDocument = Object.getOwnPropertyDescriptor(
+    globalThis,
+    'document',
+  );
   const apiUrl = 'https://api.example.com/api';
   const calls: string[] = [];
   process.env.NEXT_PUBLIC_API_URL = apiUrl;
+  Object.defineProperty(globalThis, 'document', {
+    configurable: true,
+    value: { cookie: 'theme=dark; XSRF-TOKEN=token%2Bwith%2Fencoding%3D' },
+  });
   globalThis.fetch = async function (input, init) {
     assert.equal(this, globalThis);
     calls.push(String(input));
+    assert.equal(init?.credentials, 'include');
 
-    if (calls.length === 1)
-      return Response.json({ data: { token: 'browser-csrf-token' } });
+    if (calls.length === 1) return new Response(null, { status: 204 });
 
     assert.equal(
-      new Headers(init?.headers).get('X-CSRF-TOKEN'),
-      'browser-csrf-token',
+      new Headers(init?.headers).get('X-XSRF-TOKEN'),
+      'token+with/encoding=',
+    );
+    assert.equal(
+      new Headers(init?.headers).get('Content-Type'),
+      'application/json',
     );
 
     return new Response(
@@ -128,12 +140,42 @@ test('default browser fetch keeps its required global receiver', async () => {
 
     assert.equal(user.current_role, 'owner');
     assert.deepEqual(calls, [
-      `${apiUrl}/auth/csrf-token`,
+      'https://api.example.com/sanctum/csrf-cookie',
       `${apiUrl}/auth/register`,
     ]);
   } finally {
     globalThis.fetch = originalFetch;
+    if (originalDocument)
+      Object.defineProperty(globalThis, 'document', originalDocument);
+    else Reflect.deleteProperty(globalThis, 'document');
     if (originalApiUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL;
     else process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
   }
+});
+
+test('GET requests preserve caller headers without initializing CSRF', async () => {
+  const calls: Array<{ input: string; init: RequestInit | undefined }> = [];
+  const fakeFetch: typeof fetch = async (input, init) => {
+    calls.push({ input: String(input), init });
+    return Response.json({ data: [] });
+  };
+
+  const client = new DashboardApiClient(
+    'http://api.test/api',
+    fakeFetch,
+  ) as unknown as {
+    call<T>(path: string, init?: RequestInit): Promise<T>;
+  };
+  await client.call('/projects', {
+    method: 'GET',
+    headers: { 'X-Caller': 'dashboard' },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]?.input, 'http://api.test/api/projects');
+  assert.equal(
+    new Headers(calls[0]?.init?.headers).get('X-Caller'),
+    'dashboard',
+  );
+  assert.equal(calls[0]?.init?.credentials, 'include');
 });
