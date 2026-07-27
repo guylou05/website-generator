@@ -3,9 +3,11 @@
 use App\Models\Organization;
 use App\Services\EntitlementService;
 use App\Services\UsageService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('jobs:recover-stale')->everyMinute()->withoutOverlapping();
+Schedule::call(fn () => Cache::forever('scheduler:heartbeat', now()->toIso8601String()))->everyMinute()->name('scheduler-heartbeat');
 
 Artisan::command('billing:inspect {organization}', function (EntitlementService $entitlements, UsageService $usage) {
     $organization = Organization::findOrFail($this->argument('organization'));

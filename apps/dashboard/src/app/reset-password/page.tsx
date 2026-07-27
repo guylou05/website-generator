@@ -1,7 +1,7 @@
 'use client';
 import { FormEvent, Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { dashboardApi } from '@/lib/api-client';
+import { authProvider } from '@/lib/auth-provider';
 function ResetForm() {
   const q = useSearchParams(),
     router = useRouter(),
@@ -10,7 +10,7 @@ function ResetForm() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     try {
-      await dashboardApi.resetPassword({
+      await authProvider.resetPassword({
         email: q.get('email') ?? '',
         token: q.get('token') ?? '',
         password: String(f.get('password')),

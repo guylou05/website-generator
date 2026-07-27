@@ -4,7 +4,10 @@ services:
     build: { context: ., dockerfile: apps/dashboard/Dockerfile }
     ports: ['${DASHBOARD_PORT:-3000}:3000']
     environment:
-      { NEXT_PUBLIC_API_URL: 'http://localhost:${API_PORT:-8080}/api' }
+      NEXT_PUBLIC_API_URL: 'http://localhost:${API_PORT:-8080}/api'
+      NEXT_PUBLIC_USE_PROXY: '${NEXT_PUBLIC_USE_PROXY:-false}'
+      API_INTERNAL_URL: 'http://nginx/api'
+      DOCKER_COMPOSE: 'true'
     volumes:
       [
         './apps/dashboard:/workspace/apps/dashboard',

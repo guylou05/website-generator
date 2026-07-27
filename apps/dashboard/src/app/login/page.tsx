@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { FormEvent, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Logo } from '@/components/logo';
-import { dashboardApi, DashboardApiError } from '@/lib/api-client';
+import { DashboardApiError } from '@/lib/api-client';
+import { authProvider } from '@/lib/auth-provider';
 function LoginForm() {
   const router = useRouter(),
     params = useSearchParams();
@@ -15,7 +16,7 @@ function LoginForm() {
     setError('');
     const f = new FormData(e.currentTarget);
     try {
-      await dashboardApi.login({
+      await authProvider.login({
         email: String(f.get('email')),
         password: String(f.get('password')),
         remember: f.get('remember') === 'on',
