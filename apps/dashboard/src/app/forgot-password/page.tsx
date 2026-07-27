@@ -1,12 +1,12 @@
 'use client';
 import { FormEvent, useState } from 'react';
-import { dashboardApi } from '@/lib/api-client';
+import { authProvider } from '@/lib/auth-provider';
 export default function Forgot() {
   const [message, setMessage] = useState('');
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    await dashboardApi.forgotPassword(String(f.get('email')));
+    await authProvider.forgotPassword(String(f.get('email')));
     setMessage('If an account exists, a reset link has been sent.');
   }
   return (

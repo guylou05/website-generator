@@ -29,6 +29,8 @@ packages/
 
 See [`docs/architecture.md`](docs/architecture.md) for dependency boundaries and design decisions.
 
+Deployment configuration is documented in the [authentication](docs/authentication.md), [environment](docs/environment.md), [Docker](docs/docker.md), [Railway](docs/railway.md), and [deployment](docs/deployment.md) guides.
+
 ## Prerequisites
 
 - Docker Engine with Docker Compose v2 (recommended), or
