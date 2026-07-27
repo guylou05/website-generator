@@ -24,6 +24,7 @@ import {
   type AuthUser,
   type Organization,
 } from '@/lib/api-client';
+import { authProvider } from '@/lib/auth-provider';
 import { useRouter } from 'next/navigation';
 
 const nav = [
@@ -45,7 +46,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     setDark(value);
     document.documentElement.classList.toggle('dark', value);
     void Promise.all([
-      dashboardApi.currentUser(),
+      authProvider.currentUser(),
       dashboardApi.organizations(),
     ]).then(([current, list]) => {
       setUser(current);
@@ -184,7 +185,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <button
                 className="text-muted-foreground text-xs"
                 onClick={async () => {
-                  await dashboardApi.logout();
+                  await authProvider.logout();
                   router.replace('/login');
                 }}
               >

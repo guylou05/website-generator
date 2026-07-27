@@ -8,6 +8,7 @@ use App\Http\Controllers\ImageGenerationController;
 use App\Http\Controllers\InternalJobController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PreviewSessionController;
 use App\Http\Controllers\ProjectController;
@@ -17,7 +18,7 @@ use App\Http\Controllers\WordPressConnectionController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/stripe', StripeWebhookController::class);
-Route::get('/health', fn () => response()->json(['status' => 'ok']));
+Route::get('/health', [OperationsController::class, 'health']);
 Route::get('/preview/{token}', [PreviewSessionController::class, 'public'])->middleware('throttle:30,1');
 Route::prefix('auth')->group(function () {
     Route::get('/csrf-token', [AuthController::class, 'csrfToken'])->middleware('throttle:60,1');
@@ -27,6 +28,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'reset'])->middleware('throttle:5,1');
 });
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/debug/environment', [OperationsController::class, 'environment'])->middleware('throttle:10,1');
     Route::prefix('billing')->middleware('throttle:20,1')->group(function () {
         Route::get('/plans', [BillingController::class, 'plans']);
         Route::get('/summary', [BillingController::class, 'summary']);

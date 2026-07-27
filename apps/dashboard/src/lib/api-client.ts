@@ -1,3 +1,6 @@
+import { readXsrfToken } from './cookies';
+import { browserApiBase } from './runtime-config';
+
 export interface GenerationEvent {
   id: string;
   stage: string;
@@ -271,49 +274,49 @@ export class DashboardApiError extends Error {
   }
 }
 
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-
-  const prefix = `${name}=`;
-  const cookie = document.cookie
-    .split('; ')
-    .find((item) => item.startsWith(prefix));
-
-  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
-}
-
 export class DashboardApiClient {
   private readonly request: typeof fetch;
+  private readonly baseUrl: string;
+  private csrfInitialized = false;
+  private csrfInitialization: Promise<void> | null = null;
 
-  constructor(
-    private readonly baseUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(
-      /\/$/,
-      '',
-    ) || 'http://localhost:8080/api',
-    request?: typeof fetch,
-  ) {
+  constructor(baseUrl = browserApiBase(), request?: typeof fetch) {
+    this.baseUrl = baseUrl.trim().replace(/\/+$/, '');
+    // Calling a detached native fetch causes "Illegal invocation" in some runtimes.
     this.request =
       request ??
       ((input: RequestInfo | URL, init?: RequestInit) =>
         globalThis.fetch(input, init));
   }
-  private csrfInitialized = false;
   async initializeCsrf(): Promise<void> {
     if (this.csrfInitialized) return;
-    const apiOrigin = this.baseUrl.replace(/\/api$/, '');
-    const response = await this.request(`${apiOrigin}/sanctum/csrf-cookie`, {
-      credentials: 'include',
-      cache: 'no-store',
+    if (this.csrfInitialization) return this.csrfInitialization;
+    const csrfUrl =
+      this.baseUrl === '/api/proxy'
+        ? '/api/proxy/sanctum/csrf-cookie'
+        : `${this.baseUrl.replace(/\/api$/, '')}/sanctum/csrf-cookie`;
+    this.csrfInitialization = (async () => {
+      const response = await this.request(csrfUrl, {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!response.ok)
+        throw new DashboardApiError(
+          'Could not initialize the secure session.',
+          response.status,
+          'csrf_failed',
+        );
+      this.csrfInitialized = true;
+    })().finally(() => {
+      this.csrfInitialization = null;
     });
-    if (!response.ok)
-      throw new DashboardApiError(
-        'Could not initialize the secure session.',
-        response.status,
-        'csrf_failed',
-      );
-    this.csrfInitialized = true;
+    return this.csrfInitialization;
   }
-  private async call<T>(path: string, init?: RequestInit): Promise<T> {
+  private async call<T>(
+    path: string,
+    init?: RequestInit,
+    retry = true,
+  ): Promise<T> {
     const isStateChangingRequest =
       !!init?.method && !['GET', 'HEAD'].includes(init.method.toUpperCase());
     const headers = new Headers(init?.headers);
@@ -321,7 +324,7 @@ export class DashboardApiClient {
 
     if (isStateChangingRequest) {
       await this.initializeCsrf();
-      const xsrfToken = getCookie('XSRF-TOKEN');
+      const xsrfToken = readXsrfToken();
 
       if (xsrfToken) headers.set('X-XSRF-TOKEN', xsrfToken);
     }
@@ -340,6 +343,13 @@ export class DashboardApiClient {
           details?: Record<string, string[]>;
         };
       };
+      // A stale CSRF/session cookie is common after a deployment. Refresh once,
+      // never recursively, then return the authoritative second response.
+      if (retry && (response.status === 401 || response.status === 419)) {
+        this.csrfInitialized = false;
+        if (isStateChangingRequest) await this.initializeCsrf();
+        return this.call<T>(path, init, false);
+      }
       throw new DashboardApiError(
         body?.error?.message ?? 'API request failed.',
         response.status,

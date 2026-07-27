@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { dashboardApi } from '@/lib/api-client';
+import { authProvider } from '@/lib/auth-provider';
 export default function Register() {
   const router = useRouter(),
     [error, setError] = useState('');
@@ -10,7 +10,7 @@ export default function Register() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     try {
-      await dashboardApi.register({
+      await authProvider.register({
         name: String(f.get('name')),
         email: String(f.get('email')),
         password: String(f.get('password')),
