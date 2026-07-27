@@ -9,12 +9,12 @@ Proxy:  browser ──host-only cookies──▶ Next.js ──private URL──
 
 ## Choosing a transport
 
-| Variable | Visibility | Purpose |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | browser | Public Laravel URL ending in `/api` |
-| `NEXT_PUBLIC_USE_PROXY` | browser | `true` selects `/api/proxy`; otherwise direct |
-| `API_INTERNAL_URL` | server only | Private Laravel base ending in `/api` |
-| `NEXT_PUBLIC_AUTH_DRIVER` | browser | `sanctum` (the only installed provider) |
+| Variable                  | Visibility  | Purpose                                       |
+| ------------------------- | ----------- | --------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`     | browser     | Public Laravel URL ending in `/api`           |
+| `NEXT_PUBLIC_USE_PROXY`   | browser     | `true` selects `/api/proxy`; otherwise direct |
+| `API_INTERNAL_URL`        | server only | Private Laravel base ending in `/api`         |
+| `NEXT_PUBLIC_AUTH_DRIVER` | browser     | `sanctum` (the only installed provider)       |
 
 The client normalizes trailing slashes, coalesces simultaneous CSRF requests, adds the decoded `X-XSRF-TOKEN`, and retries one time after HTTP 401/419. The proxy forwards request/response streams and rewrites API cookies as host-only.
 

@@ -26,10 +26,16 @@ export function internalApiBase(env: RuntimeEnvironment = process.env): string {
   return trimUrl(env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api');
 }
 
-export function deploymentPlatform(env: RuntimeEnvironment = process.env): DeploymentPlatform {
+export function deploymentPlatform(
+  env: RuntimeEnvironment = process.env,
+): DeploymentPlatform {
   if (env.RAILWAY_ENVIRONMENT_NAME) return 'railway';
   if (env.VERCEL) return 'vercel';
-  if (env.DOCKER_COMPOSE || env.COMPOSE_PROJECT_NAME || env.NODE_ENV === 'development')
+  if (
+    env.DOCKER_COMPOSE ||
+    env.COMPOSE_PROJECT_NAME ||
+    env.NODE_ENV === 'development'
+  )
     return 'local';
   return 'generic';
 }

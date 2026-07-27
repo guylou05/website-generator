@@ -5,11 +5,23 @@ import { internalApiBase } from '@/lib/runtime-config';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const HOP_BY_HOP = new Set(['connection', 'content-length', 'host', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade']);
+const HOP_BY_HOP = new Set([
+  'connection',
+  'content-length',
+  'host',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+]);
 
 function upstreamUrl(path: string[], search: string): string {
   const base = internalApiBase();
-  if (path[0] === 'sanctum') return `${base.replace(/\/api$/, '')}/${path.join('/')}${search}`;
+  if (path[0] === 'sanctum')
+    return `${base.replace(/\/api$/, '')}/${path.join('/')}${search}`;
   return `${base}/${path.join('/')}${search}`;
 }
 
@@ -20,7 +32,10 @@ function getSetCookies(headers: Headers): string[] {
   return value ? [value] : [];
 }
 
-async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+async function proxy(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> },
+) {
   const { path } = await context.params;
   const headers = new Headers();
   request.headers.forEach((value, key) => {
@@ -41,12 +56,24 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
 
   const responseHeaders = new Headers();
   upstream.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase()) && key.toLowerCase() !== 'set-cookie') responseHeaders.set(key, value);
+    if (
+      !HOP_BY_HOP.has(key.toLowerCase()) &&
+      key.toLowerCase() !== 'set-cookie'
+    )
+      responseHeaders.set(key, value);
   });
   const secure = request.nextUrl.protocol === 'https:';
-  for (const cookie of getSetCookies(upstream.headers)) responseHeaders.append('set-cookie', rewriteSetCookieForProxy(cookie, secure));
+  for (const cookie of getSetCookies(upstream.headers))
+    responseHeaders.append(
+      'set-cookie',
+      rewriteSetCookieForProxy(cookie, secure),
+    );
   responseHeaders.set('cache-control', 'no-store');
-  return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: responseHeaders });
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: responseHeaders,
+  });
 }
 
 export const GET = proxy;
