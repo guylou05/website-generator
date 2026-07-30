@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { DashboardApiClient } from '../src/lib/api-client';
 import { readCookie, rewriteSetCookieForProxy } from '../src/lib/cookies';
-import {
-  browserApiBase,
-  deploymentPlatform,
-  internalApiBase,
-} from '../src/lib/runtime-config';
+import { browserApiBase } from '../src/lib/runtime-config';
 
-test('selects local, direct, proxy, Railway, and Vercel configuration', () => {
+test('selects direct and proxy browser configuration', () => {
   assert.equal(
     browserApiBase({ NEXT_PUBLIC_API_URL: 'http://localhost:8080/api/' }),
     'http://localhost:8080/api',
@@ -20,18 +17,24 @@ test('selects local, direct, proxy, Railway, and Vercel configuration', () => {
     }),
     '/api/proxy',
   );
+});
+
+test('production proxy configuration never silently falls back to localhost', () => {
   assert.equal(
-    internalApiBase({ COMPOSE_PROJECT_NAME: 'site' }),
-    'http://nginx/api',
-  );
-  assert.equal(
-    internalApiBase({
-      RAILWAY_ENVIRONMENT_NAME: 'production',
-      RAILWAY_PRIVATE_DOMAIN: 'api.railway.internal',
+    browserApiBase({
+      NODE_ENV: 'production',
+      NEXT_PUBLIC_USE_PROXY: 'true',
     }),
-    'http://api.railway.internal/api',
+    '/api/proxy',
   );
-  assert.equal(deploymentPlatform({ VERCEL: '1' }), 'vercel');
+  assert.throws(
+    () =>
+      browserApiBase({
+        NODE_ENV: 'production',
+        NEXT_PUBLIC_API_URL: '/api/proxy/api',
+      }),
+    /NEXT_PUBLIC_USE_PROXY must be true/,
+  );
 });
 
 test('cookies decode safely and proxy cookies become host-only', () => {
@@ -88,9 +91,47 @@ test('proxy mode uses same-origin CSRF and API paths', async () => {
     if (urls.length === 1) return new Response(null, { status: 204 });
     return Response.json({ data: null });
   };
-  await new DashboardApiClient('/api/proxy/', fetcher).logout();
+  const client = new DashboardApiClient('/api/proxy/', fetcher);
+  await client.login({ email: 'owner@example.com', password: 'secret' });
+  await client.currentUser();
   assert.deepEqual(urls, [
     '/api/proxy/sanctum/csrf-cookie',
-    '/api/proxy/auth/logout',
+    '/api/proxy/api/auth/login',
+    '/api/proxy/api/auth/user',
   ]);
+});
+
+test('server-only configuration is excluded from client modules', async () => {
+  const runtimeConfig = await readFile(
+    new URL('../src/lib/runtime-config.ts', import.meta.url),
+    'utf8',
+  );
+  const apiClient = await readFile(
+    new URL('../src/lib/api-client.ts', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(runtimeConfig, /API_INTERNAL_URL/);
+  assert.doesNotMatch(apiClient, /API_INTERNAL_URL/);
+
+  const serverConfig = await readFile(
+    new URL('../src/lib/runtime-config.server.ts', import.meta.url),
+    'utf8',
+  );
+  assert.match(serverConfig, /import 'server-only'/);
+  assert.match(serverConfig, /API_INTERNAL_URL/);
+});
+
+test('Docker build exports every public Next.js setting', async () => {
+  const dockerfile = await readFile(
+    new URL('../Dockerfile', import.meta.url),
+    'utf8',
+  );
+  for (const variable of [
+    'NEXT_PUBLIC_API_URL',
+    'NEXT_PUBLIC_USE_PROXY',
+    'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+  ]) {
+    assert.match(dockerfile, new RegExp(`ARG ${variable}(?:\\n|\\r)`));
+    assert.match(dockerfile, new RegExp(`ENV ${variable}=\\$${variable}`));
+  }
 });

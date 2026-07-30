@@ -329,7 +329,9 @@ export class DashboardApiClient {
       if (xsrfToken) headers.set('X-XSRF-TOKEN', xsrfToken);
     }
 
-    const response = await this.request(`${this.baseUrl}${path}`, {
+    const apiBase =
+      this.baseUrl === '/api/proxy' ? '/api/proxy/api' : this.baseUrl;
+    const response = await this.request(`${apiBase}${path}`, {
       ...init,
       headers,
       cache: 'no-store',

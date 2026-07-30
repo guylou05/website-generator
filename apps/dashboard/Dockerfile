@@ -9,8 +9,10 @@ RUN pnpm install --frozen-lockfile --filter @website-generator/dashboard...
 
 COPY apps/dashboard apps/dashboard
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_USE_PROXY
 ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_USE_PROXY=$NEXT_PUBLIC_USE_PROXY
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 # The dashboard imports workspace packages through their compiled `dist` exports.
 # Build the dashboard and its transitive workspace dependencies in topological order.
