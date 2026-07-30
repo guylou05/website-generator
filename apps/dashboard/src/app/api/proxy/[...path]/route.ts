@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { rewriteSetCookieForProxy } from '@/lib/cookies';
-import { internalApiBase } from '@/lib/runtime-config';
+import { internalApiBase } from '@/lib/runtime-config.server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,10 @@ function upstreamUrl(path: string[], search: string): string {
   const base = internalApiBase();
   if (path[0] === 'sanctum')
     return `${base.replace(/\/api$/, '')}/${path.join('/')}${search}`;
-  return `${base}/${path.join('/')}${search}`;
+  // Browser API requests include `/api` after the proxy prefix. The configured
+  // upstream base already ends in `/api`, so consume that segment once.
+  const apiPath = path[0] === 'api' ? path.slice(1) : path;
+  return `${base}/${apiPath.join('/')}${search}`;
 }
 
 function getSetCookies(headers: Headers): string[] {

@@ -53,13 +53,13 @@ Add production mail, Stripe, OpenAI, and S3-compatible media variables from `app
 ### Dashboard
 
 ```dotenv
-NEXT_PUBLIC_API_URL=https://<api-domain>/api
 NEXT_PUBLIC_USE_PROXY=true
-API_INTERNAL_URL=https://<api-domain>/api
+NEXT_PUBLIC_API_URL=/api/proxy/api
+API_INTERNAL_URL=http://api-service.railway.internal:8080
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<optional-publishable-key>
 ```
 
-`NEXT_PUBLIC_*` values are embedded by Next.js during the Docker build, so redeploy the dashboard after changing them. `API_INTERNAL_URL` is server-only and is never included in the browser bundle. If a stable Railway private domain is available, use it for `API_INTERNAL_URL`; otherwise the public API URL remains safe and functional. Railway is automatically detected through `RAILWAY_ENVIRONMENT_NAME` and secure cookie defaults are applied.
+`NEXT_PUBLIC_*` values are embedded by Next.js during the Docker build, so redeploy the dashboard after changing them. Proxy mode sends browser API calls through `/api/proxy/api` and the Sanctum cookie request through `/api/proxy/sanctum/csrf-cookie`. `API_INTERNAL_URL` is server-only and is never included in the browser bundle; set its host and port to the API service's Railway private-network address. Railway is automatically detected through `RAILWAY_ENVIRONMENT_NAME` and secure cookie defaults are applied.
 
 ### Worker
 

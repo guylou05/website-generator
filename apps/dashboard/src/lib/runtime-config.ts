@@ -1,5 +1,3 @@
-export type DeploymentPlatform = 'local' | 'railway' | 'vercel' | 'generic';
-
 function trimUrl(value: string): string {
   return value.trim().replace(/\/+$/, '');
 }
@@ -8,34 +6,33 @@ export function isEnabled(value: string | undefined): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value?.trim().toLowerCase() ?? '');
 }
 
-type RuntimeEnvironment = Readonly<Record<string, string | undefined>>;
+type PublicRuntimeEnvironment = Readonly<
+  Record<
+    'NEXT_PUBLIC_API_URL' | 'NEXT_PUBLIC_USE_PROXY' | 'NODE_ENV',
+    string | undefined
+  >
+>;
 
-export function browserApiBase(env: RuntimeEnvironment = process.env): string {
-  if (isEnabled(env.NEXT_PUBLIC_USE_PROXY)) return '/api/proxy';
-  return trimUrl(env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api');
-}
+export function browserApiBase(
+  env?: Partial<PublicRuntimeEnvironment>,
+): string {
+  // Keep these direct references: Next.js replaces NEXT_PUBLIC_* expressions at
+  // build time, while dynamic access through a process.env object is not inlined.
+  const useProxy = env
+    ? env.NEXT_PUBLIC_USE_PROXY
+    : process.env.NEXT_PUBLIC_USE_PROXY;
+  const publicUrl = env
+    ? env.NEXT_PUBLIC_API_URL
+    : process.env.NEXT_PUBLIC_API_URL;
+  const nodeEnv = env ? env.NODE_ENV : process.env.NODE_ENV;
 
-export function internalApiBase(env: RuntimeEnvironment = process.env): string {
-  const configured = env.API_INTERNAL_URL;
-  if (configured) return trimUrl(configured);
+  if (isEnabled(useProxy)) return '/api/proxy';
 
-  // Railway private networking is opt-in because service names are project-specific.
-  if (env.RAILWAY_ENVIRONMENT_NAME && env.RAILWAY_PRIVATE_DOMAIN)
-    return `http://${env.RAILWAY_PRIVATE_DOMAIN}/api`;
-  if (env.DOCKER_COMPOSE || env.COMPOSE_PROJECT_NAME) return 'http://nginx/api';
-  return trimUrl(env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api');
-}
+  if (nodeEnv === 'production' && publicUrl?.startsWith('/api/proxy')) {
+    throw new Error(
+      'Invalid dashboard configuration: NEXT_PUBLIC_USE_PROXY must be true when NEXT_PUBLIC_API_URL uses /api/proxy.',
+    );
+  }
 
-export function deploymentPlatform(
-  env: RuntimeEnvironment = process.env,
-): DeploymentPlatform {
-  if (env.RAILWAY_ENVIRONMENT_NAME) return 'railway';
-  if (env.VERCEL) return 'vercel';
-  if (
-    env.DOCKER_COMPOSE ||
-    env.COMPOSE_PROJECT_NAME ||
-    env.NODE_ENV === 'development'
-  )
-    return 'local';
-  return 'generic';
+  return trimUrl(publicUrl || 'http://localhost:8080/api');
 }
