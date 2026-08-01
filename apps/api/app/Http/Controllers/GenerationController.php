@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGenerationRequest;
 use App\Http\Resources\GenerationRunResource;
-use App\Jobs\GenerateWebsite;
 use App\Models\GenerationRun;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Services\EntitlementService;
+use App\Services\JobTransport;
 use App\Services\UsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class GenerationController extends Controller
 {
-    public function store(StoreGenerationRequest $request, Project $project, EntitlementService $entitlements, UsageService $usage): JsonResponse
+    public function store(StoreGenerationRequest $request, Project $project, EntitlementService $entitlements, UsageService $usage, JobTransport $jobs): JsonResponse
     {
         $organization = Organization::findOrFail($project->organization_id);
         $provider = $request->validated('provider', env('AI_PROVIDER', 'mock'));
@@ -37,7 +37,7 @@ class GenerationController extends Controller
             return response()->json(['error' => $entitlements->denial($organization, 'generations')], 402);
         }
         $run->events()->create(['stage' => 'system', 'event_type' => 'run.queued', 'progress' => 0, 'message' => 'Generation queued']);
-        GenerateWebsite::dispatch($run->id);
+        $jobs->generation($run->id, $run->attempt ?? 1);
 
         return response()->json(['data' => (new GenerationRunResource($run->fresh('events')))->resolve()], 202);
     }
@@ -52,13 +52,16 @@ class GenerationController extends Controller
         return new GenerationRunResource($generationRun->load('events'));
     }
 
-    public function retry(GenerationRun $generationRun): JsonResponse
+    public function retry(GenerationRun $generationRun, JobTransport $jobs): JsonResponse
     {
         if (! in_array($generationRun->status, ['failed', 'cancelled', 'stale'], true)) {
             return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'Only failed, cancelled, or stale generations can be retried.']], 409);
         }
+        if ($generationRun->project->generationRuns()->whereKeyNot($generationRun->id)->whereIn('status', ['queued', 'running', 'cancelling'])->exists()) {
+            return response()->json(['error' => ['code' => 'generation_active', 'message' => 'Another generation is already active for this project.']], 409);
+        }
         $retry = $generationRun->project->generationRuns()->create(['organization_id' => $generationRun->organization_id, 'provider' => $generationRun->provider, 'status' => 'queued', 'progress' => 0, 'input' => $generationRun->input, 'queued_at' => now(), 'attempt' => $generationRun->attempt + 1, 'max_attempts' => $generationRun->max_attempts]);
-        GenerateWebsite::dispatch($retry->id);
+        $jobs->generation($retry->id, $retry->attempt ?? 1);
 
         return response()->json(['data' => (new GenerationRunResource($retry))->resolve()], 202);
     }
