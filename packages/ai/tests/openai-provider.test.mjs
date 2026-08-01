@@ -15,6 +15,7 @@ import {
   openAIWebsiteBlueprintSchema,
   siteBlueprintSchema,
   findSchemaFormats,
+  findSchemaRefs,
   prepareOpenAISchema,
   validateOpenAISchema,
 } from '../dist/providers/openai/index.js';
@@ -136,6 +137,30 @@ test('website_blueprint exact submitted schema has no formats or record maps', (
   );
 });
 
+test('blueprint and repair runtime schemas contain only standalone $ref nodes', () => {
+  for (const name of ['website_blueprint', 'website_blueprint_repair']) {
+    const schema = zodResponseFormat(openAIWebsiteBlueprintSchema, name)
+      .json_schema.schema;
+    assert.doesNotThrow(() =>
+      validateOpenAISchema(name, openAIWebsiteBlueprintSchema),
+    );
+    const defaults = [];
+    const findDefaults = (node, path = '#') => {
+      if (!node || typeof node !== 'object') return;
+      if (!Array.isArray(node) && Object.hasOwn(node, 'default'))
+        defaults.push(path);
+      for (const [key, child] of Object.entries(node))
+        findDefaults(child, `${path}/${key}`);
+    };
+    findDefaults(schema);
+    assert.deepEqual(defaults, [], name);
+    const refs = findSchemaRefs(schema);
+    assert.ok(refs.length > 0, `${name} should exercise recursive $ref output`);
+    for (const { path, node } of refs)
+      assert.deepEqual(Object.keys(node), ['$ref'], `${name}: ${path}`);
+  }
+});
+
 test('schema format reporter includes the response name, path, and value', () => {
   const schema = z.object({ canonicalUrl: z.string().url() });
   assert.deepEqual(
@@ -225,13 +250,60 @@ test('website_copy normalizes duplicate page and section keys without losing con
 });
 
 test('blueprint transport parses directly into the canonical domain schema', () => {
-  const blueprint = JSON.parse(
+  const canonicalInput = JSON.parse(
     readFileSync(
       new URL('../../shared/sample-blueprint.json', import.meta.url),
     ),
   );
-  const transported = openAIWebsiteBlueprintSchema.parse(blueprint);
-  assert.deepEqual(siteBlueprintSchema.parse(transported), transported);
+  const canonical = siteBlueprintSchema.parse(canonicalInput);
+  const jsonSchema = zodResponseFormat(
+    openAIWebsiteBlueprintSchema,
+    'website_blueprint',
+  ).json_schema.schema;
+  const resolve = (schema) => {
+    if (!schema.$ref) return schema;
+    return schema.$ref
+      .slice(2)
+      .split('/')
+      .reduce((node, key) => node[key], jsonSchema);
+  };
+  const toTransport = (value, rawSchema) => {
+    const schema = resolve(rawSchema);
+    if (value === undefined && schema.nullable) return null;
+    if (value === undefined && schema.type === 'null') return null;
+    if (schema.anyOf) {
+      const match = schema.anyOf.find((choice) => {
+        const candidate = resolve(choice);
+        if (value && typeof value === 'object' && !Array.isArray(value))
+          return (
+            candidate.properties?.type &&
+            resolve(candidate.properties.type).const === value.type
+          );
+        if (Array.isArray(value)) return candidate.type === 'array';
+        if (value === undefined) return candidate.type === 'null';
+        return candidate.type === typeof value;
+      });
+      return toTransport(value, match ?? schema.anyOf[0]);
+    }
+    if (Array.isArray(value))
+      return value.map((item) => toTransport(item, schema.items));
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(schema.properties).map(([key, child]) => [
+          key,
+          toTransport(value[key], child),
+        ]),
+      );
+    }
+    return value;
+  };
+  const transported = openAIWebsiteBlueprintSchema.parse(
+    toTransport(canonical, jsonSchema),
+  );
+  const domain = siteBlueprintSchema.parse(transported);
+  assert.equal(domain.defaultSeo.noIndex, false);
+  assert.equal(domain.pages[0].sections[0].layout.container, 'wide');
+  assert.equal(domain.pages[0].sections[0].components[2].external, false);
 });
 test('stages use an injected client and never call the network', async () => {
   const analysis = await new OpenAIBusinessAnalyzer(fake).analyze(profile, {
