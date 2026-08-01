@@ -19,7 +19,15 @@ class WebsiteRevisionService
     public function create(Project $project, array $blueprint, string $source = 'manual_edit', ?WebsiteRevision $parent = null, ?string $generationRunId = null): WebsiteRevision
     {
         return DB::transaction(function () use ($project, $blueprint, $source, $parent, $generationRunId) {
-            $number = ((int) WebsiteRevision::where('project_id', $project->id)->lockForUpdate()->max('revision_number')) + 1;
+            // Serializing on the project also protects the first revision, when there
+            // is no existing revision row available to lock yet.
+            Project::whereKey($project->id)->lockForUpdate()->firstOrFail();
+
+            $latest = WebsiteRevision::where('project_id', $project->id)
+                ->orderByDesc('revision_number')
+                ->lockForUpdate()
+                ->first();
+            $number = ($latest?->revision_number ?? 0) + 1;
             $revision = WebsiteRevision::create(['organization_id' => $project->organization_id, 'project_id' => $project->id, 'generation_run_id' => $generationRunId, 'parent_revision_id' => $parent?->id, 'revision_number' => $number, 'status' => 'draft', 'source' => $source, 'blueprint' => $this->normalize($blueprint), 'created_by' => auth()->id()]);
             $this->audit('revision.created', $revision);
 
