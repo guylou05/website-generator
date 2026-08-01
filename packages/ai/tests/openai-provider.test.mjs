@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
 import {
   OpenAIBusinessAnalyzer,
   OpenAIContentWriter,
@@ -39,7 +40,7 @@ const fake = {
         navigation: [],
         pages: [],
       });
-    return schema.parse({ pages: {} });
+    return schema.parse({ pages: [] });
   },
 };
 const profile = {
@@ -64,18 +65,104 @@ test('every OpenAI stage schema is strict and fully required', () => {
   assert.equal(audience.nullable, true);
   assert.ok(analysis.properties.offerings.items.required.includes('audience'));
 });
-test('website_copy pages contain a complete page value schema', () => {
-  const schema = validateOpenAISchema(
-    'website_copy',
-    openAISchemas.website_copy,
-  );
-  const page = schema.properties.pages.additionalProperties;
+test('website_copy exact OpenAI JSON schema uses only strict keyed arrays', () => {
+  const schema = zodResponseFormat(openAISchemas.website_copy, 'website_copy')
+    .json_schema.schema;
+  const pages = schema.properties.pages;
+  assert.equal(pages.type, 'array');
+  assert.equal(pages.items.type, 'object');
+  assert.equal('additionalProperties' in pages, false);
 
-  assert.ok(page.properties.sections);
-  assert.ok(page.required.includes('sections'));
-  assert.deepEqual(
-    page.required.toSorted(),
-    Object.keys(page.properties).toSorted(),
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'object') {
+      assert.equal(node.additionalProperties, false);
+      assert.deepEqual(
+        node.required.toSorted(),
+        Object.keys(node.properties).toSorted(),
+      );
+    }
+    for (const child of Object.values(node.properties ?? {})) visit(child);
+    visit(node.items);
+    for (const keyword of ['anyOf', 'oneOf', 'allOf'])
+      for (const child of node[keyword] ?? []) visit(child);
+  };
+  visit(schema);
+});
+
+test('website_copy stage converts an actual structured client response to domain records', async () => {
+  const sdk = {
+    chat: {
+      completions: {
+        parse: async () => ({
+          choices: [
+            {
+              message: {
+                parsed: {
+                  pages: [
+                    {
+                      key: 'home',
+                      sections: [
+                        {
+                          key: 'hero',
+                          heading: 'Websites repaired',
+                          body: null,
+                          items: null,
+                          callToAction: {
+                            label: 'Get help',
+                            destination: '/contact',
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        }),
+      },
+    },
+  };
+  const client = new OpenAIStructuredClient(
+    { apiKey: 'test', model: 'gpt-5.5', timeoutMs: 1000, maxRetries: 0 },
+    sdk,
+  );
+  const result = await new OpenAIContentWriter(client).write(
+    { analysis: {}, plan: {} },
+    { runId: 'test' },
+  );
+  assert.deepEqual(result, {
+    pages: {
+      home: {
+        sections: {
+          hero: {
+            heading: 'Websites repaired',
+            callToAction: { label: 'Get help', destination: '/contact' },
+          },
+        },
+      },
+    },
+  });
+});
+
+test('website_copy rejects duplicate page and section keys clearly', () => {
+  const section = {
+    key: 'hero',
+    heading: null,
+    body: null,
+    items: null,
+    callToAction: null,
+  };
+  assert.throws(
+    () =>
+      openAISchemas.website_copy.parse({
+        pages: [
+          { key: 'home', sections: [section, section] },
+          { key: 'home', sections: [] },
+        ],
+      }),
+    /Duplicate (page|section) key/,
   );
 });
 test('stages use an injected client and never call the network', async () => {
