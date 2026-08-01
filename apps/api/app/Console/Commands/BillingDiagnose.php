@@ -19,7 +19,7 @@ class BillingDiagnose extends Command
                 $this->error($error);
             }
 
-return self::FAILURE;
+            return self::FAILURE;
         }
         $this->info(config('billing.enabled') ? 'Stripe keys, webhook secret, and known prices are configured. No charge was created.' : 'Billing is disabled; free-plan fallback is active.');
 

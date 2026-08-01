@@ -24,6 +24,6 @@ class ReleaseCheck extends Command
             $this->error($error);
         }
 
-return in_array(false, $checks, true) ? self::FAILURE : self::SUCCESS;
+        return in_array(false, $checks, true) ? self::FAILURE : self::SUCCESS;
     }
 }

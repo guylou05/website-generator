@@ -19,7 +19,7 @@ class AiDiagnose extends Command
                 $this->error($error);
             }
 
-return self::FAILURE;
+            return self::FAILURE;
         }
         $this->info('AI provider configuration is ready. No billable request was made.');
 

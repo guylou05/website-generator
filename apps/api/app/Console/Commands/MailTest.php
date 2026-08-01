@@ -27,7 +27,7 @@ class MailTest extends Command
                 $this->error($error);
             }
 
-return self::FAILURE;
+            return self::FAILURE;
         }
         try {
             Mail::raw('This is a SiteFoundry mail configuration test. No action is required.', fn ($mail) => $mail->to($recipient)->subject('SiteFoundry mail test'));
