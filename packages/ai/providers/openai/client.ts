@@ -19,7 +19,7 @@ export interface StructuredOpenAIClient {
     name: string,
     prompt: string,
     input: unknown,
-    schema: z.ZodType<T>,
+    schema: z.ZodType<T, z.ZodTypeDef, unknown>,
     signal?: AbortSignal,
   ): Promise<T>;
   readonly usage: readonly UsageMetadata[];
@@ -108,7 +108,7 @@ export class OpenAIStructuredClient implements StructuredOpenAIClient {
     name: string,
     prompt: string,
     input: unknown,
-    schema: z.ZodType<T>,
+    schema: z.ZodType<T, z.ZodTypeDef, unknown>,
     signal?: AbortSignal,
   ): Promise<T> {
     try {

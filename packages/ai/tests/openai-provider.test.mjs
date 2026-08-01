@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { z } from 'zod';
 import { zodResponseFormat } from 'openai/helpers/zod';
@@ -12,6 +13,7 @@ import {
   readOpenAIConfig,
   openAISchemas,
   openAIWebsiteBlueprintSchema,
+  siteBlueprintSchema,
   findSchemaFormats,
   prepareOpenAISchema,
   validateOpenAISchema,
@@ -198,7 +200,7 @@ test('website_copy stage converts an actual structured client response to domain
   });
 });
 
-test('website_copy rejects duplicate page and section keys clearly', () => {
+test('website_copy normalizes duplicate page and section keys without losing content', () => {
   const section = {
     key: 'hero',
     heading: null,
@@ -206,16 +208,30 @@ test('website_copy rejects duplicate page and section keys clearly', () => {
     items: null,
     callToAction: null,
   };
-  assert.throws(
-    () =>
-      openAISchemas.website_copy.parse({
-        pages: [
-          { key: 'home', sections: [section, section] },
-          { key: 'home', sections: [] },
-        ],
-      }),
-    /Duplicate (page|section) key/,
+  const parsed = openAISchemas.website_copy.parse({
+    pages: [
+      { key: 'home', sections: [section, section, section] },
+      { key: 'home', sections: [] },
+    ],
+  });
+  assert.deepEqual(
+    parsed.pages.map(({ key }) => key),
+    ['home', 'home-2'],
   );
+  assert.deepEqual(
+    parsed.pages[0].sections.map(({ key }) => key),
+    ['hero', 'hero-2', 'hero-3'],
+  );
+});
+
+test('blueprint transport parses directly into the canonical domain schema', () => {
+  const blueprint = JSON.parse(
+    readFileSync(
+      new URL('../../shared/sample-blueprint.json', import.meta.url),
+    ),
+  );
+  const transported = openAIWebsiteBlueprintSchema.parse(blueprint);
+  assert.deepEqual(siteBlueprintSchema.parse(transported), transported);
 });
 test('stages use an injected client and never call the network', async () => {
   const analysis = await new OpenAIBusinessAnalyzer(fake).analyze(profile, {
