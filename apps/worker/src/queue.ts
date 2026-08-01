@@ -1,44 +1,32 @@
 import type Redis from 'ioredis';
+import { z } from 'zod';
 import { logger } from './logger.js';
 
-export type TransportJob = {
-  version: 1;
-  type: 'generation' | 'deployment';
-  uuid: string;
-  attempt: number;
-  enqueued_at: string;
-};
+const transportJobSchema = z
+  .object({
+    id: z.string().uuid(),
+    type: z.enum(['generation', 'deployment', 'media']),
+    resource_id: z.string().uuid(),
+    attempt: z.number().int().positive(),
+    created_at: z.string().datetime({ offset: true }),
+    idempotency_key: z.string().min(1).max(255),
+  })
+  .strict();
+export type TransportJob = z.infer<typeof transportJobSchema>;
 
 export type QueueConfig = {
   generation: string;
   deployment: string;
+  media: string;
   prefix: string;
 };
-
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function queueKey(config: QueueConfig, name: string): string {
   return `${config.prefix}:queue:${name}`;
 }
 
 export function decodeJob(payload: string): TransportJob {
-  const value: unknown = JSON.parse(payload);
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    (value as Partial<TransportJob>).version !== 1 ||
-    !['generation', 'deployment'].includes(
-      String((value as Partial<TransportJob>).type),
-    ) ||
-    !uuidPattern.test(String((value as Partial<TransportJob>).uuid)) ||
-    !Number.isInteger((value as Partial<TransportJob>).attempt) ||
-    Number((value as Partial<TransportJob>).attempt) < 1 ||
-    typeof (value as Partial<TransportJob>).enqueued_at !== 'string'
-  ) {
-    throw new Error('Unsupported interoperable queue payload');
-  }
-  return value as TransportJob;
+  return transportJobSchema.parse(JSON.parse(payload));
 }
 
 export async function consumeOne(
@@ -58,15 +46,21 @@ export async function consumeOne(
     validEnvelope = true;
     if (
       (queueName === config.generation && job.type !== 'generation') ||
-      (queueName === config.deployment && job.type !== 'deployment')
+      (queueName === config.deployment && job.type !== 'deployment') ||
+      (queueName === config.media && job.type !== 'media')
     ) {
       throw new Error('Job type does not match queue');
     }
-    logger.info('Queue job received', { type: job.type, uuid: job.uuid });
-    const lock = `${config.prefix}:job-lock:${job.type}:${job.uuid}`;
+    logger.info('Queue job received', {
+      type: job.type,
+      resourceId: job.resource_id,
+      queue: queueName,
+    });
+    const lock = `${config.prefix}:job-lock:${job.idempotency_key}`;
     if (await redis.set(lock, workerId, 'EX', 300, 'NX')) {
       try {
         await processJob(job);
+        await redis.del(`${config.prefix}:published:${job.idempotency_key}`);
       } catch (error) {
         // An unexpected transport/process crash is retried. Domain failures are
         // reported to the API by JobHandlers and resolve normally.
@@ -76,7 +70,10 @@ export async function consumeOne(
         if ((await redis.get(lock)) === workerId) await redis.del(lock);
       }
     } else {
-      logger.info('Duplicate job ignored', { type: job.type, uuid: job.uuid });
+      logger.info('Duplicate job ignored', {
+        type: job.type,
+        resourceId: job.resource_id,
+      });
     }
   } catch (error) {
     logger.error('Worker job failed', {

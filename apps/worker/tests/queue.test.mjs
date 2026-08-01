@@ -4,11 +4,12 @@ import { decodeJob, queueKey } from '../dist/queue.js';
 
 test('decodes the language-neutral Laravel envelope', () => {
   const payload = JSON.stringify({
-    version: 1,
+    id: '123e4567-e89b-42d3-a456-426614174000',
     type: 'generation',
-    uuid: '123e4567-e89b-42d3-a456-426614174000',
+    resource_id: '123e4567-e89b-42d3-a456-426614174000',
     attempt: 1,
-    enqueued_at: '2026-08-01T00:00:00Z',
+    created_at: '2026-08-01T00:00:00Z',
+    idempotency_key: 'generation:123e4567-e89b-42d3-a456-426614174000:1',
   });
   assert.equal(decodeJob(payload).type, 'generation');
 });
@@ -20,6 +21,7 @@ test('uses the documented prefixed queue key', () => {
         prefix: 'sitefoundry',
         generation: 'website-generation',
         deployment: 'wordpress-deployment',
+        media: 'media-processing',
       },
       'website-generation',
     ),

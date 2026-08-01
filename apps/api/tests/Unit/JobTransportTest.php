@@ -13,14 +13,14 @@ class JobTransportTest extends TestCase
     {
         $connection = Mockery::mock();
         Redis::shouldReceive('connection')->with('queue_transport')->once()->andReturn($connection);
-        $connection->shouldReceive('lpush')->once()->with('sitefoundry:queue:website-generation', Mockery::on(function (string $json): bool {
+        $connection->shouldReceive('eval')->once()->withArgs(function (string $script, int $keys, string $dedupe, string $queue, string $json): bool {
             $payload = json_decode($json, true);
 
-            return $payload['version'] === 1
-                && $payload['type'] === 'generation'
-                && $payload['uuid'] === '123e4567-e89b-42d3-a456-426614174000'
-                && $payload['attempt'] === 1;
-        }));
+            return $keys === 2 && $queue === 'sitefoundry:queue:website-generation'
+                && $dedupe === 'sitefoundry:published:generation:123e4567-e89b-42d3-a456-426614174000:1'
+                && $payload['type'] === 'generation' && $payload['resource_id'] === $payload['id']
+                && $payload['attempt'] === 1 && isset($payload['created_at'], $payload['idempotency_key']);
+        })->andReturn(1);
 
         app(JobTransport::class)->generation('123e4567-e89b-42d3-a456-426614174000');
     }
