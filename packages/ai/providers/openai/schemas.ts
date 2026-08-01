@@ -4,7 +4,7 @@ import { siteBlueprintSchema } from '@website-generator/shared/schema';
 const offering = z.object({
   name: z.string(),
   description: z.string(),
-  audience: z.string().optional(),
+  audience: z.string().nullable(),
 });
 export const businessAnalysisSchema = z.object({
   summary: z.string(),
@@ -22,12 +22,16 @@ export const businessAnalysisSchema = z.object({
   recommendedTone: z.array(z.string()),
   constraints: z.array(z.string()),
 });
-type Navigation = { label: string; pageKey: string; children?: Navigation[] };
+type Navigation = {
+  label: string;
+  pageKey: string;
+  children: Navigation[] | null;
+};
 const navigation: z.ZodType<Navigation> = z.lazy(() =>
   z.object({
     label: z.string(),
     pageKey: z.string(),
-    children: z.array(navigation).optional(),
+    children: z.array(navigation).nullable(),
   }),
 ) as z.ZodType<Navigation>;
 export const websitePlanSchema = z.object({
@@ -66,12 +70,12 @@ export const websiteContentSchema = z.object({
     z.object({
       sections: z.record(
         z.object({
-          heading: z.string().optional(),
-          body: z.string().optional(),
-          items: z.array(contentItem).optional(),
+          heading: z.string().nullable(),
+          body: z.string().nullable(),
+          items: z.array(contentItem).nullable(),
           callToAction: z
             .object({ label: z.string(), destination: z.string() })
-            .optional(),
+            .nullable(),
         }),
       ),
     }),
@@ -123,3 +127,14 @@ export const designPlanSchema = z.object({
   ),
 });
 export { siteBlueprintSchema };
+
+/** Every schema submitted to an OpenAI strict Structured Outputs request. */
+export const openAISchemas = {
+  business_analysis: businessAnalysisSchema,
+  website_plan: websitePlanSchema,
+  website_copy: websiteContentSchema,
+  seo: seoContentSchema,
+  design: designPlanSchema,
+  blueprint: siteBlueprintSchema,
+  blueprint_repair: siteBlueprintSchema,
+} as const;

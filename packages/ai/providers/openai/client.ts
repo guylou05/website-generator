@@ -3,6 +3,7 @@ import { zodResponseFormat } from 'openai/helpers/zod';
 import type { z } from 'zod';
 import type { OpenAIProviderConfig } from './config.js';
 import { SYSTEM_PROMPT } from './prompts.js';
+import { validateOpenAISchema } from './schema-validation.js';
 
 export interface UsageMetadata {
   inputTokens?: number;
@@ -107,6 +108,7 @@ export class OpenAIStructuredClient implements StructuredOpenAIClient {
     signal?: AbortSignal,
   ): Promise<T> {
     try {
+      validateOpenAISchema(name, schema);
       const completion = await this.sdk.chat.completions.parse(
         {
           model: this.config.model,

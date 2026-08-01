@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { componentSchema } from './component.js';
+import { nullableOptional } from './structured-output.js';
 /** A semantic region whose layout hints are portable across builders. */
 export const sectionSchema = z
   .object({
@@ -14,7 +15,7 @@ export const sectionSchema = z
       'contact',
       'custom',
     ]),
-    label: z.string().min(1).optional(),
+    label: nullableOptional(z.string().min(1)),
     layout: z
       .object({
         container: z

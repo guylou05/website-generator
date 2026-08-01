@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { nullableOptional } from './structured-output.js';
 export interface NavigationItem {
   id: string;
   label: string;
@@ -25,14 +26,15 @@ export const navigationSchema = z
   .object({
     ariaLabel: z.string().min(1).default('Primary navigation'),
     items: z.array(navigationItemSchema),
-    cta: z
-      .object({
-        label: z.string().min(1),
-        href: z.string().min(1),
-        external: z.boolean().default(false),
-      })
-      .strict()
-      .optional(),
+    cta: nullableOptional(
+      z
+        .object({
+          label: z.string().min(1),
+          href: z.string().min(1),
+          external: z.boolean().default(false),
+        })
+        .strict(),
+    ),
   })
   .strict();
 export type Navigation = z.infer<typeof navigationSchema>;

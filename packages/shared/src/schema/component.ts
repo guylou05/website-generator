@@ -1,15 +1,17 @@
 import { z } from 'zod';
+import { nullableOptional } from './structured-output.js';
 const base = {
   id: z.string().min(1),
-  accessibilityLabel: z.string().min(1).optional(),
-  style: z
-    .object({
-      variant: z.string().min(1).optional(),
-      align: z.enum(['start', 'center', 'end']).optional(),
-      width: z.enum(['auto', 'full']).optional(),
-    })
-    .strict()
-    .optional(),
+  accessibilityLabel: nullableOptional(z.string().min(1)),
+  style: nullableOptional(
+    z
+      .object({
+        variant: nullableOptional(z.string().min(1)),
+        align: nullableOptional(z.enum(['start', 'center', 'end'])),
+        width: nullableOptional(z.enum(['auto', 'full'])),
+      })
+      .strict(),
+  ),
 };
 export const headingComponentSchema = z
   .object({
@@ -38,9 +40,9 @@ export const imageComponentSchema = z
     type: z.literal('image'),
     url: z.string().url(),
     alt: z.string(),
-    caption: z.string().min(1).optional(),
-    width: z.number().int().positive().optional(),
-    height: z.number().int().positive().optional(),
+    caption: nullableOptional(z.string().min(1)),
+    width: nullableOptional(z.number().int().positive()),
+    height: nullableOptional(z.number().int().positive()),
     loading: z.enum(['eager', 'lazy']).default('lazy'),
   })
   .strict();
@@ -51,14 +53,14 @@ export const formFieldSchema = z
     label: z.string().min(1),
     type: z.enum(['text', 'email', 'tel', 'textarea', 'select', 'checkbox']),
     required: z.boolean().default(false),
-    placeholder: z.string().optional(),
-    options: z
-      .array(
+    placeholder: nullableOptional(z.string()),
+    options: nullableOptional(
+      z.array(
         z
           .object({ label: z.string().min(1), value: z.string().min(1) })
           .strict(),
-      )
-      .optional(),
+      ),
+    ),
   })
   .strict()
   .superRefine((field, context) => {
@@ -79,7 +81,7 @@ export const formComponentSchema = z
     fields: z.array(formFieldSchema).min(1),
     submitLabel: z.string().min(1),
     successMessage: z.string().min(1),
-    consentText: z.string().min(1).optional(),
+    consentText: nullableOptional(z.string().min(1)),
   })
   .strict();
 /** Builder-neutral content primitives supported by every renderer. */
