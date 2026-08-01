@@ -146,3 +146,5 @@ The platform includes a tenant-safe, revision-aware media pipeline for private u
 ## Production operations
 
 The controlled-production runbook is in [production readiness](docs/production-readiness.md), the complete 17-step journey is in [smoke testing](docs/smoke-testing.md), and restore/key-rotation procedures are in [backup and recovery](docs/backup-recovery.md). Build the installable connector with `pnpm build:wordpress-plugin`; the artifact is `dist/sitefoundry-connector.zip`.
+
+The supported customer routes, API/role matrix, staging checklist, and external-service requirements are documented in [Customer product completion](docs/customer-product-completion.md).

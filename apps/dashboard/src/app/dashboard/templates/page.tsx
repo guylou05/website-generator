@@ -1,7 +1,7 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeading } from '@/components/page-heading';
-import { templates } from '@/lib/mock-data';
+import { templates } from '@/lib/template-catalog';
 export default function Templates() {
   return (
     <>

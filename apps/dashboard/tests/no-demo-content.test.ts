@@ -14,6 +14,7 @@ const forbidden = [
   'Flora Studio',
   '24.8K',
   '4m 18s',
+  '92%',
 ];
 async function files(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });

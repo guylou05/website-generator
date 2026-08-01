@@ -1,24 +1,8 @@
 'use client';
-import Link from 'next/link';
-import { useReducer, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  Circle,
-  Loader2,
-  RotateCcw,
-  Sparkles,
-  XCircle,
-} from 'lucide-react';
-import {
-  generationReducer,
-  generationStages,
-  initialGenerationState,
-  type WebsiteWizardData,
-} from '@/lib/website-generation';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from 'lucide-react';
+import { type WebsiteWizardData } from '@/lib/website-generation';
 import { dashboardApi } from '@/lib/api-client';
 
 const steps = [
@@ -42,14 +26,53 @@ const initialForm: WebsiteWizardData = {
 export default function NewWebsite() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initialForm);
-  const [generation, dispatch] = useReducer(
-    generationReducer,
-    initialGenerationState,
-  );
-  const controller = useRef<AbortController | null>(null);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const submitted = useRef(false);
   const router = useRouter();
+  const search = useSearchParams();
+  useEffect(() => {
+    const saved = window.localStorage.getItem('sitefoundry.website-draft');
+    if (saved)
+      try {
+        const draft = JSON.parse(saved) as {
+          step: number;
+          form: WebsiteWizardData;
+        };
+        setStep(Math.min(draft.step, 6));
+        setForm(draft.form);
+      } catch {
+        window.localStorage.removeItem('sitefoundry.website-draft');
+      }
+    const template = search.get('template');
+    if (template)
+      setForm((current) => ({ ...current, template }) as WebsiteWizardData);
+  }, [search]);
+  useEffect(() => {
+    window.localStorage.setItem(
+      'sitefoundry.website-draft',
+      JSON.stringify({ step, form }),
+    );
+  }, [form, step]);
+  const validation = validateStep(step, form);
+  const next = () => {
+    if (validation) {
+      setError(validation);
+      return;
+    }
+    setError('');
+    setStep((value) => value + 1);
+  };
   const start = () => {
-    dispatch({ type: 'start', stage: 'analysis' });
+    if (submitted.current || submitting) return;
+    const issue = validateStep(6, form);
+    if (issue) {
+      setError(issue);
+      return;
+    }
+    submitted.current = true;
+    setSubmitting(true);
+    setError('');
     void (async () => {
       try {
         const project = await dashboardApi.createProject({
@@ -60,32 +83,19 @@ export default function NewWebsite() {
         const run = await dashboardApi.createGeneration(project.id, {
           ...form,
         });
-        if (run.status === 'completed')
-          router.push(`/dashboard/projects/${project.id}`);
-        else
-          dispatch({
-            type: 'fail',
-            stage: 'analysis',
-            error: run.error?.message ?? 'Generation failed.',
-          });
+        window.localStorage.removeItem('sitefoundry.website-draft');
+        router.push(`/dashboard/projects/${project.id}/generations/${run.id}`);
       } catch (error) {
-        dispatch({
-          type: 'fail',
-          stage: 'analysis',
-          error: error instanceof Error ? error.message : 'Generation failed.',
-        });
+        submitted.current = false;
+        setSubmitting(false);
+        setError(
+          error instanceof Error
+            ? error.message
+            : 'The project could not be created.',
+        );
       }
     })();
   };
-  if (generation.status !== 'idle')
-    return (
-      <Generation
-        form={form}
-        state={generation}
-        onRetry={start}
-        onCancel={() => controller.current?.abort()}
-      />
-    );
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-8">
@@ -135,13 +145,18 @@ export default function NewWebsite() {
             Back
           </button>
           <button
-            onClick={() => (step === 6 ? start() : setStep((x) => x + 1))}
+            disabled={submitting}
+            onClick={() => (step === 6 ? start() : next())}
             className="bg-primary text-primary-foreground flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium shadow-lg"
           >
             {step === 6 ? (
               <>
-                <Sparkles className="size-4" />
-                Generate Website
+                {submitting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                {submitting ? 'Creating project…' : 'Generate Website'}
               </>
             ) : (
               <>
@@ -151,6 +166,11 @@ export default function NewWebsite() {
             )}
           </button>
         </div>
+        {error && (
+          <p role="alert" className="mt-4 text-sm text-red-600">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -211,65 +231,98 @@ function WizardStep({
           </div>
         )}
         {step === 1 && (
-          <select
-            className="field"
-            value={form.businessType}
-            onChange={(e) => update('businessType', e.target.value)}
-          >
-            {[
-              'Professional services',
-              'Health & wellness',
-              'Technology & SaaS',
-              'Creative & design',
-              'Retail & e-commerce',
-            ].map((x) => (
-              <option key={x}>{x}</option>
-            ))}
-          </select>
+          <label className="text-sm font-medium">
+            Business type
+            <select
+              className="field mt-2"
+              value={form.businessType}
+              onChange={(e) => update('businessType', e.target.value)}
+            >
+              <option value="" disabled>
+                Select a business type
+              </option>
+              {[
+                'Professional services',
+                'Health & wellness',
+                'Technology & SaaS',
+                'Creative & design',
+                'Retail & e-commerce',
+              ].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </label>
         )}
         {step === 2 && (
-          <textarea
-            className="field min-h-32"
-            value={form.services.join('\n')}
-            onChange={(e) =>
-              update('services', e.target.value.split('\n').filter(Boolean))
-            }
-          />
+          <label className="text-sm font-medium">
+            Services, one per line
+            <textarea
+              className="field mt-2 min-h-32"
+              value={form.services.join('\n')}
+              onChange={(e) =>
+                update(
+                  'services',
+                  e.target.value
+                    .split('\n')
+                    .map((value) => value.trim())
+                    .filter(Boolean),
+                )
+              }
+            />
+          </label>
         )}
         {step === 3 && (
-          <div className="flex gap-3">
-            {form.brandColors.map((color) => (
-              <span
-                key={color}
-                className="border-card ring-border size-12 rounded-full border-4 shadow ring-1"
-                style={{ background: color }}
-              />
+          <div className="flex flex-wrap gap-4">
+            {form.brandColors.map((color, index) => (
+              <label className="text-muted-foreground text-xs" key={index}>
+                Color {index + 1}
+                <input
+                  aria-label={`Brand color ${index + 1}`}
+                  type="color"
+                  className="mt-2 block size-12 cursor-pointer rounded-full border-0 bg-transparent"
+                  value={color}
+                  onChange={(event) => {
+                    const colors = [...form.brandColors];
+                    colors[index] = event.target.value;
+                    update('brandColors', colors);
+                  }}
+                />
+              </label>
             ))}
           </div>
         )}
         {step === 4 && (
-          <textarea
-            className="field min-h-36 resize-none"
-            value={form.targetAudience}
-            onChange={(e) => update('targetAudience', e.target.value)}
-          />
+          <label className="text-sm font-medium">
+            Target audience
+            <textarea
+              className="field mt-2 min-h-36 resize-none"
+              value={form.targetAudience}
+              onChange={(e) => update('targetAudience', e.target.value)}
+            />
+          </label>
         )}
         {step === 5 && (
-          <select
-            className="field"
-            value={form.websiteGoal}
-            onChange={(e) => update('websiteGoal', e.target.value)}
-          >
-            {[
-              'Generate qualified leads',
-              'Book more appointments',
-              'Sell products online',
-              'Showcase my work',
-              'Build brand awareness',
-            ].map((x) => (
-              <option key={x}>{x}</option>
-            ))}
-          </select>
+          <label className="text-sm font-medium">
+            Primary website goal
+            <select
+              className="field mt-2"
+              value={form.websiteGoal}
+              onChange={(e) => update('websiteGoal', e.target.value)}
+            >
+              <option value="" disabled>
+                Select a goal
+              </option>
+              {[
+                'Generate qualified leads',
+                'Book more appointments',
+                'Sell products online',
+                'Showcase my work',
+                'Build brand awareness',
+              ].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </label>
         )}
         {step === 6 && (
           <div className="space-y-3">
@@ -294,154 +347,19 @@ function WizardStep({
     </div>
   );
 }
-function Generation({
-  form,
-  state,
-  onRetry,
-  onCancel,
-}: {
-  form: WebsiteWizardData;
-  state: ReturnType<typeof generationReducer>;
-  onRetry: () => void;
-  onCancel: () => void;
-}) {
-  if (state.status === 'success' && state.result)
-    return (
-      <div className="mx-auto max-w-2xl py-16 text-center">
-        <CheckCircle2 className="mx-auto size-14 text-emerald-500" />
-        <h1 className="mt-5 text-2xl font-semibold">
-          {state.result.websiteName} is ready
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Your mock project was generated successfully.
-        </p>
-        <div className="card mt-8 grid gap-4 p-6 text-left sm:grid-cols-3">
-          <Status
-            label="Pages generated"
-            value={String(state.result.pagesGenerated)}
-          />
-          <Status
-            label="Blueprint"
-            value={state.result.blueprintValid ? 'Validated' : 'Invalid'}
-          />
-          <Status
-            label="Elementor output"
-            value={state.result.elementorReady ? 'Ready' : 'Unavailable'}
-          />
-        </div>
-        <div className="mt-6 flex justify-center gap-3">
-          <Link
-            href="/dashboard/projects"
-            className="rounded-lg border px-5 py-2.5 text-sm font-medium"
-          >
-            View Project
-          </Link>
-          <button className="bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-medium">
-            Prepare Deployment
-          </button>
-        </div>
-      </div>
-    );
-  return (
-    <div className="mx-auto max-w-2xl py-8 sm:py-16">
-      <div className="text-center">
-        <Sparkles className="text-primary mx-auto size-10" />
-        <h1 className="mt-5 text-2xl font-semibold">
-          Creating {form.businessName}
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Live progress from the website generation orchestrator.
-        </p>
-      </div>
-      <div className="card mt-8 p-6 sm:p-8">
-        <div className="mb-5 flex items-end justify-between">
-          <div>
-            <p className="text-sm font-medium">
-              {state.failedStage
-                ? 'Generation paused'
-                : state.currentStage
-                  ? generationStages.find(
-                      ([id]) => id === state.currentStage,
-                    )?.[1]
-                  : 'Generation progress'}
-            </p>
-            <p className="text-muted-foreground mt-1 text-xs">
-              {state.completedStages.length} of {generationStages.length} stages
-              complete
-            </p>
-          </div>
-          <p className="text-2xl font-semibold">{state.percentage}%</p>
-        </div>
-        <div className="bg-muted mb-6 h-2 overflow-hidden rounded-full">
-          <div
-            className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all"
-            style={{ width: `${state.percentage}%` }}
-          />
-        </div>
-        <div className="space-y-1">
-          {generationStages.map(([id, label]) => {
-            const complete = state.completedStages.includes(id);
-            const active = state.currentStage === id;
-            const failed = state.failedStage === id;
-            return (
-              <div
-                key={id}
-                className={`flex items-center gap-3 rounded-lg p-3 ${active ? 'bg-primary/5' : ''}`}
-              >
-                {complete ? (
-                  <CheckCircle2 className="size-5 text-emerald-500" />
-                ) : failed ? (
-                  <XCircle className="size-5 text-red-500" />
-                ) : active ? (
-                  <Loader2 className="text-primary size-5 animate-spin" />
-                ) : (
-                  <Circle className="text-border size-5" />
-                )}
-                <span className="text-sm">{label}</span>
-                <span className="text-muted-foreground ml-auto text-xs">
-                  {complete
-                    ? 'Complete'
-                    : failed
-                      ? 'Failed'
-                      : active
-                        ? 'In progress'
-                        : 'Waiting'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        {state.error && (
-          <p className="mt-4 text-sm text-red-600">{state.error}</p>
-        )}
-        <div className="mt-6 flex gap-3">
-          {state.status === 'failed' || state.status === 'cancelled' ? (
-            <button
-              onClick={onRetry}
-              className="bg-primary text-primary-foreground flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium"
-            >
-              <RotateCcw className="size-4" />
-              Retry
-            </button>
-          ) : (
-            <button
-              onClick={onCancel}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium"
-            >
-              <XCircle className="size-4" />
-              Cancel
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-function Status({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="mt-1 font-semibold">{value}</p>
-    </div>
-  );
+
+function validateStep(step: number, form: WebsiteWizardData): string {
+  if ((step === 0 || step === 6) && form.businessName.trim().length < 2)
+    return 'Enter a business name of at least two characters.';
+  if ((step === 1 || step === 6) && !form.businessType)
+    return 'Choose a business type.';
+  if ((step === 2 || step === 6) && form.services.length === 0)
+    return 'Add at least one service, one per line.';
+  if ((step === 3 || step === 6) && form.brandColors.length === 0)
+    return 'Choose at least one brand color.';
+  if ((step === 4 || step === 6) && form.targetAudience.trim().length < 3)
+    return 'Describe your target audience.';
+  if ((step === 5 || step === 6) && !form.websiteGoal)
+    return 'Choose a website goal.';
+  return '';
 }

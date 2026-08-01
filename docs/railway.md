@@ -89,3 +89,5 @@ The `scheduler` service uses `/apps/api/railway.scheduler.toml`, which starts `p
 5. Trigger a mock generation and verify it reaches a terminal successful state.
 
 Keep the API, worker, and scheduler on Railway's private network whenever a public URL is not required. Only the API and dashboard need public ingress.
+
+For a customer-flow staging pass, follow `docs/customer-product-completion.md`. In particular, run both the queue worker and scheduler services before submitting the wizard; queued progress without new persisted events is presented as a worker/queue delay rather than fabricated progress.

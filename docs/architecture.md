@@ -66,3 +66,7 @@ Laravel maps Stripe prices to stable internal plans and is the subscription/usag
 # Customer dashboard data boundary
 
 Dashboard overview, profile, and organization settings are served by authenticated Laravel endpoints. Overview queries are always constrained by `current_organization_id`; personal profile fields are not stored on the organization. See [dashboard completion](dashboard-completion.md) for the route matrix and intentionally unsupported controls.
+
+### Customer workflow boundary
+
+The authenticated dashboard treats Laravel resources as authoritative. The new-website form only keeps a recoverable pre-submission draft in browser storage; after project creation it redirects to a run-addressed progress route that polls persisted generation events. Refreshing therefore neither simulates work nor creates another project. See `docs/customer-product-completion.md` for the route and role matrix.
