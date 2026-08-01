@@ -20,7 +20,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
 
     protected function casts(): array
     {
-        return ['email_verified_at' => 'datetime', 'last_login_at' => 'datetime', 'password' => 'hashed'];
+        return ['email_verified_at' => 'datetime', 'last_login_at' => 'datetime', 'onboarding_completed_at' => 'datetime', 'welcome_email_sent_at' => 'datetime', 'password' => 'hashed'];
     }
 
     public function currentOrganization(): BelongsTo

@@ -2,6 +2,12 @@
 
 The dashboard depends on the `AuthProvider` contract, not Laravel Sanctum. The current `SanctumAuthProvider` uses encrypted server-side sessions. A future Passport/OAuth provider can implement the same contract without changing pages.
 
+## Transactional registration and verification
+
+The user, initial organization, active owner membership, current organization, and onboarding state commit atomically. After commit, verification and idempotent welcome notifications are queued. Mail delivery failure is logged and retryable and leaves verification pending; it cannot fail registration. The authenticated response includes `email_verification_pending` after the session is regenerated.
+
+Users can request another link through the rate-limited `POST /api/auth/email/verification-notification` endpoint. Run a Laravel queue worker wherever email should be delivered. Inspect legacy data with `php artisan users:repair-registration --dry-run` and apply non-destructive repairs with `php artisan users:repair-registration --fix`.
+
 ```text
 Direct: browser ──credentials + XSRF──▶ Laravel API
 Proxy:  browser ──host-only cookies──▶ Next.js ──private URL──▶ Laravel API

@@ -16,13 +16,41 @@ import { dashboardApi, type Project } from '@/lib/api-client';
 
 export default async function Dashboard() {
   let projects: Project[] = [];
+  let user = null;
   try {
-    projects = await dashboardApi.projects();
+    [projects, user] = await Promise.all([
+      dashboardApi.projects(),
+      dashboardApi.currentUser(),
+    ]);
   } catch {
     /* The projects page exposes connection errors. */
   }
   return (
     <div className="space-y-8">
+      {user && projects.length === 0 && (
+        <section className="card border-primary/20 bg-primary/5 p-5">
+          <h2 className="font-semibold">Your organization is ready</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Complete these quick first steps:
+          </p>
+          <div className="mt-3 flex flex-wrap gap-4 text-sm">
+            <Link className="text-primary font-medium" href="/dashboard/new">
+              Create a project
+            </Link>
+            {user.email_verification_pending && (
+              <Link className="text-primary font-medium" href="/verify-email">
+                Verify email
+              </Link>
+            )}
+            <Link
+              className="text-primary font-medium"
+              href="/dashboard/settings"
+            >
+              Complete organization profile
+            </Link>
+          </div>
+        </section>
+      )}
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-muted-foreground text-sm">Wednesday, July 22</p>

@@ -37,6 +37,36 @@ class EnvironmentValidator
             $errors[] = 'DASHBOARD_URL or CORS_ALLOWED_ORIGINS must identify the dashboard.';
         }
 
+        $production = $value('APP_ENV', 'local') === 'production';
+        $mailer = (string) $value('MAIL_MAILER', 'log');
+        $fromAddress = trim((string) $value('MAIL_FROM_ADDRESS', $production ? '' : 'noreply@example.com'));
+        $fromName = trim((string) $value('MAIL_FROM_NAME', $production ? '' : 'SiteFoundry'));
+        if (! filter_var($fromAddress, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'MAIL_FROM_ADDRESS must be a valid RFC-compliant email address (for example, noreply@example.com).';
+        }
+        if ($production && $this->isPlaceholderEmail($fromAddress)) {
+            $errors[] = 'MAIL_FROM_ADDRESS must not contain a placeholder value in production.';
+        }
+        if ($production && $fromName === '') {
+            $errors[] = 'MAIL_FROM_NAME must not be empty in production.';
+        }
+        if ($production && $mailer === 'log') {
+            $errors[] = 'MAIL_MAILER=log is only suitable for non-production environments.';
+        }
+        if ($production && $value('QUEUE_CONNECTION', 'sync') === 'sync') {
+            $errors[] = 'QUEUE_CONNECTION must use an asynchronous driver in production.';
+        }
+
         return $errors;
+    }
+
+    private function isPlaceholderEmail(string $email): bool
+    {
+        $lower = strtolower($email);
+
+        return str_contains($lower, '<') || str_contains($lower, '>')
+            || str_contains($lower, 'your_domain') || str_contains($lower, 'your-domain')
+            || str_contains($lower, 'placeholder') || str_ends_with($lower, '@example.com')
+            || str_ends_with($lower, '@example.org') || str_ends_with($lower, '@example.net');
     }
 }

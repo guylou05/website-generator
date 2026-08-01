@@ -31,6 +31,12 @@ See [`docs/architecture.md`](docs/architecture.md) for dependency boundaries and
 
 Deployment configuration is documented in the [authentication](docs/authentication.md), [environment](docs/environment.md), [Docker](docs/docker.md), [Railway](docs/railway.md), and [deployment](docs/deployment.md) guides.
 
+## Registration operations
+
+Registration creates the user, organization, owner membership, current organization, and onboarding state in one transaction. Verification and welcome mail is queued after commit, so delivery failures never leave a partial account or turn a successful registration into an error. Production needs a queue worker and valid mail transport. For local use, set `MAIL_MAILER=log`, `MAIL_FROM_ADDRESS=noreply@example.com`, and `MAIL_FROM_NAME=SiteFoundry`.
+
+Inspect old or interrupted registrations with `php artisan users:repair-registration --dry-run`; use `--fix` to safely add or correct relationships. The command never deletes records.
+
 ## Prerequisites
 
 - Docker Engine with Docker Compose v2 (recommended), or

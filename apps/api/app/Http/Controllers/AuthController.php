@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendWelcomeEmail;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Notifications\QueuedVerifyEmail;
 use App\Services\AuditService;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -37,7 +39,18 @@ class AuthController extends Controller
 
             return $user;
         });
-        event(new Registered($user));
+        // Account creation is authoritative. Mail is queued only after the
+        // transaction commits and can never turn a valid registration into a 500.
+        try {
+            $user->notify(new QueuedVerifyEmail);
+        } catch (\Throwable $exception) {
+            Log::error('Unable to queue registration verification email.', ['user_id' => $user->id, 'exception' => $exception::class]);
+        }
+        try {
+            SendWelcomeEmail::dispatch($user->id)->afterCommit();
+        } catch (\Throwable $exception) {
+            Log::error('Unable to queue registration welcome email.', ['user_id' => $user->id, 'exception' => $exception::class]);
+        }
         Auth::login($user);
         $request->session()->regenerate();
         $audit->record($request, 'registration', 'user', $user->id, [], $user->current_organization_id);
@@ -95,7 +108,11 @@ class AuthController extends Controller
     public function verification(Request $request): JsonResponse
     {
         if (! $request->user()->hasVerifiedEmail()) {
-            $request->user()->sendEmailVerificationNotification();
+            try {
+                $request->user()->notify(new QueuedVerifyEmail);
+            } catch (\Throwable $exception) {
+                Log::error('Unable to queue requested verification email.', ['user_id' => $request->user()->id, 'exception' => $exception::class]);
+            }
         }
 
         return response()->json(['data' => ['message' => 'If verification is required, a link has been sent.']]);
@@ -117,6 +134,6 @@ class AuthController extends Controller
         $user->load(['currentOrganization', 'memberships']);
         $membership = $user->current_organization_id ? $user->membershipFor($user->current_organization_id) : null;
 
-        return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'email_verified_at' => $user->email_verified_at, 'current_organization' => $user->currentOrganization, 'current_role' => $membership?->role];
+        return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'email_verified_at' => $user->email_verified_at, 'email_verification_pending' => ! $user->hasVerifiedEmail(), 'current_organization' => $user->currentOrganization, 'current_role' => $membership?->role];
     }
 }
