@@ -65,25 +65,28 @@ export const websitePlanSchema = z.object({
   ),
 });
 const contentItem = z.object({ title: z.string(), body: z.string() });
+const websiteCopySectionSchema = z
+  .object({
+    heading: z.string().nullable(),
+    body: z.string().nullable(),
+    items: z.array(contentItem).nullable(),
+    callToAction: z
+      .object({ label: z.string(), destination: z.string() })
+      .nullable(),
+  })
+  .strict();
+const websiteCopyPageSchema = z
+  .object({
+    sections: z.record(z.string(), websiteCopySectionSchema),
+  })
+  .strict();
 export const websiteContentSchema = z.object({
-  pages: z.record(
-    z.object({
-      sections: z.record(
-        z.object({
-          heading: z.string().nullable(),
-          body: z.string().nullable(),
-          items: z.array(contentItem).nullable(),
-          callToAction: z
-            .object({ label: z.string(), destination: z.string() })
-            .nullable(),
-        }),
-      ),
-    }),
-  ),
+  pages: z.record(z.string(), websiteCopyPageSchema),
 });
 export const seoContentSchema = z.object({
   siteTitle: z.string(),
   pages: z.record(
+    z.string(),
     z.object({
       title: z.string(),
       description: z.string(),
@@ -109,8 +112,10 @@ export const designPlanSchema = z.object({
     spacingScale: z.enum(['compact', 'comfortable', 'spacious']),
   }),
   pageLayouts: z.record(
+    z.string(),
     z.object({
       sections: z.record(
+        z.string(),
         z.object({
           container: z.enum(['narrow', 'standard', 'wide', 'full']),
           columns: z.number().int().min(1).max(4),
