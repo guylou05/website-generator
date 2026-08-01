@@ -13,11 +13,9 @@ class RecoverStaleJobs extends Command
 
     protected $description = 'Recover jobs whose worker heartbeat expired';
 
-    public function handle(): int
+    public function handle(StaleJobRecoveryService $recovery): int
     {
-        $cutoff = now()->subSeconds(config('app.job_stale_after_seconds'));
-        $count = GenerationRun::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->count()
-            + Deployment::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->count();
+        $count = $recovery->countAll();
         if (! $this->option('execute')) {
             $this->info("Dry run: {$count} stale job(s) found; no records changed. Pass --execute to recover them.");
 

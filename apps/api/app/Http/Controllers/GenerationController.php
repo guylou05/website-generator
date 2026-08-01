@@ -65,6 +65,9 @@ class GenerationController extends Controller
 
     public function cancel(GenerationRun $generationRun): GenerationRunResource|JsonResponse
     {
+        if ($generationRun->status === 'cancelling') {
+            return new GenerationRunResource($generationRun->load('events'));
+        }
         if (! in_array($generationRun->status, ['queued', 'running'], true)) {
             return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'This generation can no longer be cancelled.']], 409);
         }
