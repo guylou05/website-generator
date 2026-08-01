@@ -18,3 +18,7 @@ All endpoints below require the authenticated Sanctum session. Overview and orga
 - `POST /api/profile/change-password` — requires `current_password`, `password`, and `password_confirmation`.
 - `GET|DELETE /api/profile/sessions[/{session}]` and `POST /api/profile/sessions/revoke-others` — sanitized session management when database sessions are configured.
 - `GET|PATCH /api/organization/settings` — organization metadata; only owners/admins may patch.
+
+## Customer generation lifecycle
+
+The wizard persists no server draft: its final submission creates the organization-scoped project with `POST /api/projects`, then starts a run with `POST /api/projects/{project}/generations`. Clients reconnect with `GET /api/generations/{run}` and render the persisted event collection. `POST /api/generations/{run}/cancel` and `/retry` are idempotency-protected lifecycle actions. Provider errors are returned as bounded safe error objects; credentials never appear in inputs or resources.

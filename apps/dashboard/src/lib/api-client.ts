@@ -14,7 +14,15 @@ export interface GenerationRun {
   id: string;
   projectId: string;
   provider: 'mock' | 'openai';
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  status:
+    | 'pending'
+    | 'queued'
+    | 'running'
+    | 'completed'
+    | 'succeeded'
+    | 'failed'
+    | 'cancelled'
+    | 'stale';
   currentStage: string | null;
   progress: number;
   input: Record<string, unknown>;
@@ -614,6 +622,9 @@ export class DashboardApiClient {
     return mapGeneration(
       await this.call<Wire>(`/generations/${id}/retry`, { method: 'POST' }),
     );
+  }
+  async generation(id: string): Promise<GenerationRun> {
+    return mapGeneration(await this.call<Wire>(`/generations/${id}`));
   }
   async cancelGeneration(id: string): Promise<GenerationRun> {
     return mapGeneration(
