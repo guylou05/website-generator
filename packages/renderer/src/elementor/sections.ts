@@ -2,6 +2,7 @@ import type {
   Footer,
   Navigation,
   Section,
+  SectionType,
 } from '@website-generator/shared/schema';
 import type { ElementorIdFactory } from './ids.js';
 import {
@@ -15,6 +16,7 @@ import type {
   ElementorSectionKind,
 } from './types.js';
 import { UnsupportedElementorSectionError } from './types.js';
+import { ElementorRenderError } from './types.js';
 import {
   accordionWidget,
   buttonWidget,
@@ -40,31 +42,60 @@ function container(
   };
 }
 
-export function identifySection(section: Section): ElementorSectionKind {
-  if (section.type !== 'custom') {
-    if (section.type === 'services') return 'services';
-    if (
-      ['hero', 'features', 'testimonials', 'cta', 'contact'].includes(
-        section.type,
-      )
-    )
-      return section.type as ElementorSectionKind;
+export type ElementorSectionRendering = 'specialized' | 'generic';
+
+/** Exhaustive contract between the canonical schema and the Elementor renderer. */
+export const ELEMENTOR_SECTION_COMPATIBILITY = {
+  hero: 'specialized',
+  content: 'generic',
+  features: 'specialized',
+  services: 'specialized',
+  testimonials: 'specialized',
+  cta: 'specialized',
+  contact: 'specialized',
+  custom: 'generic',
+} as const satisfies Record<SectionType, ElementorSectionRendering>;
+
+export const ELEMENTOR_GENERIC_SECTION_TYPES = [
+  'content',
+  'custom',
+] as const satisfies readonly SectionType[];
+
+export function identifySection(
+  section: Section,
+  pageId?: string,
+): SectionType | ElementorSectionKind {
+  if (section.type === 'custom') {
+    const value = `${section.id} ${section.label ?? ''}`.toLowerCase();
+    if (value.includes('header')) return 'header';
+    if (value.includes('footer')) return 'footer';
+    if (value.includes('trust')) return 'trust-bar';
+    if (value.includes('pricing') || value.includes('plan')) return 'pricing';
+    if (value.includes('faq') || value.includes('question')) return 'faq';
   }
-  const value = `${section.id} ${section.label ?? ''}`.toLowerCase();
-  if (value.includes('header')) return 'header';
-  if (value.includes('footer')) return 'footer';
-  if (value.includes('trust')) return 'trust-bar';
-  if (value.includes('pricing') || value.includes('plan')) return 'pricing';
-  if (value.includes('faq') || value.includes('question')) return 'faq';
-  throw new UnsupportedElementorSectionError(section.id, section.type);
+  if (section.type in ELEMENTOR_SECTION_COMPATIBILITY) return section.type;
+  throw new UnsupportedElementorSectionError(section.id, section.type, {
+    ...(pageId === undefined ? {} : { pageId }),
+    componentCount: section.components.length,
+  });
 }
 
 export function renderSection(
   section: Section,
   ids: ElementorIdFactory,
   context: ElementorStyleContext,
+  pageId?: string,
 ): ElementorContainer {
-  const kind = identifySection(section);
+  const unsupportedComponent = section.components.find(
+    (component) =>
+      !['heading', 'text', 'button', 'image', 'form'].includes(component.type),
+  );
+  if (unsupportedComponent)
+    throw new ElementorRenderError(
+      `Unsupported Elementor component type "${unsupportedComponent.type}" (page ID "${pageId ?? 'unknown'}", section ID "${section.id}", section type "${section.type}", component count ${section.components.length}, unsupported component type "${unsupportedComponent.type}")`,
+      `sections.${section.id}.components.${unsupportedComponent.id}`,
+    );
+  const kind = identifySection(section, pageId);
   const scope = `section.${section.id}`;
   const baseSettings = {
     ...sectionStyleSettings(
@@ -86,8 +117,8 @@ export function renderSection(
   if (
     kind === 'services' ||
     kind === 'features' ||
-    kind === 'pricing' ||
     kind === 'testimonials' ||
+    kind === 'pricing' ||
     kind === 'trust-bar'
   )
     return container(
@@ -106,6 +137,30 @@ export function renderSection(
     ),
     false,
   );
+}
+
+function renderFaq(
+  section: Section,
+  ids: ElementorIdFactory,
+  scope: string,
+  context: ElementorStyleContext,
+): readonly ElementorElement[] {
+  const elements: ElementorElement[] = [];
+  const items: { title: string; content: string }[] = [];
+  for (let index = 0; index < section.components.length; index += 1) {
+    const component = section.components[index];
+    const answer = section.components[index + 1];
+    if (component?.type === 'heading' && component.level <= 2)
+      elements.push(componentWidget(component, ids, scope, context));
+    else if (component?.type === 'heading' && answer?.type === 'text') {
+      items.push({ title: component.text, content: answer.text });
+      index += 1;
+    } else if (component)
+      elements.push(componentWidget(component, ids, scope, context));
+  }
+  if (items.length)
+    elements.push(accordionWidget(ids, `${scope}.accordion`, items, context));
+  return elements;
 }
 
 function renderCardSection(
@@ -147,30 +202,6 @@ function renderCardSection(
         ]),
       );
   }
-  return elements;
-}
-
-function renderFaq(
-  section: Section,
-  ids: ElementorIdFactory,
-  scope: string,
-  context: ElementorStyleContext,
-): readonly ElementorElement[] {
-  const elements: ElementorElement[] = [];
-  const items: { title: string; content: string }[] = [];
-  for (let index = 0; index < section.components.length; index += 1) {
-    const component = section.components[index];
-    const answer = section.components[index + 1];
-    if (component?.type === 'heading' && component.level <= 2)
-      elements.push(componentWidget(component, ids, scope, context));
-    else if (component?.type === 'heading' && answer?.type === 'text') {
-      items.push({ title: component.text, content: answer.text });
-      index += 1;
-    } else if (component)
-      elements.push(componentWidget(component, ids, scope, context));
-  }
-  if (items.length)
-    elements.push(accordionWidget(ids, `${scope}.accordion`, items, context));
   return elements;
 }
 

@@ -2,19 +2,22 @@ import { z } from 'zod';
 import { componentSchema } from './component.js';
 import { nullableOptional } from './structured-output.js';
 /** A semantic region whose layout hints are portable across builders. */
+export const SECTION_TYPES = [
+  'hero',
+  'content',
+  'features',
+  'services',
+  'testimonials',
+  'cta',
+  'contact',
+  'custom',
+] as const;
+export type SectionType = (typeof SECTION_TYPES)[number];
+
 export const sectionSchema = z
   .object({
     id: z.string().min(1),
-    type: z.enum([
-      'hero',
-      'content',
-      'features',
-      'services',
-      'testimonials',
-      'cta',
-      'contact',
-      'custom',
-    ]),
+    type: z.enum(SECTION_TYPES),
     label: nullableOptional(z.string().min(1)),
     layout: z
       .object({
