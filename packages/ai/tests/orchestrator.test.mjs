@@ -148,6 +148,28 @@ test('enforces per-stage timeouts and exposes the timeout as the stage cause', a
   );
 });
 
+test('allows blueprint generation beyond the global 30ms timeout and emits heartbeats', async () => {
+  const provider = new MockAiProvider(responses);
+  provider.blueprintGenerator = {
+    generate: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 45));
+      return responses.blueprint;
+    },
+  };
+  const { orchestrator, events } = setup(provider, {
+    defaultTimeoutMs: 30,
+    stages: { blueprint: { heartbeatMs: 10 } },
+  });
+  const result = await orchestrator.generateWebsite('project-1');
+  assert.equal(result.blueprint, responses.blueprint);
+  assert.ok(
+    events.some(
+      ({ type, progress }) =>
+        type === 'stage.heartbeat' && progress.stage === 'blueprint',
+    ),
+  );
+});
+
 test('supports the configured generateWebsite(projectId) entry point', async () => {
   const { dependencies } = setup();
   configureWebsiteGenerator(dependencies);

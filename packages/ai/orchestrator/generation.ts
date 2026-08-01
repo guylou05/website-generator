@@ -51,6 +51,7 @@ export type GenerationEvent =
       readonly progress: GenerationProgress;
     }
   | { readonly type: 'stage.started'; readonly progress: GenerationProgress }
+  | { readonly type: 'stage.heartbeat'; readonly progress: GenerationProgress }
   | {
       readonly type: 'stage.retrying';
       readonly progress: GenerationProgress;
@@ -92,6 +93,7 @@ export interface GenerationEventReporter {
 
 export interface StageConfiguration {
   readonly timeoutMs?: number;
+  readonly heartbeatMs?: number;
   readonly retryPolicy?: RetryPolicy;
 }
 
@@ -320,7 +322,11 @@ export class WebsiteGenerationOrchestrator {
     const config = this.dependencies.stages?.[stage];
     const retry = config?.retryPolicy ?? this.defaultRetry;
     const timeoutMs =
-      config?.timeoutMs ?? this.dependencies.defaultTimeoutMs ?? 30_000;
+      config?.timeoutMs ??
+      (stage === 'blueprint'
+        ? Math.max(this.dependencies.defaultTimeoutMs ?? 0, 120_000)
+        : (this.dependencies.defaultTimeoutMs ?? 30_000));
+    const heartbeatMs = config?.heartbeatMs ?? 15_000;
     const began = this.now().getTime();
     for (let attempt = 1; attempt <= retry.maxAttempts; attempt += 1) {
       const progress = this.progress(
@@ -343,6 +349,25 @@ export class WebsiteGenerationOrchestrator {
           timeoutMs,
           runId,
           stage,
+          () =>
+            void this.emit(
+              'stage.heartbeat',
+              this.progress(
+                projectId,
+                runId,
+                stage,
+                'running',
+                attempt,
+                completed,
+              ),
+            ).catch((error) =>
+              this.logger.warn('Generation stage heartbeat failed', {
+                projectId,
+                ...stageLogContext(runId, stage, attempt),
+                error: error instanceof Error ? error.message : String(error),
+              }),
+            ),
+          heartbeatMs,
         );
         assign(value);
         const durationMs = this.now().getTime() - began;
@@ -420,9 +445,12 @@ export class WebsiteGenerationOrchestrator {
     timeoutMs: number,
     runId: string,
     stage: GenerationStage,
+    heartbeat: () => void,
+    heartbeatMs: number,
   ): Promise<T> {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const heartbeatTimer = setInterval(heartbeat, heartbeatMs);
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => {
         controller.abort();
@@ -433,6 +461,7 @@ export class WebsiteGenerationOrchestrator {
       return await Promise.race([operation(controller.signal), timeout]);
     } finally {
       if (timer) clearTimeout(timer);
+      clearInterval(heartbeatTimer);
     }
   }
 
