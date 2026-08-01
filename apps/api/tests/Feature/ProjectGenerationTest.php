@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\GenerateWebsite;
 use App\Models\Project;
+use App\Services\JobTransport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Tests\TestCase;
 
 class ProjectGenerationTest extends TestCase
@@ -28,10 +28,11 @@ class ProjectGenerationTest extends TestCase
 
     public function test_generation_is_persisted_and_dispatched_without_execution(): void
     {
-        Queue::fake();
+        $jobs = Mockery::mock(JobTransport::class);
+        $jobs->shouldReceive('generation')->once()->with(Mockery::type('string'), Mockery::type('int'));
+        $this->app->instance(JobTransport::class, $jobs);
         $response = $this->postJson('/api/projects/'.$this->project()->id.'/generations', ['input' => ['businessName' => 'Acme']])->assertStatus(202);
         $response->assertJsonPath('data.status', 'queued')->assertJsonPath('data.progress', 0)->assertJsonPath('data.output', null);
-        Queue::assertPushed(GenerateWebsite::class, fn ($job) => $job->generationRunId === $response->json('data.id'));
         $this->assertDatabaseCount('generation_events', 1);
     }
 
@@ -39,7 +40,9 @@ class ProjectGenerationTest extends TestCase
     {
         $project = $this->project();
         $run = $project->generationRuns()->create(['provider' => 'mock', 'status' => 'failed', 'progress' => 10, 'input' => ['businessName' => 'Acme'], 'error' => ['code' => 'failed']]);
-        Queue::fake();
+        $jobs = Mockery::mock(JobTransport::class);
+        $jobs->shouldReceive('generation')->once();
+        $this->app->instance(JobTransport::class, $jobs);
         $this->postJson('/api/generations/'.$run->id.'/retry')->assertStatus(202)->assertJsonPath('data.status', 'queued');
         $this->assertDatabaseCount('generation_runs', 2);
     }
