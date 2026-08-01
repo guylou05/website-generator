@@ -3,13 +3,59 @@ import type { z } from 'zod';
 
 type JsonSchema = Record<string, unknown>;
 
+export interface SchemaFormatOccurrence {
+  path: string;
+  value: unknown;
+}
+
+/** Report every format keyword in a generated schema, including nested definitions. */
+export function findSchemaFormats(
+  schema: unknown,
+  path = '#',
+): SchemaFormatOccurrence[] {
+  if (!schema || typeof schema !== 'object') return [];
+  const occurrences: SchemaFormatOccurrence[] = [];
+  if (!Array.isArray(schema) && Object.hasOwn(schema, 'format'))
+    occurrences.push({ path, value: (schema as JsonSchema).format });
+  for (const [key, child] of Object.entries(schema)) {
+    const escapedKey = key.replaceAll('~', '~0').replaceAll('/', '~1');
+    occurrences.push(...findSchemaFormats(child, `${path}/${escapedKey}`));
+  }
+  return occurrences;
+}
+
+/** Clone a schema for transport and strip string formats unsupported by OpenAI. */
+export function prepareOpenAISchema(schema: unknown): JsonSchema {
+  const clone = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(clone);
+    if (!node || typeof node !== 'object') return node;
+    const result: JsonSchema = {};
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'format' && (node as JsonSchema).type === 'string') continue;
+      result[key] = clone(value);
+    }
+    return result;
+  };
+  return clone(schema) as JsonSchema;
+}
+
+export function assertNoSchemaFormats(name: string, schema: unknown): void {
+  const occurrence = findSchemaFormats(schema)[0];
+  if (occurrence)
+    throw new Error(
+      `${name} unsupported format:\n${occurrence.path}\nformat: ${String(occurrence.value)}`,
+    );
+}
+
 /** Validate the exact JSON Schema representation submitted to OpenAI strict mode. */
 export function validateOpenAISchema(
   name: string,
   schema: z.ZodType,
 ): JsonSchema {
-  const jsonSchema = zodResponseFormat(schema, name).json_schema
+  const generatedSchema = zodResponseFormat(schema, name).json_schema
     .schema as JsonSchema;
+  const jsonSchema = prepareOpenAISchema(generatedSchema);
+  assertNoSchemaFormats(name, jsonSchema);
 
   const visit = (node: unknown, path: string): void => {
     if (!node || typeof node !== 'object') return;

@@ -310,6 +310,270 @@ export function designPlanFromTransport(
   };
 }
 
+// This transport contract is deliberately independent from the shared domain
+// schema. In particular, URL and timestamp strings must not emit JSON Schema
+// `format` keywords, which OpenAI structured outputs reject.
+const nullableString = z.string().nullable();
+const nullableNumber = z.number().nullable();
+const componentStyleTransportSchema = z
+  .object({
+    variant: nullableString,
+    align: z.enum(['start', 'center', 'end']).nullable(),
+    width: z.enum(['auto', 'full']).nullable(),
+  })
+  .strict();
+const componentBaseTransport = {
+  id: z.string(),
+  accessibilityLabel: nullableString,
+  style: componentStyleTransportSchema.nullable(),
+};
+const formFieldTransportSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    label: z.string(),
+    type: z.enum(['text', 'email', 'tel', 'textarea', 'select', 'checkbox']),
+    required: z.boolean(),
+    placeholder: nullableString,
+    options: z
+      .array(z.object({ label: z.string(), value: z.string() }).strict())
+      .nullable(),
+  })
+  .strict();
+const blueprintComponentTransportSchema = z.discriminatedUnion('type', [
+  z
+    .object({
+      ...componentBaseTransport,
+      type: z.literal('heading'),
+      level: z.number().int().min(1).max(6),
+      text: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      ...componentBaseTransport,
+      type: z.literal('text'),
+      text: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      ...componentBaseTransport,
+      type: z.literal('button'),
+      label: z.string(),
+      href: z.string(),
+      intent: z.enum(['primary', 'secondary', 'link']),
+      external: z.boolean(),
+    })
+    .strict(),
+  z
+    .object({
+      ...componentBaseTransport,
+      type: z.literal('image'),
+      url: z.string(),
+      alt: z.string(),
+      caption: nullableString,
+      width: nullableNumber,
+      height: nullableNumber,
+      loading: z.enum(['eager', 'lazy']),
+    })
+    .strict(),
+  z
+    .object({
+      ...componentBaseTransport,
+      type: z.literal('form'),
+      name: z.string(),
+      action: z.string(),
+      method: z.enum(['POST', 'GET']),
+      fields: z.array(formFieldTransportSchema),
+      submitLabel: z.string(),
+      successMessage: z.string(),
+      consentText: nullableString,
+    })
+    .strict(),
+]);
+type BlueprintNavigationTransport = {
+  id: string;
+  label: string;
+  href: string;
+  external: boolean;
+  children: BlueprintNavigationTransport[];
+};
+const blueprintNavigationItemTransportSchema: z.ZodType<BlueprintNavigationTransport> =
+  z.lazy(() =>
+    z
+      .object({
+        id: z.string(),
+        label: z.string(),
+        href: z.string(),
+        external: z.boolean(),
+        children: z.array(blueprintNavigationItemTransportSchema),
+      })
+      .strict(),
+  );
+const seoTransportSchema = z
+  .object({
+    title: z.string(),
+    description: z.string(),
+    canonicalUrl: nullableString,
+    noIndex: z.boolean(),
+    noFollow: z.boolean(),
+    keywords: z.array(z.string()),
+    openGraph: z
+      .object({
+        title: nullableString,
+        description: nullableString,
+        imageUrl: nullableString,
+        imageAlt: nullableString,
+        type: z.enum(['website', 'article']),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+const brandAssetTransportSchema = z
+  .object({
+    url: z.string(),
+    alt: z.string(),
+    width: nullableNumber,
+    height: nullableNumber,
+  })
+  .strict();
+export const openAIWebsiteBlueprintSchema = z
+  .object({
+    schemaVersion: z.literal('1.0'),
+    metadata: z
+      .object({
+        name: z.string(),
+        description: z.string(),
+        language: z.string(),
+        baseUrl: z.string(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+      })
+      .strict(),
+    branding: z
+      .object({
+        name: z.string(),
+        tagline: nullableString,
+        logo: brandAssetTransportSchema.nullable(),
+        mark: brandAssetTransportSchema.nullable(),
+        colors: z
+          .object({
+            primary: z.string(),
+            secondary: z.string(),
+            accent: z.string(),
+            background: z.string(),
+            surface: z.string(),
+            text: z.string(),
+            mutedText: z.string(),
+          })
+          .strict(),
+        typography: z
+          .object({
+            headingFont: z.string(),
+            bodyFont: z.string(),
+            baseSize: z.string(),
+          })
+          .strict(),
+      })
+      .strict(),
+    globalStyles: z
+      .object({
+        borderRadius: z.enum(['none', 'small', 'medium', 'large', 'pill']),
+        contentWidth: z.enum(['narrow', 'standard', 'wide']),
+        spacingScale: z.enum(['compact', 'comfortable', 'spacious']),
+        buttonStyle: z.enum(['solid', 'outline', 'soft']),
+        imageStyle: z.enum(['square', 'rounded', 'soft']),
+      })
+      .strict(),
+    navigation: z
+      .object({
+        ariaLabel: z.string(),
+        items: z.array(blueprintNavigationItemTransportSchema),
+        cta: z
+          .object({
+            label: z.string(),
+            href: z.string(),
+            external: z.boolean(),
+          })
+          .strict()
+          .nullable(),
+      })
+      .strict(),
+    defaultSeo: seoTransportSchema,
+    pages: z.array(
+      z
+        .object({
+          id: z.string(),
+          title: z.string(),
+          slug: z.string(),
+          description: nullableString,
+          showInNavigation: z.boolean(),
+          seo: seoTransportSchema,
+          sections: z.array(
+            z
+              .object({
+                id: z.string(),
+                type: z.enum([
+                  'hero',
+                  'content',
+                  'features',
+                  'services',
+                  'testimonials',
+                  'cta',
+                  'contact',
+                  'custom',
+                ]),
+                label: nullableString,
+                layout: z
+                  .object({
+                    container: z.enum(['narrow', 'standard', 'wide', 'full']),
+                    columns: z.number().int().min(1).max(12),
+                    spacing: z.enum(['none', 'small', 'medium', 'large']),
+                    background: z.enum([
+                      'default',
+                      'surface',
+                      'primary',
+                      'secondary',
+                      'accent',
+                    ]),
+                  })
+                  .strict(),
+                components: z.array(blueprintComponentTransportSchema),
+              })
+              .strict(),
+          ),
+        })
+        .strict(),
+    ),
+    footer: z
+      .object({
+        tagline: nullableString,
+        columns: z.array(
+          z
+            .object({
+              title: z.string(),
+              links: z.array(blueprintNavigationItemTransportSchema),
+            })
+            .strict(),
+        ),
+        socialLinks: z.array(
+          z
+            .object({
+              platform: z.string(),
+              href: z.string(),
+              label: z.string(),
+            })
+            .strict(),
+        ),
+        components: z.array(blueprintComponentTransportSchema),
+        copyright: z.string(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export { siteBlueprintSchema };
 export const openAISchemas = {
   business_analysis: businessAnalysisSchema,
@@ -317,6 +581,6 @@ export const openAISchemas = {
   website_copy: websiteContentTransportSchema,
   seo: seoContentTransportSchema,
   design: designPlanTransportSchema,
-  blueprint: siteBlueprintSchema,
-  blueprint_repair: siteBlueprintSchema,
+  blueprint: openAIWebsiteBlueprintSchema,
+  blueprint_repair: openAIWebsiteBlueprintSchema,
 } as const;
