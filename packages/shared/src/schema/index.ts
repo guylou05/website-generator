@@ -6,3 +6,4 @@ export * from './page.js';
 export * from './section.js';
 export * from './seo.js';
 export * from './site.js';
+export * from './structured-output.js';

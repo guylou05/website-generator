@@ -9,6 +9,8 @@ import {
   OpenAIRetryPolicy,
   OpenAIStructuredClient,
   readOpenAIConfig,
+  openAISchemas,
+  validateOpenAISchema,
 } from '../dist/providers/openai/index.js';
 
 const fake = {
@@ -21,7 +23,10 @@ const fake = {
         summary: input.description,
         industry: input.industry,
         audiences: [],
-        offerings: input.productsOrServices,
+        offerings: input.productsOrServices.map((offering) => ({
+          ...offering,
+          audience: null,
+        })),
         valueProposition: input.description,
         goals: input.goals,
         recommendedTone: ['clear'],
@@ -46,6 +51,19 @@ const profile = {
   differentiators: [],
   goals: ['Leads'],
 };
+
+test('every OpenAI stage schema is strict and fully required', () => {
+  for (const [name, schema] of Object.entries(openAISchemas))
+    assert.doesNotThrow(() => validateOpenAISchema(name, schema), name);
+
+  const analysis = validateOpenAISchema(
+    'business_analysis',
+    openAISchemas.business_analysis,
+  );
+  const audience = analysis.properties.offerings.items.properties.audience;
+  assert.equal(audience.nullable, true);
+  assert.ok(analysis.properties.offerings.items.required.includes('audience'));
+});
 test('stages use an injected client and never call the network', async () => {
   const analysis = await new OpenAIBusinessAnalyzer(fake).analyze(profile, {
     runId: 'test',

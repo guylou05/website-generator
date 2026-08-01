@@ -14,6 +14,7 @@ export * from './designer.js';
 export * from './planner.js';
 export * from './prompts.js';
 export * from './schemas.js';
+export * from './schema-validation.js';
 export * from './writer.js';
 export * from './retry.js';
 export function createOpenAIProvider(

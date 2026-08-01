@@ -1,19 +1,20 @@
 import { z } from 'zod';
+import { nullableOptional } from './structured-output.js';
 export const brandAssetSchema = z
   .object({
     url: z.string().url(),
     alt: z.string().min(1),
-    width: z.number().int().positive().optional(),
-    height: z.number().int().positive().optional(),
+    width: nullableOptional(z.number().int().positive()),
+    height: nullableOptional(z.number().int().positive()),
   })
   .strict();
 /** Semantic brand tokens; each renderer controls their implementation. */
 export const brandingSchema = z
   .object({
     name: z.string().min(1),
-    tagline: z.string().min(1).optional(),
-    logo: brandAssetSchema.optional(),
-    mark: brandAssetSchema.optional(),
+    tagline: nullableOptional(z.string().min(1)),
+    logo: nullableOptional(brandAssetSchema),
+    mark: nullableOptional(brandAssetSchema),
     colors: z
       .object({
         primary: z.string().min(1),

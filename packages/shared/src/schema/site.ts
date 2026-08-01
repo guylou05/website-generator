@@ -4,6 +4,7 @@ import { componentSchema } from './component.js';
 import { navigationItemSchema, navigationSchema } from './navigation.js';
 import { pageSchema } from './page.js';
 import { seoSchema } from './seo.js';
+import { nullableOptional } from './structured-output.js';
 
 export const siteMetadataSchema = z
   .object({
@@ -34,7 +35,7 @@ export const globalStylesSchema = z
 
 export const footerSchema = z
   .object({
-    tagline: z.string().min(1).optional(),
+    tagline: nullableOptional(z.string().min(1)),
     columns: z
       .array(
         z
