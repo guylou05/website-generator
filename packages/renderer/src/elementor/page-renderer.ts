@@ -4,10 +4,10 @@ import {
 } from '@website-generator/shared/schema';
 import { ElementorIdFactory } from './ids.js';
 import {
+  identifySection,
   renderFooter,
   renderHeader,
   renderSection,
-  identifySection,
 } from './sections.js';
 import { createElementorStyleContext, pageStyleSettings } from './styles.js';
 import type { ElementorDocument } from './types.js';
@@ -64,14 +64,10 @@ export function renderValidatedElementorPage(
       renderHeader(blueprint.navigation, blueprint.branding.name, ids, styles),
     );
   for (const section of page.sections)
-    content.push(renderSection(section, ids, styles));
-  const hasExplicitFooter = page.sections.some((section) => {
-    try {
-      return identifySection(section) === 'footer';
-    } catch {
-      return false;
-    }
-  });
+    content.push(renderSection(section, ids, styles, page.id));
+  const hasExplicitFooter = page.sections.some(
+    (section) => identifySection(section, page.id) === 'footer',
+  );
   if ((options.includeFooter ?? true) && !hasExplicitFooter)
     content.push(renderFooter(blueprint.footer, ids, styles));
   return {

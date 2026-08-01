@@ -48,6 +48,12 @@ export type ElementorSectionKind =
   | 'contact'
   | 'footer';
 
+export interface ElementorSectionDiagnosticContext {
+  readonly pageId?: string;
+  readonly componentCount?: number;
+  readonly unsupportedComponentType?: string;
+}
+
 export class ElementorRenderError extends Error {
   constructor(
     message: string,
@@ -63,9 +69,19 @@ export class UnsupportedElementorSectionError extends ElementorRenderError {
   constructor(
     readonly sectionId: string,
     readonly sectionType: string,
+    readonly diagnostic: ElementorSectionDiagnosticContext = {},
   ) {
+    const details = [
+      diagnostic.pageId && `page ID "${diagnostic.pageId}"`,
+      `section ID "${sectionId}"`,
+      `section type "${sectionType}"`,
+      diagnostic.componentCount !== undefined &&
+        `component count ${diagnostic.componentCount}`,
+      diagnostic.unsupportedComponentType &&
+        `unsupported component type "${diagnostic.unsupportedComponentType}"`,
+    ].filter(Boolean);
     super(
-      `Unsupported Elementor section type "${sectionType}"`,
+      `Unsupported Elementor section type "${sectionType}" (${details.join(', ')})`,
       `sections.${sectionId}`,
     );
     this.name = 'UnsupportedElementorSectionError';
