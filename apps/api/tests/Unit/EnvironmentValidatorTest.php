@@ -42,4 +42,20 @@ class EnvironmentValidatorTest extends TestCase
         $this->assertContains('Redis configuration is missing: set REDIS_URL or REDIS_HOST when SESSION_DRIVER=redis.', $errors);
         $this->assertContains('Database configuration is missing: set DB_URL, DATABASE_URL, or DB_DATABASE.', $errors);
     }
+
+    #[Test]
+    public function production_rejects_invalid_and_placeholder_mail_senders(): void
+    {
+        $base = [
+            'APP_ENV' => 'production', 'APP_URL' => 'https://api.test', 'APP_KEY' => 'base64:test',
+            'DB_CONNECTION' => 'sqlite', 'SESSION_DRIVER' => 'array',
+            'SANCTUM_STATEFUL_DOMAINS' => 'dashboard.test', 'DASHBOARD_URL' => 'https://dashboard.test',
+            'MAIL_MAILER' => 'smtp', 'MAIL_FROM_NAME' => 'SiteFoundry',
+        ];
+        $invalid = (new EnvironmentValidator)->errors($base + ['MAIL_FROM_ADDRESS' => 'hello@<YOUR_DOMAIN>']);
+        $placeholder = (new EnvironmentValidator)->errors($base + ['MAIL_FROM_ADDRESS' => 'noreply@example.com']);
+
+        $this->assertContains('MAIL_FROM_ADDRESS must be a valid RFC-compliant email address (for example, noreply@example.com).', $invalid);
+        $this->assertContains('MAIL_FROM_ADDRESS must not contain a placeholder value in production.', $placeholder);
+    }
 }

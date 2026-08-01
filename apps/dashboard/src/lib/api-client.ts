@@ -77,6 +77,7 @@ export interface AuthUser {
   name: string;
   email: string;
   email_verified_at: string | null;
+  email_verification_pending: boolean;
   current_organization: Organization | null;
   current_role: MembershipRole | null;
 }
@@ -268,7 +269,7 @@ export class DashboardApiError extends Error {
     message: string,
     readonly status: number,
     readonly code = 'request_failed',
-    readonly details?: Record<string, unknown>,
+    readonly details?: Record<string, string[]>,
   ) {
     super(message);
   }

@@ -15,6 +15,8 @@ The application is deployed as four services from this repository, plus Railway 
 
 The API config runs migrations as a pre-deploy command and uses Laravel's dedicated `/up` health endpoint. Every container listens on Railway's injected `PORT` where applicable.
 
+Registration email is asynchronous. Configure the production mail transport, `MAIL_FROM_ADDRESS`, and `MAIL_FROM_NAME` on the API, keep `QUEUE_CONNECTION=redis`, and run a Laravel queue worker. Production startup rejects invalid or placeholder sender settings before the service accepts traffic; `MAIL_MAILER=log` is reserved for staging environments where delivery is intentionally disabled.
+
 ## 2. Configure variables
 
 Use Railway reference variables for database and Redis connection strings rather than copying credentials. Variable names below are the names consumed by the applications.
