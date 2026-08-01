@@ -13,6 +13,7 @@ const required = (name: string): string => {
 const queueConfig: QueueConfig = {
   generation: process.env.GENERATION_QUEUE_NAME ?? 'website-generation',
   deployment: process.env.DEPLOYMENT_QUEUE_NAME ?? 'wordpress-deployment',
+  media: process.env.MEDIA_QUEUE_NAME ?? 'media-processing',
   prefix: (process.env.REDIS_QUEUE_PREFIX ?? 'sitefoundry').replace(/:+$/, ''),
 };
 const redisDatabase = Number(process.env.REDIS_QUEUE_DB ?? 0);
@@ -34,13 +35,22 @@ const concurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY ?? 2));
 let stopping = false;
 
 async function consume(): Promise<void> {
-  const queues = [queueConfig.generation, queueConfig.deployment];
+  const queues = [
+    queueConfig.generation,
+    queueConfig.deployment,
+    queueConfig.media,
+  ];
   let cursor = 0;
   while (!stopping) {
     const queue = queues[cursor++ % queues.length]!;
     await consumeOne(redis, queueConfig, queue, workerId, async (job) => {
-      if (job.type === 'generation') await handlers.generation(job.uuid);
-      else await handlers.deployment(job.uuid);
+      if (job.type === 'generation') await handlers.generation(job.resource_id);
+      else if (job.type === 'deployment')
+        await handlers.deployment(job.resource_id);
+      else
+        throw new Error(
+          'Media execution is not yet available through the internal API',
+        );
     });
   }
 }
@@ -55,6 +65,7 @@ const heartbeat = async (): Promise<void> => {
       database: redisDatabase,
       generation_queue: queueConfig.generation,
       deployment_queue: queueConfig.deployment,
+      media_queue: queueConfig.media,
       prefix: queueConfig.prefix,
     }),
     'EX',
@@ -62,6 +73,12 @@ const heartbeat = async (): Promise<void> => {
   );
 };
 await heartbeat();
+logger.info('Worker ready');
+logger.info('Redis: connected');
+logger.info(`Prefix: ${queueConfig.prefix}`);
+logger.info('Queues', {
+  queues: [queueConfig.generation, queueConfig.deployment, queueConfig.media],
+});
 const heartbeatTimer = setInterval(() => void heartbeat(), 15_000);
 const tasks = Array.from({ length: concurrency }, () => consume());
 async function shutdown(signal: string): Promise<void> {
@@ -80,5 +97,6 @@ logger.info('Website Generator worker ready', {
   redisDatabase,
   generationQueue: queueConfig.generation,
   deploymentQueue: queueConfig.deployment,
+  mediaQueue: queueConfig.media,
   queuePrefix: queueConfig.prefix,
 });

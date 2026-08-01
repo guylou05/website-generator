@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -17,6 +18,11 @@ class JobTransport
         $this->enqueue('generation', $uuid, config('job_transport.generation_queue'), $attempt);
     }
 
+    public function media(string $uuid, int $attempt = 1): void
+    {
+        $this->enqueue('media', $uuid, config('job_transport.media_queue'), $attempt);
+    }
+
     public function deployment(string $uuid, int $attempt = 1): void
     {
         $this->enqueue('deployment', $uuid, config('job_transport.deployment_queue'), $attempt);
@@ -29,14 +35,26 @@ class JobTransport
 
     private function enqueue(string $type, string $uuid, string $queue, int $attempt): void
     {
+        $idempotencyKey = "{$type}:{$uuid}:{$attempt}";
         $payload = json_encode([
-            'version' => 1,
+            'id' => $uuid,
             'type' => $type,
-            'uuid' => $uuid,
+            'resource_id' => $uuid,
             'attempt' => $attempt,
-            'enqueued_at' => now()->toIso8601String(),
+            'created_at' => now()->toIso8601String(),
+            'idempotency_key' => $idempotencyKey,
         ], JSON_THROW_ON_ERROR);
 
-        Redis::connection(config('job_transport.redis_connection'))->lpush($this->key($queue), $payload);
+        $redis = Redis::connection(config('job_transport.redis_connection'));
+        $published = $redis->eval(
+            "if redis.call('SET', KEYS[1], '1', 'NX', 'EX', 120) then redis.call('LPUSH', KEYS[2], ARGV[1]); return 1 else return 0 end",
+            2,
+            config('job_transport.prefix').':published:'.$idempotencyKey,
+            $this->key($queue),
+            $payload,
+        );
+        Log::info($published ? 'Interoperable job published' : 'Duplicate active job publish skipped', [
+            'resource_id' => $uuid, 'job_type' => $type, 'queue' => $queue,
+        ]);
     }
 }
