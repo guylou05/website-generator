@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bell,
+  CreditCard,
   ChevronDown,
   FilePlus2,
   FolderKanban,
@@ -13,6 +14,7 @@ import {
   Menu,
   Moon,
   Search,
+  ShieldCheck,
   Settings,
   Sun,
   X,
@@ -32,6 +34,9 @@ const nav = [
   { href: '/dashboard/new', label: 'New website', icon: FilePlus2 },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
   { href: '/dashboard/templates', label: 'Templates', icon: Grid2X2 },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
+  { href: '/dashboard/settings/billing', label: 'Billing', icon: CreditCard },
+  { href: '/dashboard/security', label: 'Security', icon: ShieldCheck },
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -177,14 +182,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </button>
-            <button
+            <Link
+              href="/dashboard/notifications"
               aria-label="Notifications"
-              title="Notifications coming soon"
-              disabled
               className="text-muted-foreground hover:bg-muted relative rounded-lg p-2"
             >
               <Bell className="size-4" />
-            </button>
+            </Link>
             <div className="ml-2 flex items-center gap-2 border-l pl-3">
               <span className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-semibold text-white">
                 {user?.name

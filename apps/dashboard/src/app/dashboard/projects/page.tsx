@@ -1,16 +1,33 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FilePlus2 } from 'lucide-react';
 import { PageHeading } from '@/components/page-heading';
 import { dashboardApi, type Project } from '@/lib/api-client';
 
-export default async function Projects() {
-  let projects: Project[] = [];
-  let unavailable = false;
-  try {
-    projects = await dashboardApi.projects();
-  } catch {
-    unavailable = true;
-  }
+export default function Projects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadProjects = () => {
+    setLoading(true);
+    setError('');
+    dashboardApi
+      .projects()
+      .then(setProjects)
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : 'Projects could not be loaded. Please try again.',
+        ),
+      )
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(loadProjects, []);
   return (
     <>
       <PageHeading
@@ -27,12 +44,28 @@ export default async function Projects() {
         }
       />
       <div className="card divide-y">
-        {unavailable && (
-          <p className="p-6 text-sm text-red-600">
-            Projects could not be loaded. Check the API connection.
-          </p>
+        {loading && (
+          <div className="space-y-3 p-6" aria-label="Loading projects">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="bg-muted h-14 animate-pulse rounded-lg"
+              />
+            ))}
+          </div>
         )}
-        {!unavailable && projects.length === 0 && (
+        {error && (
+          <div className="p-6 text-center" role="alert">
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              className="mt-3 rounded-lg border px-4 py-2 text-sm"
+              onClick={loadProjects}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        {!loading && !error && projects.length === 0 && (
           <p className="text-muted-foreground p-8 text-center text-sm">
             No projects yet. Create your first website.
           </p>

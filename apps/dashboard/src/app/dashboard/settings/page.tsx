@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Bell,
   Building2,
@@ -43,7 +44,11 @@ const notificationLabels: Record<string, string> = {
 };
 
 export default function Settings() {
-  const [tab, setTab] = useState<Tab>('Profile');
+  const requestedTab = useSearchParams().get('tab');
+  const initialTab = tabs.some(({ label }) => label === requestedTab)
+    ? (requestedTab as Tab)
+    : 'Profile';
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organization, setOrganization] = useState<OrganizationSettings | null>(
     null,
@@ -53,6 +58,7 @@ export default function Settings() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [fields, setFields] = useState<Record<string, string[]>>({});
+  useEffect(() => setTab(initialTab), [initialTab]);
   useEffect(() => {
     Promise.all([dashboardApi.profile(), dashboardApi.organizationSettings()])
       .then(([p, o]) => {

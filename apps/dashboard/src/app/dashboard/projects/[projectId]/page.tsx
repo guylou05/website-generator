@@ -1,19 +1,60 @@
-import { notFound } from 'next/navigation';
-import { dashboardApi } from '@/lib/api-client';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { dashboardApi, type Deployment, type Project } from '@/lib/api-client';
 import { GenerationActions } from '@/components/generation-actions';
 import Link from 'next/link';
 
-export default async function ProjectDetail({
-  params,
-}: {
-  params: Promise<{ projectId: string }>;
-}) {
-  const { projectId } = await params;
-  const [project, deployments] = await Promise.all([
-    dashboardApi.project(projectId).catch(() => null),
-    dashboardApi.deployments(projectId).catch(() => []),
-  ]);
-  if (!project) notFound();
+export default function ProjectDetail() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const [project, setProject] = useState<Project | null>(null);
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      dashboardApi.project(projectId),
+      dashboardApi.deployments(projectId),
+    ])
+      .then(([nextProject, nextDeployments]) => {
+        setProject(nextProject);
+        setDeployments(nextDeployments);
+      })
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : 'This project could not be loaded.',
+        ),
+      )
+      .finally(() => setLoading(false));
+  }, [projectId]);
+
+  if (loading)
+    return (
+      <div
+        className="bg-muted h-80 animate-pulse rounded-xl"
+        aria-label="Loading project"
+      />
+    );
+  if (!project)
+    return (
+      <section className="card p-8 text-center" role="alert">
+        <h1 className="text-xl font-semibold">Project unavailable</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
+          {error || 'The project was not found.'}
+        </p>
+        <Link
+          href="/dashboard/projects"
+          className="text-primary mt-5 inline-block text-sm font-medium"
+        >
+          Back to projects
+        </Link>
+      </section>
+    );
   const run = project.generationRuns[0];
   const summary = run?.output?.summary;
   return (
