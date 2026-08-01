@@ -8,6 +8,8 @@ import {
   OpenAIContentWriter,
   OpenAIWebsitePlanner,
   OpenAIProviderError,
+  OpenAIBlueprintGenerator,
+  BlueprintTransportValidationError,
   OpenAIRetryPolicy,
   OpenAIStructuredClient,
   readOpenAIConfig,
@@ -19,6 +21,11 @@ import {
   prepareOpenAISchema,
   validateOpenAISchema,
 } from '../dist/providers/openai/index.js';
+import {
+  normalizeBlueprint,
+  slugifyPage,
+  truncateSeo,
+} from '../../shared/dist/schema/index.js';
 
 const fake = {
   usage: [],
@@ -304,6 +311,116 @@ test('blueprint transport parses directly into the canonical domain schema', () 
   assert.equal(domain.defaultSeo.noIndex, false);
   assert.equal(domain.pages[0].sections[0].layout.container, 'wide');
   assert.equal(domain.pages[0].sections[0].components[2].external, false);
+});
+
+test('blueprint normalization deterministically cleans URLs, nullable strings, slugs, and SEO', () => {
+  const value = JSON.parse(
+    readFileSync(
+      new URL('../../shared/sample-blueprint.json', import.meta.url),
+    ),
+  );
+  value.defaultSeo.canonicalUrl = ' N/A ';
+  value.defaultSeo.openGraph = {
+    title: '',
+    description: ' ',
+    imageUrl: ' https://example.com/card.jpg ',
+    imageAlt: '',
+    type: 'website',
+  };
+  value.defaultSeo.title = `${'A useful website title '.repeat(5)}!!!`;
+  value.pages.push(structuredClone(value.pages[0]));
+  value.pages[0].slug = '/DNS_Fixes/';
+  const duplicate = value.pages.at(-1);
+  duplicate.id = 'duplicate-page';
+  duplicate.slug = 'https://example.com/DNS_Fixes/?source=test#top';
+  const component = value.pages[0].sections[0].components[0];
+  component.accessibilityLabel = ' ';
+  component.style = { variant: '', align: null, width: null };
+
+  const normalized = normalizeBlueprint(value).value;
+  assert.equal(normalized.defaultSeo.canonicalUrl, null);
+  assert.equal(
+    normalized.defaultSeo.openGraph.imageUrl,
+    'https://example.com/card.jpg',
+  );
+  assert.equal(normalized.defaultSeo.openGraph.imageAlt, null);
+  assert.ok(normalized.defaultSeo.title.length <= 70);
+  assert.equal(normalized.pages[0].slug, 'dns-fixes');
+  assert.equal(normalized.pages.at(-1).slug, 'dns-fixes-2');
+  assert.equal(component.text.length > 0, true);
+  assert.equal(
+    normalized.pages[0].sections[0].components[0].accessibilityLabel,
+    null,
+  );
+  assert.equal(
+    normalized.pages[0].sections[0].components[0].style.variant,
+    null,
+  );
+  assert.equal(siteBlueprintSchema.safeParse(normalized).success, true);
+});
+
+test('slug and SEO helpers preserve homepage semantics and truncate on words', () => {
+  assert.equal(slugifyPage('Website Fix'), 'website-fix');
+  assert.equal(slugifyPage('https://example.com/email-help?q=1'), 'email-help');
+  assert.equal(slugifyPage('/'), '');
+  assert.equal(truncateSeo('one two three four', 13), 'one two three');
+});
+
+test('blueprint generation makes exactly one targeted repair for required content', async () => {
+  const invalid = JSON.parse(
+    readFileSync(
+      new URL('../../shared/sample-blueprint.json', import.meta.url),
+    ),
+  );
+  invalid.pages[0].sections[0].components[1].text = '';
+  invalid.defaultSeo.canonicalUrl = 'TBD';
+  let repairInput;
+  const client = {
+    usage: [],
+    calls: [],
+    async generate(name, _prompt, input) {
+      this.calls.push(name);
+      if (name === 'website_blueprint') return invalid;
+      repairInput = input;
+      const repaired = structuredClone(input.normalizedBlueprint);
+      repaired.pages[0].sections[0].components[1].text = 'Repaired copy';
+      return repaired;
+    },
+  };
+  const result = await new OpenAIBlueprintGenerator(client).generate(
+    {},
+    { runId: 'test' },
+  );
+  assert.deepEqual(client.calls, [
+    'website_blueprint',
+    'website_blueprint_repair',
+  ]);
+  assert.equal(repairInput.normalizedBlueprint.defaultSeo.canonicalUrl, null);
+  assert.deepEqual(repairInput.issues[0].path, [
+    'pages',
+    0,
+    'sections',
+    0,
+    'components',
+    1,
+    'text',
+  ]);
+  assert.equal(siteBlueprintSchema.safeParse(result).success, true);
+});
+
+test('local transport Zod failures retain blueprint classification', async () => {
+  const client = {
+    usage: [],
+    async generate() {
+      throw new z.ZodError([]);
+    },
+  };
+  await assert.rejects(
+    new OpenAIBlueprintGenerator(client).generate({}, { runId: 'test' }),
+    (error) =>
+      error instanceof BlueprintTransportValidationError &&
+      !(error instanceof OpenAIProviderError),
+  );
 });
 test('stages use an injected client and never call the network', async () => {
   const analysis = await new OpenAIBusinessAnalyzer(fake).analyze(profile, {
