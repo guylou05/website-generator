@@ -1,4 +1,13 @@
 export type JobKind = 'generations' | 'deployments';
+export class InternalApiError extends Error {
+  constructor(
+    message: string,
+    readonly details: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = 'InternalApiError';
+  }
+}
 export class InternalApiClient {
   constructor(
     private readonly baseUrl: string,
@@ -21,6 +30,22 @@ export class InternalApiClient {
     action: string,
     body?: unknown,
   ): Promise<T> {
+    let serializedBody: string | undefined;
+    if (body !== undefined) {
+      try {
+        serializedBody = JSON.stringify(body);
+      } catch (error) {
+        throw new InternalApiError(
+          'Internal API request serialization failed',
+          {
+            kind,
+            id,
+            action,
+            serializationError: serializeError(error),
+          },
+        );
+      }
+    }
     const response = await fetch(
       `${this.baseUrl.replace(/\/$/, '')}/${kind}/${id}/${action}`,
       {
@@ -30,17 +55,28 @@ export class InternalApiClient {
           Accept: 'application/json',
           ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
         },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        ...(serializedBody === undefined ? {} : { body: serializedBody }),
       },
     );
     if (!response.ok) {
-      const error = new Error(`Internal API returned HTTP ${response.status}`);
-      Object.assign(error, {
-        status: response.status,
-        retryable: response.status >= 500 || response.status === 429,
-      });
-      throw error;
+      const responseBody = await response.text();
+      throw new InternalApiError(
+        `Internal API returned HTTP ${response.status}`,
+        {
+          kind,
+          id,
+          action,
+          status: response.status,
+          retryable: response.status >= 500 || response.status === 429,
+          responseBody,
+        },
+      );
     }
     return response.json() as Promise<T>;
   }
+}
+
+function serializeError(error: unknown): Record<string, unknown> {
+  if (!(error instanceof Error)) return { value: String(error) };
+  return { name: error.name, message: error.message, stack: error.stack };
 }

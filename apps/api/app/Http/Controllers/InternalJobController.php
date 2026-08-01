@@ -7,8 +7,14 @@ use App\Models\GenerationRun;
 use App\Models\Organization;
 use App\Services\EntitlementService;
 use App\Services\WebsiteRevisionService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class InternalJobController extends Controller
 {
@@ -76,7 +82,70 @@ class InternalJobController extends Controller
 
     public function generationCompleted(Request $request, GenerationRun $generationRun): JsonResponse
     {
-        return $this->completed($request, $generationRun, ['output' => 'required|array']);
+        Log::info('Post-blueprint completion request received', ['generation_run_id' => $generationRun->id]);
+        try {
+            Log::info('Generation completion payload validation started', ['generation_run_id' => $generationRun->id]);
+            $data = $request->validate(['output' => 'required|array', 'output.blueprint' => 'required|array', 'output.elementor' => 'required|array']);
+            Log::info('Generation completion payload validation completed', ['generation_run_id' => $generationRun->id]);
+
+            Log::info('Generation completion database transaction starting', ['generation_run_id' => $generationRun->id]);
+            $response = DB::transaction(function () use ($generationRun, $data) {
+                Log::info('Generation completion database transaction started', ['generation_run_id' => $generationRun->id]);
+                $job = GenerationRun::lockForUpdate()->findOrFail($generationRun->id);
+                Log::info('Generation run locked for completion', ['generation_run_id' => $job->id, 'status' => $job->status]);
+                if ($job->status === 'succeeded') {
+                    Log::info('Generation completion already persisted', ['generation_run_id' => $job->id]);
+
+                    return response()->json(['data' => $job]);
+                }
+                if (in_array($job->status, ['cancelling', 'cancelled'], true)) {
+                    return response()->json(['error' => ['code' => 'cancelled', 'message' => 'Cancelled jobs cannot complete.']], 409);
+                }
+                if ($job->status !== 'running') {
+                    return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'Job is not running.']], 409);
+                }
+
+                Log::info('Blueprint persistence started', ['generation_run_id' => $job->id]);
+                $job->update(['output' => $data['output']]);
+                Log::info('Blueprint persistence completed', ['generation_run_id' => $job->id]);
+
+                $revision = $job->project->websiteRevisions()->where('generation_run_id', $job->id)->first();
+                if (! $revision) {
+                    Log::info('Website revision and pages creation started', ['generation_run_id' => $job->id]);
+                    $revision = app(WebsiteRevisionService::class)->create($job->project, $data['output']['blueprint'], 'generation', null, $job->id);
+                    Log::info('Website revision and pages creation completed', ['generation_run_id' => $job->id, 'revision_id' => $revision->id, 'pages' => count($revision->blueprint['pages'] ?? [])]);
+                }
+
+                Log::info('Persisted blueprint validation started', ['generation_run_id' => $job->id, 'revision_id' => $revision->id]);
+                $validation = app(WebsiteRevisionService::class)->validate($revision);
+                Log::info('Persisted blueprint validation completed', ['generation_run_id' => $job->id, 'revision_id' => $revision->id, 'valid' => $validation['valid'], 'validation_errors' => $validation['errors']]);
+                $revision->update(['elementor_output' => $data['output']['elementor'], 'status' => $validation['valid'] ? 'ready' : 'invalid']);
+                Log::info('Rendered pages persistence completed', ['generation_run_id' => $job->id, 'revision_id' => $revision->id]);
+
+                Log::info('Project status update started', ['generation_run_id' => $job->id]);
+                $job->project()->update(['status' => 'ready']);
+                Log::info('Project status update completed', ['generation_run_id' => $job->id]);
+
+                Log::info('Generation run completion update started', ['generation_run_id' => $job->id]);
+                $job->update(['status' => 'succeeded', 'progress' => 100, 'current_stage' => null, 'completed_at' => now(), 'error' => null]);
+                Log::info('Generation run completion update completed', ['generation_run_id' => $job->id]);
+
+                Log::info('Final generation event emission started', ['generation_run_id' => $job->id]);
+                $job->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => 'completion', 'event_type' => 'generation.completed', 'progress' => 100, 'message' => 'Generation completed', 'metadata' => ['revision_id' => $revision->id], 'created_at' => now()]);
+                Log::info('Final generation event emission completed', ['generation_run_id' => $job->id]);
+                return response()->json(['data' => $job->fresh('events')]);
+            }, 3);
+            Log::info('Generation completion database transaction committed', ['generation_run_id' => $generationRun->id]);
+
+            return $response;
+        } catch (Throwable $exception) {
+            $details = $this->exceptionDetails($exception);
+            Log::error('Post-blueprint generation completion failed', ['generation_run_id' => $generationRun->id, 'exception' => $details]);
+            Log::info('Complete generation exception persistence started', ['generation_run_id' => $generationRun->id]);
+            GenerationRun::whereKey($generationRun->id)->update(['status' => 'failed', 'error' => ['code' => $exception::class, 'message' => $exception->getMessage(), 'details' => $details], 'current_stage' => null, 'completed_at' => now()]);
+            Log::info('Complete generation exception persistence completed', ['generation_run_id' => $generationRun->id]);
+            throw $exception;
+        }
     }
 
     public function deploymentCompleted(Request $request, Deployment $deployment): JsonResponse
@@ -157,13 +226,29 @@ class InternalJobController extends Controller
 
     private function failed(Request $request, $job): JsonResponse
     {
-        $data = $request->validate(['code' => 'required|string|max:100', 'message' => 'required|string|max:1000', 'cancelled' => 'sometimes|boolean']);
+        $data = $request->validate(['code' => 'required|string|max:255', 'message' => 'required|string|max:4000', 'details' => 'sometimes|array', 'cancelled' => 'sometimes|boolean']);
         if (in_array($job->status, ['failed', 'cancelled'], true)) {
             return response()->json(['data' => $job]);
         }
         $status = ($data['cancelled'] ?? false) || $job->status === 'cancelling' ? 'cancelled' : 'failed';
-        $job->update(['status' => $status, 'error' => $status === 'failed' ? ['code' => $data['code'], 'message' => $data['message']] : null, 'current_stage' => null, 'completed_at' => now()]);
+        $job->update(['status' => $status, 'error' => $status === 'failed' ? ['code' => $data['code'], 'message' => $data['message'], 'details' => $data['details'] ?? null] : null, 'current_stage' => null, 'completed_at' => now()]);
 
         return response()->json(['data' => $job->fresh('events')]);
+    }
+
+    private function exceptionDetails(Throwable $exception): array
+    {
+        $details = ['class' => $exception::class, 'message' => $exception->getMessage(), 'code' => $exception->getCode(), 'file' => $exception->getFile(), 'line' => $exception->getLine(), 'trace' => $exception->getTraceAsString()];
+        if ($exception instanceof QueryException) {
+            $details['sql'] = ['connection' => $exception->getConnectionName(), 'query' => $exception->getSql(), 'bindings' => $exception->getBindings(), 'error_info' => $exception->errorInfo];
+        }
+        if ($exception instanceof ValidationException) {
+            $details['validation_errors'] = $exception->errors();
+        }
+        if ($exception->getPrevious()) {
+            $details['previous'] = $this->exceptionDetails($exception->getPrevious());
+        }
+
+        return $details;
     }
 }
