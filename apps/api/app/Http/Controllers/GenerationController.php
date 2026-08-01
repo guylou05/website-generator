@@ -57,7 +57,17 @@ class GenerationController extends Controller
         if (! in_array($generationRun->status, ['failed', 'cancelled', 'stale'], true)) {
             return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'Only failed, cancelled, or stale generations can be retried.']], 409);
         }
-        $retry = $generationRun->project->generationRuns()->create(['organization_id' => $generationRun->organization_id, 'provider' => $generationRun->provider, 'status' => 'queued', 'progress' => 0, 'input' => $generationRun->input, 'queued_at' => now(), 'attempt' => $generationRun->attempt + 1, 'max_attempts' => $generationRun->max_attempts]);
+        $retry = DB::transaction(function () use ($generationRun) {
+            Project::whereKey($generationRun->project_id)->lockForUpdate()->firstOrFail();
+            if (GenerationRun::where('project_id', $generationRun->project_id)->whereIn('status', ['queued', 'running', 'cancelling'])->exists()) {
+                return null;
+            }
+
+            return $generationRun->project->generationRuns()->create(['organization_id' => $generationRun->organization_id, 'provider' => $generationRun->provider, 'status' => 'queued', 'progress' => 0, 'input' => $generationRun->input, 'queued_at' => now(), 'attempt' => $generationRun->attempt + 1, 'max_attempts' => $generationRun->max_attempts]);
+        });
+        if (! $retry) {
+            return response()->json(['error' => ['code' => 'generation_active', 'message' => 'Another generation is already active for this project.']], 409);
+        }
         GenerateWebsite::dispatch($retry->id);
 
         return response()->json(['data' => (new GenerationRunResource($retry))->resolve()], 202);
@@ -65,6 +75,9 @@ class GenerationController extends Controller
 
     public function cancel(GenerationRun $generationRun): GenerationRunResource|JsonResponse
     {
+        if ($generationRun->status === 'cancelling') {
+            return new GenerationRunResource($generationRun->load('events'));
+        }
         if (! in_array($generationRun->status, ['queued', 'running'], true)) {
             return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'This generation can no longer be cancelled.']], 409);
         }

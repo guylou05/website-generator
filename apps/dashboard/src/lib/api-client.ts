@@ -18,6 +18,7 @@ export interface GenerationRun {
     | 'pending'
     | 'queued'
     | 'running'
+    | 'cancelling'
     | 'completed'
     | 'succeeded'
     | 'failed'

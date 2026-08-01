@@ -6,6 +6,8 @@ import { dashboardApi, type Deployment, type Project } from '@/lib/api-client';
 import { GenerationActions } from '@/components/generation-actions';
 import Link from 'next/link';
 
+const activeGenerationStatuses = new Set(['queued', 'running', 'cancelling']);
+
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
@@ -32,6 +34,18 @@ export default function ProjectDetail() {
       )
       .finally(() => setLoading(false));
   }, [projectId]);
+
+  const latestRun = project?.generationRuns[0];
+  useEffect(() => {
+    if (!latestRun || !activeGenerationStatuses.has(latestRun.status)) return;
+    const timer = window.setInterval(() => {
+      void dashboardApi
+        .project(projectId)
+        .then(setProject)
+        .catch(() => undefined);
+    }, 2500);
+    return () => window.clearInterval(timer);
+  }, [latestRun, projectId]);
 
   if (loading)
     return (
@@ -68,8 +82,22 @@ export default function ProjectDetail() {
           </span>
         </div>
         <GenerationActions
-          runId={run?.id}
-          retryable={run?.status === 'failed' || run?.status === 'cancelled'}
+          run={run}
+          onGenerationChange={(nextRun) =>
+            setProject((current) =>
+              current
+                ? {
+                    ...current,
+                    generationRuns: [
+                      nextRun,
+                      ...current.generationRuns.filter(
+                        (item) => item.id !== nextRun.id,
+                      ),
+                    ],
+                  }
+                : current,
+            )
+          }
         />
         {run?.status === 'completed' && (
           <Link
@@ -134,6 +162,12 @@ export default function ProjectDetail() {
           Last generation:{' '}
           <span className="capitalize">{run?.status ?? 'Not started'}</span>
         </p>
+        {run?.status === 'cancelling' && (
+          <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+            Cancellation requested. The job will stop when the worker next
+            checks its status.
+          </p>
+        )}
         <div className="mt-5 space-y-3">
           {run?.events.map((event) => (
             <div key={event.id} className="flex gap-3 border-l-2 pl-4">

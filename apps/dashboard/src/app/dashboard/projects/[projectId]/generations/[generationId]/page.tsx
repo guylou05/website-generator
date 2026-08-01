@@ -131,6 +131,13 @@ export default function GenerationProgressPage() {
                 or unavailable; it is safe to refresh.
               </p>
             )}
+            {run.status === 'cancelling' && (
+              <p className="mt-4 flex gap-2 text-sm text-amber-700">
+                <AlertTriangle className="size-5 shrink-0" />
+                Cancellation requested. The job will stop when the worker next
+                checks its status.
+              </p>
+            )}
             <ol className="mt-6 space-y-2">
               {events.length ? (
                 events.map((event) => (
@@ -185,7 +192,7 @@ export default function GenerationProgressPage() {
                   Retry
                 </button>
               )}
-              {!terminal.has(run.status) && (
+              {['pending', 'queued', 'running'].includes(run.status) && (
                 <button
                   disabled={busy}
                   onClick={() => void act('cancel')}
@@ -224,6 +231,7 @@ function statusTitle(status: GenerationRun['status']) {
     pending: 'Generation queued',
     queued: 'Generation queued',
     running: 'Creating your website',
+    cancelling: 'Cancelling generation',
     completed: 'Website created',
     succeeded: 'Website created',
     failed: 'Generation failed',
