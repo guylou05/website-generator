@@ -369,10 +369,271 @@ export function designPlanFromTransport(
   };
 }
 
-// The provider transport, parser, and validator intentionally share the one
-// canonical blueprint definition. OpenAI-only JSON Schema adaptation (such as
-// stripping unsupported `format` annotations) happens in the client.
-export const openAIWebsiteBlueprintSchema = siteBlueprintSchema;
+// This is deliberately independent from the canonical schemas. In particular,
+// none of these fields use defaults, preprocessors, URL/datetime formats, or
+// application refinements: those belong to siteBlueprintSchema after transport.
+const nullable = <T extends z.ZodTypeAny>(schema: T) => schema.nullable();
+const transportBrandAsset = z
+  .object({
+    url: z.string(),
+    alt: z.string(),
+    width: nullable(z.number().int().positive()),
+    height: nullable(z.number().int().positive()),
+  })
+  .strict();
+const transportStyle = nullable(
+  z
+    .object({
+      variant: nullable(z.string()),
+      align: nullable(z.enum(['start', 'center', 'end'])),
+      width: nullable(z.enum(['auto', 'full'])),
+    })
+    .strict(),
+);
+const transportComponentBase = {
+  id: z.string(),
+  accessibilityLabel: nullable(z.string()),
+  style: transportStyle,
+};
+const transportFormField = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    label: z.string(),
+    type: z.enum(['text', 'email', 'tel', 'textarea', 'select', 'checkbox']),
+    required: z.boolean(),
+    placeholder: nullable(z.string()),
+    options: nullable(
+      z.array(z.object({ label: z.string(), value: z.string() }).strict()),
+    ),
+  })
+  .strict();
+const transportComponent = z.discriminatedUnion('type', [
+  z
+    .object({
+      ...transportComponentBase,
+      type: z.literal('heading'),
+      level: z.number().int().min(1).max(6),
+      text: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      ...transportComponentBase,
+      type: z.literal('text'),
+      text: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      ...transportComponentBase,
+      type: z.literal('button'),
+      label: z.string(),
+      href: z.string(),
+      intent: z.enum(['primary', 'secondary', 'link']),
+      external: z.boolean(),
+    })
+    .strict(),
+  z
+    .object({
+      ...transportComponentBase,
+      type: z.literal('image'),
+      url: z.string(),
+      alt: z.string(),
+      caption: nullable(z.string()),
+      width: nullable(z.number().int().positive()),
+      height: nullable(z.number().int().positive()),
+      loading: z.enum(['eager', 'lazy']),
+    })
+    .strict(),
+  z
+    .object({
+      ...transportComponentBase,
+      type: z.literal('form'),
+      name: z.string(),
+      action: z.string(),
+      method: z.enum(['POST', 'GET']),
+      fields: z.array(transportFormField),
+      submitLabel: z.string(),
+      successMessage: z.string(),
+      consentText: nullable(z.string()),
+    })
+    .strict(),
+]);
+const transportSeo = z
+  .object({
+    title: z.string(),
+    description: z.string(),
+    canonicalUrl: nullable(z.string()),
+    noIndex: z.boolean(),
+    noFollow: z.boolean(),
+    keywords: z.array(z.string()),
+    openGraph: nullable(
+      z
+        .object({
+          title: nullable(z.string()),
+          description: nullable(z.string()),
+          imageUrl: nullable(z.string()),
+          imageAlt: nullable(z.string()),
+          type: z.enum(['website', 'article']),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+type TransportNavigationItem = {
+  id: string;
+  label: string;
+  href: string;
+  external: boolean;
+  children: TransportNavigationItem[];
+};
+const transportNavigationItem: z.ZodType<TransportNavigationItem> = z.lazy(() =>
+  z
+    .object({
+      id: z.string(),
+      label: z.string(),
+      href: z.string(),
+      external: z.boolean(),
+      children: z.array(transportNavigationItem),
+    })
+    .strict(),
+);
+const transportSection = z
+  .object({
+    id: z.string(),
+    type: z.enum([
+      'hero',
+      'content',
+      'features',
+      'services',
+      'testimonials',
+      'cta',
+      'contact',
+      'custom',
+    ]),
+    label: nullable(z.string()),
+    layout: z
+      .object({
+        container: z.enum(['narrow', 'standard', 'wide', 'full']),
+        columns: z.number().int().min(1).max(12),
+        spacing: z.enum(['none', 'small', 'medium', 'large']),
+        background: z.enum([
+          'default',
+          'surface',
+          'primary',
+          'secondary',
+          'accent',
+        ]),
+      })
+      .strict(),
+    components: z.array(transportComponent),
+  })
+  .strict();
+
+export const openAIWebsiteBlueprintSchema = z
+  .object({
+    schemaVersion: z.literal('1.0'),
+    metadata: z
+      .object({
+        name: z.string(),
+        description: z.string(),
+        language: z.string(),
+        baseUrl: z.string(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+      })
+      .strict(),
+    branding: z
+      .object({
+        name: z.string(),
+        tagline: nullable(z.string()),
+        logo: nullable(transportBrandAsset),
+        mark: nullable(transportBrandAsset),
+        colors: z
+          .object({
+            primary: z.string(),
+            secondary: z.string(),
+            accent: z.string(),
+            background: z.string(),
+            surface: z.string(),
+            text: z.string(),
+            mutedText: z.string(),
+          })
+          .strict(),
+        typography: z
+          .object({
+            headingFont: z.string(),
+            bodyFont: z.string(),
+            baseSize: z.string(),
+          })
+          .strict(),
+      })
+      .strict(),
+    globalStyles: z
+      .object({
+        borderRadius: z.enum(['none', 'small', 'medium', 'large', 'pill']),
+        contentWidth: z.enum(['narrow', 'standard', 'wide']),
+        spacingScale: z.enum(['compact', 'comfortable', 'spacious']),
+        buttonStyle: z.enum(['solid', 'outline', 'soft']),
+        imageStyle: z.enum(['square', 'rounded', 'soft']),
+      })
+      .strict(),
+    navigation: z
+      .object({
+        ariaLabel: z.string(),
+        items: z.array(transportNavigationItem),
+        cta: nullable(
+          z
+            .object({
+              label: z.string(),
+              href: z.string(),
+              external: z.boolean(),
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+    defaultSeo: transportSeo,
+    pages: z.array(
+      z
+        .object({
+          id: z.string(),
+          title: z.string(),
+          slug: z.string(),
+          description: nullable(z.string()),
+          showInNavigation: z.boolean(),
+          seo: transportSeo,
+          sections: z.array(transportSection),
+        })
+        .strict(),
+    ),
+    footer: z
+      .object({
+        tagline: nullable(z.string()),
+        columns: z.array(
+          z
+            .object({
+              title: z.string(),
+              links: z.array(transportNavigationItem),
+            })
+            .strict(),
+        ),
+        socialLinks: z.array(
+          z
+            .object({
+              platform: z.string(),
+              href: z.string(),
+              label: z.string(),
+            })
+            .strict(),
+        ),
+        components: z.array(transportComponent),
+        copyright: z.string(),
+      })
+      .strict(),
+  })
+  .strict();
 
 export { siteBlueprintSchema };
 export const openAISchemas = {

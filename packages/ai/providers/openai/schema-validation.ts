@@ -8,6 +8,33 @@ export interface SchemaFormatOccurrence {
   value: unknown;
 }
 
+export interface SchemaRefOccurrence {
+  path: string;
+  node: Record<string, unknown>;
+}
+
+/** Test/debug helper that reports the full JSON Pointer of every $ref node. */
+export function findSchemaRefs(
+  schema: unknown,
+  path = '#',
+): SchemaRefOccurrence[] {
+  if (!schema || typeof schema !== 'object') return [];
+  if (Array.isArray(schema))
+    return schema.flatMap((child, index) =>
+      findSchemaRefs(child, `${path}/${index}`),
+    );
+  const node = schema as JsonSchema;
+  const found = Object.hasOwn(node, '$ref') ? [{ path, node }] : [];
+  for (const [key, child] of Object.entries(node))
+    found.push(
+      ...findSchemaRefs(
+        child,
+        `${path}/${key.replaceAll('~', '~0').replaceAll('/', '~1')}`,
+      ),
+    );
+  return found;
+}
+
 /** Report every format keyword in a generated schema, including nested definitions. */
 export function findSchemaFormats(
   schema: unknown,
@@ -24,14 +51,13 @@ export function findSchemaFormats(
   return occurrences;
 }
 
-/** Clone a schema for transport and strip string formats unsupported by OpenAI. */
+/** Clone a generated schema before attaching it to the SDK request. */
 export function prepareOpenAISchema(schema: unknown): JsonSchema {
   const clone = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(clone);
     if (!node || typeof node !== 'object') return node;
     const result: JsonSchema = {};
     for (const [key, value] of Object.entries(node)) {
-      if (key === 'format' && (node as JsonSchema).type === 'string') continue;
       result[key] = clone(value);
     }
     return result;
@@ -60,6 +86,22 @@ export function validateOpenAISchema(
   const visit = (node: unknown, path: string): void => {
     if (!node || typeof node !== 'object') return;
     const value = node as JsonSchema;
+    if (Object.hasOwn(value, 'default'))
+      throw new Error(
+        `OpenAI structured output schema at ${path} contains unsupported default`,
+      );
+    if (Object.hasOwn(value, '$ref') && Object.keys(value).length !== 1)
+      throw new Error(
+        `OpenAI structured output $ref at ${path} has sibling keywords: ${Object.keys(
+          value,
+        )
+          .filter((key) => key !== '$ref')
+          .join(', ')}`,
+      );
+    if (Object.hasOwn(value, 'format'))
+      throw new Error(
+        `OpenAI structured output schema at ${path} contains unsupported format ${JSON.stringify(value.format)}`,
+      );
     const properties = value.properties as JsonSchema | undefined;
     if (value.type === 'object' || properties) {
       const isMap =
@@ -67,7 +109,9 @@ export function validateOpenAISchema(
         value.additionalProperties !== null &&
         typeof value.additionalProperties === 'object';
       if (isMap) {
-        visit(value.additionalProperties, `${path}/additionalProperties`);
+        throw new Error(
+          `OpenAI structured output object at ${path} is an unsupported additionalProperties map`,
+        );
       } else {
         if (!properties)
           throw new Error(
@@ -80,6 +124,10 @@ export function validateOpenAISchema(
 
         const propertyKeys = Object.keys(properties);
         const requiredKeys = value.required as unknown[];
+        if (new Set(requiredKeys).size !== requiredKeys.length)
+          throw new Error(
+            `OpenAI structured output object at ${path}/required contains duplicate keys`,
+          );
         const invalidRequiredKey = requiredKeys.find(
           (key) => typeof key !== 'string' || !(key in properties),
         );
@@ -118,6 +166,25 @@ export function validateOpenAISchema(
       if (definitions)
         for (const [key, child] of Object.entries(definitions))
           visit(child, `${path}/${keyword}/${key}`);
+    }
+    // Traverse unrecognised schema containers too, so forbidden keywords can
+    // never hide in a newly emitted JSON Schema keyword.
+    const traversed = new Set([
+      'properties',
+      'items',
+      'anyOf',
+      'oneOf',
+      'allOf',
+      'definitions',
+      '$defs',
+    ]);
+    for (const [key, child] of Object.entries(value)) {
+      if (traversed.has(key) || child === null || typeof child !== 'object')
+        continue;
+      visit(
+        child,
+        `${path}/${key.replaceAll('~', '~0').replaceAll('/', '~1')}`,
+      );
     }
   };
 
