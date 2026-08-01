@@ -14,6 +14,7 @@ import { renderElementorPage } from '@website-generator/renderer';
 import { siteBlueprintSchema } from '@website-generator/shared/schema';
 import type { InternalApiClient, JobKind } from './internal-api.js';
 import { logger } from './logger.js';
+import { BlueprintValidationError } from './blueprint-validation.js';
 
 type GenerationContext = {
   data: {
@@ -90,11 +91,19 @@ export class JobHandlers {
       logger.info('Blueprint validation started', { generationRunId: id });
       const validation = siteBlueprintSchema.safeParse(result.blueprint);
       if (!validation.success) {
+        const failure = new BlueprintValidationError(
+          validation.error,
+          result.blueprint,
+        );
         logger.error('Blueprint validation failed', {
-          generationRunId: id,
-          validationErrors: validation.error.issues,
+          runId: id,
+          projectId: context.data.project_id,
+          model: process.env.OPENAI_MODEL ?? context.data.provider,
+          schemaVersion: '1.0',
+          issueCount: validation.error.issues.length,
+          issues: failure.details.issues,
         });
-        throw validation.error;
+        throw failure;
       }
       logger.info('Blueprint validation completed', {
         generationRunId: id,
@@ -210,10 +219,11 @@ export class JobHandlers {
   private async fail(kind: JobKind, id: string, error: unknown): Promise<void> {
     const cancelled = error instanceof Cancelled;
     const details = serializeException(error);
+    const validation = error instanceof BlueprintValidationError;
     await this.api.post(kind, id, 'failed', {
-      code: cancelled ? 'cancelled' : details.name,
+      code: cancelled ? 'cancelled' : validation ? error.code : details.name,
       message: details.message,
-      details,
+      details: validation ? error.details : details,
       cancelled,
     });
   }

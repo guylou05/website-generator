@@ -92,3 +92,6 @@ export type SiteMetadata = z.infer<typeof siteMetadataSchema>;
 export type GlobalStyles = z.infer<typeof globalStylesSchema>;
 export type Footer = z.infer<typeof footerSchema>;
 export type SiteBlueprint = z.infer<typeof siteBlueprintSchema>;
+
+/** Version of the single contract consumed by generation, persistence and renderers. */
+export const BLUEPRINT_SCHEMA_VERSION = '1.0' as const;
