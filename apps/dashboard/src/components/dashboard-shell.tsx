@@ -40,18 +40,25 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [dark, setDark] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [plan, setPlan] = useState<string | null>(null);
   const [verificationMessage, setVerificationMessage] = useState('');
   const router = useRouter();
   useEffect(() => {
-    const value = localStorage.getItem('theme') === 'dark';
+    const preference = localStorage.getItem('theme') ?? 'system';
+    const value =
+      preference === 'dark' ||
+      (preference === 'system' &&
+        matchMedia('(prefers-color-scheme: dark)').matches);
     setDark(value);
     document.documentElement.classList.toggle('dark', value);
     void Promise.all([
       authProvider.currentUser(),
       dashboardApi.organizations(),
-    ]).then(([current, list]) => {
+      dashboardApi.overview(),
+    ]).then(([current, list, overview]) => {
       setUser(current);
       setOrganizations(list);
+      setPlan(overview.organization.plan);
     });
   }, []);
   const toggleTheme = () => {
@@ -136,15 +143,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <Settings className="size-4" />
             Settings
           </Link>
-          <div className="bg-muted/60 mt-4 rounded-xl border p-3">
-            <p className="text-xs font-medium">Starter plan</p>
-            <div className="bg-border my-2 h-1.5 overflow-hidden rounded-full">
-              <div className="bg-primary h-full w-2/3 rounded-full" />
+          {plan && (
+            <div className="bg-muted/60 mt-4 rounded-xl border p-3">
+              <p className="text-xs font-medium capitalize">{plan} plan</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {user?.current_role
+                  ? `${user.current_role} access`
+                  : 'Organization access'}
+              </p>
             </div>
-            <p className="text-muted-foreground text-xs">
-              3 of 5 websites used
-            </p>
-          </div>
+          )}
         </div>
       </aside>
       <div className="lg:pl-64">
@@ -157,7 +165,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <input
               aria-label="Search"
               className="field py-2 pl-9"
-              placeholder="Search projects..."
+              placeholder="Search (Coming soon)"
+              disabled
             />
           </div>
           <div className="ml-auto flex items-center gap-1">
@@ -170,14 +179,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </button>
             <button
               aria-label="Notifications"
+              title="Notifications coming soon"
+              disabled
               className="text-muted-foreground hover:bg-muted relative rounded-lg p-2"
             >
               <Bell className="size-4" />
-              <span className="bg-primary absolute right-1.5 top-1.5 size-1.5 rounded-full" />
             </button>
             <div className="ml-2 flex items-center gap-2 border-l pl-3">
               <span className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-semibold text-white">
-                AM
+                {user?.name
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase() || 'A'}
               </span>
               <span className="hidden text-sm font-medium sm:block">
                 {user?.name ?? 'Account'}

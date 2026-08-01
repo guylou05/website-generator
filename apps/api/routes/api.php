@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\DashboardOverviewController;
 use App\Http\Controllers\DeploymentController;
 use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\ImageGenerationController;
@@ -10,7 +11,9 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\OrganizationSettingsController;
 use App\Http\Controllers\PreviewSessionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\WebsiteRevisionController;
@@ -29,6 +32,17 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'reset'])->middleware('throttle:5,1');
 });
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/dashboard/overview', DashboardOverviewController::class)->middleware('tenant.access');
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::patch('/profile', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'avatar']);
+    Route::delete('/profile/avatar', [ProfileController::class, 'removeAvatar']);
+    Route::post('/profile/change-password', [ProfileController::class, 'password'])->middleware('throttle:5,1');
+    Route::get('/profile/sessions', [ProfileController::class, 'sessions']);
+    Route::delete('/profile/sessions/{session}', [ProfileController::class, 'revokeSession']);
+    Route::post('/profile/sessions/revoke-others', [ProfileController::class, 'revokeOthers']);
+    Route::get('/organization/settings', [OrganizationSettingsController::class, 'show']);
+    Route::patch('/organization/settings', [OrganizationSettingsController::class, 'update']);
     Route::get('/debug/environment', [OperationsController::class, 'environment'])->middleware('throttle:10,1');
     Route::prefix('billing')->middleware(['throttle:20,1', 'verified.email'])->group(function () {
         Route::get('/plans', [BillingController::class, 'plans']);

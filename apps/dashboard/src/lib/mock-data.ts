@@ -1,34 +1,4 @@
-export const projects = [
-  {
-    name: 'Northstar Health',
-    domain: 'northstarhealth.co',
-    status: 'Live',
-    updated: '12 min ago',
-    color: 'from-sky-400 to-blue-600',
-  },
-  {
-    name: 'Flora Studio',
-    domain: 'florastudio.design',
-    status: 'Generating',
-    updated: '28 min ago',
-    color: 'from-pink-400 to-rose-600',
-  },
-  {
-    name: 'Atlas Finance',
-    domain: 'Preview ready',
-    status: 'Draft',
-    updated: 'Yesterday',
-    color: 'from-amber-400 to-orange-600',
-  },
-  {
-    name: 'Kanso Interiors',
-    domain: 'kansointeriors.com',
-    status: 'Live',
-    updated: '2 days ago',
-    color: 'from-emerald-400 to-teal-600',
-  },
-];
-
+/** Static starter definitions; these contain no popularity or usage claims. */
 export const templates = [
   {
     name: 'Sora',

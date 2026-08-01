@@ -62,3 +62,7 @@ Roles are centralized in `OrganizationPolicy` and tenant middleware: owners cont
 ## Billing boundary
 
 Laravel maps Stripe prices to stable internal plans and is the subscription/usage system of record. The dashboard only requests hosted Checkout or Portal URLs. Workers retain `INTERNAL_WORKER_TOKEN` authentication and receive an authoritative plan/provider snapshot before external mutations.
+
+# Customer dashboard data boundary
+
+Dashboard overview, profile, and organization settings are served by authenticated Laravel endpoints. Overview queries are always constrained by `current_organization_id`; personal profile fields are not stored on the organization. See [dashboard completion](dashboard-completion.md) for the route matrix and intentionally unsupported controls.

@@ -31,14 +31,13 @@ const steps = [
   'Review & generate',
 ];
 const initialForm: WebsiteWizardData = {
-  businessName: 'Northstar Advisory',
-  description: 'Practical strategic guidance for growing companies.',
-  businessType: 'Professional services',
-  services: ['Strategy consulting', 'Market research', 'Growth planning'],
+  businessName: '',
+  description: '',
+  businessType: '',
+  services: [],
   brandColors: ['#6658E8', '#141B2D', '#F6F7FB'],
-  targetAudience:
-    'Founders and leadership teams at growing B2B companies with 10–100 employees.',
-  websiteGoal: 'Generate qualified leads',
+  targetAudience: '',
+  websiteGoal: '',
 };
 export default function NewWebsite() {
   const [step, setStep] = useState(0);

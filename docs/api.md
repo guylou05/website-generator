@@ -7,3 +7,14 @@ Authenticated organization CRUD is under `/api/organizations`; `/switch`, `/memb
 ### Billing
 
 Owner/admin endpoints: `GET /api/billing/plans`, `/summary`, `/usage`; `POST /api/billing/checkout-session`, `/portal-session`, `/change-plan`, `/cancel-subscription`, `/resume-subscription`. Limit denials use HTTP 402 with `code`, `metric`, `limit`, `used`, `remaining`, `current_plan`, and `upgrade_required`. Stripe sends signed events to unauthenticated `POST /api/webhooks/stripe`.
+
+# Customer dashboard and settings
+
+All endpoints below require the authenticated Sanctum session. Overview and organization resources use the authenticated user's current organization.
+
+- `GET /api/dashboard/overview` — persisted metrics, recent projects/deployments/activity, account/organization context, and operational heartbeat state.
+- `GET|PATCH /api/profile` — personal name, email, locale, timezone, appearance, and notifications. An email change requires `current_password` and clears verification.
+- `POST|DELETE /api/profile/avatar` — attach an existing organization image media asset or remove it.
+- `POST /api/profile/change-password` — requires `current_password`, `password`, and `password_confirmation`.
+- `GET|DELETE /api/profile/sessions[/{session}]` and `POST /api/profile/sessions/revoke-others` — sanitized session management when database sessions are configured.
+- `GET|PATCH /api/organization/settings` — organization metadata; only owners/admins may patch.
