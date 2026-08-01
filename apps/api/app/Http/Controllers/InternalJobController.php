@@ -133,6 +133,7 @@ class InternalJobController extends Controller
                 Log::info('Final generation event emission started', ['generation_run_id' => $job->id]);
                 $job->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => 'completion', 'event_type' => 'generation.completed', 'progress' => 100, 'message' => 'Generation completed', 'metadata' => ['revision_id' => $revision->id], 'created_at' => now()]);
                 Log::info('Final generation event emission completed', ['generation_run_id' => $job->id]);
+
                 return response()->json(['data' => $job->fresh('events')]);
             }, 3);
             Log::info('Generation completion database transaction committed', ['generation_run_id' => $generationRun->id]);
