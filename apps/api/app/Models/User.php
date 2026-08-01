@@ -14,13 +14,13 @@ class User extends Authenticatable implements MustVerifyEmailContract
 {
     use HasUuids, MustVerifyEmail, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password'];
+    protected $fillable = ['name', 'first_name', 'last_name', 'email', 'password', 'timezone', 'locale', 'appearance', 'notification_preferences', 'avatar_media_asset_id'];
 
     protected $hidden = ['password', 'remember_token'];
 
     protected function casts(): array
     {
-        return ['email_verified_at' => 'datetime', 'last_login_at' => 'datetime', 'onboarding_completed_at' => 'datetime', 'welcome_email_sent_at' => 'datetime', 'password' => 'hashed'];
+        return ['email_verified_at' => 'datetime', 'last_login_at' => 'datetime', 'onboarding_completed_at' => 'datetime', 'welcome_email_sent_at' => 'datetime', 'notification_preferences' => 'array', 'password' => 'hashed'];
     }
 
     public function currentOrganization(): BelongsTo

@@ -153,7 +153,7 @@ export default function EditorPage() {
             className="mx-auto min-h-full overflow-hidden rounded-xl border bg-white shadow-xl transition-[max-width]"
           >
             <nav className="flex items-center justify-between px-8 py-5">
-              <strong>Northstar Studio</strong>
+              <strong>Your website</strong>
               <span className="text-sm">Home · Services · About · Contact</span>
             </nav>
             <section

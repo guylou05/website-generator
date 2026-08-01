@@ -1,4 +1,5 @@
-import { ArrowRight, Search, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { PageHeading } from '@/components/page-heading';
 import { templates } from '@/lib/mock-data';
 export default function Templates() {
@@ -6,24 +7,12 @@ export default function Templates() {
     <>
       <PageHeading
         title="Templates"
-        description="Curated starting points, ready to make your own."
+        description="Static starter templates, ready to make your own."
       />
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-        <div className="relative max-w-md flex-1">
-          <Search className="text-muted-foreground absolute left-3 top-2.5 size-4" />
-          <input className="field py-2 pl-9" placeholder="Search templates" />
-        </div>
-        <div className="flex gap-2 overflow-auto">
-          {['All', 'Business', 'Portfolio', 'E-commerce'].map((x, i) => (
-            <button
-              key={x}
-              className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm ${i === 0 ? 'bg-foreground text-background' : 'bg-card border'}`}
-            >
-              {x}
-            </button>
-          ))}
-        </div>
-      </div>
+      <p className="text-muted-foreground mb-6 text-sm">
+        Starter templates provide design direction only; no popularity, rating,
+        or usage data is claimed.
+      </p>
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {templates.map((t) => (
           <article className="card group overflow-hidden" key={t.name}>
@@ -46,9 +35,12 @@ export default function Templates() {
                 <p className="font-medium">{t.name}</p>
                 <p className="text-muted-foreground text-sm">{t.type}</p>
               </div>
-              <button className="text-primary flex items-center gap-1.5 text-sm font-medium">
+              <Link
+                href={`/dashboard/new?template=${encodeURIComponent(t.name)}`}
+                className="text-primary flex items-center gap-1.5 text-sm font-medium"
+              >
                 Use template <ArrowRight className="size-4" />
-              </button>
+              </Link>
             </div>
           </article>
         ))}

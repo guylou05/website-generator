@@ -81,6 +81,95 @@ export interface AuthUser {
   current_organization: Organization | null;
   current_role: MembershipRole | null;
 }
+export interface DashboardOverview {
+  user: Pick<AuthUser, 'id' | 'name' | 'email' | 'email_verified_at'> & {
+    first_name: string;
+  };
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    role: MembershipRole;
+    plan: string;
+  };
+  metrics: {
+    total_projects: number;
+    live_websites: number;
+    draft_websites: number;
+    paused_websites: number;
+    failed_websites: number;
+    generations_this_month: number;
+    deployments_this_month: number;
+    average_generation_seconds: number | null;
+    deployment_success_rate: number | null;
+    media_storage_bytes: number;
+    generation_usage: number;
+    generation_limit: number;
+    deployment_usage: number;
+    deployment_limit: number;
+  };
+  recent_projects: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+    updated_at: string;
+    approved_revision_id: string | null;
+    last_generation: string | null;
+    last_deployment: string | null;
+  }>;
+  recent_deployments: Array<{
+    id: string;
+    project_id: string;
+    project_name: string;
+    status: string;
+    dry_run: boolean;
+    completed_at: string | null;
+    site_url: string | null;
+  }>;
+  recent_activity: Array<{
+    id: string;
+    action: string;
+    description: string;
+    created_at: string;
+    project_id: string | null;
+  }>;
+  system: {
+    worker_available: boolean;
+    scheduler_available: boolean;
+    queue_status: string;
+  };
+}
+export interface Profile {
+  id: string;
+  name: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  email_verified_at: string | null;
+  avatar: { id: string; url: string | null } | null;
+  timezone: string | null;
+  locale: string | null;
+  appearance: 'light' | 'dark' | 'system';
+  notification_preferences: Record<string, boolean>;
+  last_login_at: string | null;
+}
+export interface OrganizationSettings {
+  id: string;
+  name: string;
+  slug: string;
+  billing_email: string | null;
+  company_website: string | null;
+  industry: string | null;
+  timezone: string | null;
+  address: Record<string, string> | null;
+  logo_media_asset_id: string | null;
+  role: MembershipRole;
+  plan: string;
+  can_edit: boolean;
+  can_manage_members: boolean;
+  can_manage_billing: boolean;
+}
 export type MembershipRole = 'owner' | 'admin' | 'member' | 'viewer';
 export interface Organization {
   id: string;
@@ -393,6 +482,55 @@ export class DashboardApiClient {
   }
   currentUser(): Promise<AuthUser> {
     return this.call('/auth/user');
+  }
+  overview(): Promise<DashboardOverview> {
+    return this.call('/dashboard/overview');
+  }
+  profile(): Promise<Profile> {
+    return this.call('/profile');
+  }
+  updateProfile(
+    input: Partial<Profile> & { current_password?: string },
+  ): Promise<Profile> {
+    return this.call('/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  }
+  changePassword(input: {
+    current_password: string;
+    password: string;
+    password_confirmation: string;
+  }) {
+    return this.call<{ message: string }>('/profile/change-password', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+  profileSessions(): Promise<
+    Array<{
+      id: string;
+      ip_address: string | null;
+      user_agent: string | null;
+      last_activity: number;
+      current: boolean;
+    }>
+  > {
+    return this.call('/profile/sessions');
+  }
+  revokeOtherSessions(): Promise<null> {
+    return this.call('/profile/sessions/revoke-others', { method: 'POST' });
+  }
+  organizationSettings(): Promise<OrganizationSettings> {
+    return this.call('/organization/settings');
+  }
+  updateOrganizationSettings(
+    input: Partial<OrganizationSettings>,
+  ): Promise<OrganizationSettings> {
+    return this.call('/organization/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
   }
   resendVerification(): Promise<{ message: string }> {
     return this.call('/auth/email/verification-notification', {
