@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Jobs\DeployWebsite;
-use App\Jobs\GenerateWebsite;
 use App\Models\Deployment;
 use App\Models\GenerationRun;
 use Illuminate\Database\Eloquent\Builder;
 
 class StaleJobRecoveryService
 {
+    public function __construct(private readonly JobTransport $jobs) {}
+
     public function countGenerations(): int
     {
         return $this->stuckQuery(GenerationRun::query())->count();
@@ -22,12 +22,12 @@ class StaleJobRecoveryService
 
     public function recoverGenerations(): int
     {
-        return $this->recover(GenerationRun::class, GenerateWebsite::class);
+        return $this->recover(GenerationRun::class, 'generation');
     }
 
     public function recoverAll(): int
     {
-        return $this->recoverGenerations() + $this->recover(Deployment::class, DeployWebsite::class);
+        return $this->recoverGenerations() + $this->recover(Deployment::class, 'deployment');
     }
 
     private function stuckQuery(Builder $query): Builder
@@ -46,11 +46,11 @@ class StaleJobRecoveryService
             });
     }
 
-    /** @param class-string<GenerationRun|Deployment> $model @param class-string $job */
-    private function recover(string $model, string $job): int
+    /** @param class-string<GenerationRun|Deployment> $model */
+    private function recover(string $model, string $type): int
     {
         $count = 0;
-        $this->stuckQuery($model::query())->eachById(function ($record) use ($job, &$count) {
+        $this->stuckQuery($model::query())->eachById(function ($record) use ($type, &$count) {
             $count++;
             if ($record->status === 'cancelling') {
                 $record->update(['status' => 'cancelled', 'worker_id' => null, 'current_stage' => null, 'completed_at' => now()]);
@@ -78,7 +78,7 @@ class StaleJobRecoveryService
             ]);
             if ($record->attempt < $record->max_attempts) {
                 $record->update(['status' => 'queued', 'attempt' => $record->attempt + 1, 'queued_at' => now(), 'heartbeat_at' => null]);
-                $job::dispatch($record->id);
+                $this->jobs->{$type}($record->id, $record->attempt ?? 1);
             } else {
                 $record->update(['status' => 'failed', 'error' => ['code' => 'retry_exhausted', 'message' => 'The job could not be recovered.'], 'completed_at' => now()]);
             }

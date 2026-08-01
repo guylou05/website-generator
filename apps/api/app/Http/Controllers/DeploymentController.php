@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\DeployWebsite;
 use App\Models\Deployment;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Services\EntitlementService;
+use App\Services\JobTransport;
 use App\Services\UsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,12 +60,12 @@ class DeploymentController extends Controller
         $deployment = $project->deployments()->create(['organization_id' => $project->organization_id, 'generation_run_id' => $run->id, 'website_revision_id' => $revision->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
         $usage->record($organization, $dryRun ? 'deployment_preview_started' : 'live_deployments', 1, 'deployment', $deployment->id, 'deployment-started-'.$deployment->id);
         $deployment->events()->create(['stage' => 'system', 'event_type' => 'deployment.queued', 'progress' => 0, 'message' => 'Deployment queued.', 'created_at' => now()]);
-        DeployWebsite::dispatch($deployment->id);
+        app(JobTransport::class)->deployment($deployment->id, $deployment->attempt ?? 1);
 
         return response()->json(['data' => $deployment->fresh('events')], 202);
     }
 
-    public function retry(Deployment $deployment): JsonResponse
+    public function retry(Deployment $deployment, JobTransport $jobs): JsonResponse
     {
         if (! in_array($deployment->status, ['failed', 'cancelled', 'stale'], true)) {
             return response()->json(['error' => ['code' => 'not_retryable', 'message' => 'Deployment is not retryable.']], 409);
@@ -73,7 +73,7 @@ class DeploymentController extends Controller
         $copy = $deployment->replicate(['status', 'progress', 'current_stage', 'operations', 'result', 'error', 'queued_at', 'heartbeat_at', 'worker_id', 'started_at', 'completed_at']);
         $copy->fill(['status' => 'queued', 'progress' => 0, 'queued_at' => now(), 'attempt' => $deployment->attempt + 1]);
         $copy->save();
-        DeployWebsite::dispatch($copy->id);
+        $jobs->deployment($copy->id, $copy->attempt ?? 1);
 
         return response()->json(['data' => $copy], 202);
     }

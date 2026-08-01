@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class RecoverStuckGenerationsTest extends TestCase
@@ -50,12 +49,10 @@ class RecoverStuckGenerationsTest extends TestCase
 
     public function test_dry_run_detects_old_queued_generation_without_changing_it(): void
     {
-        Queue::fake();
         $run = $this->project()->generationRuns()->create(['provider' => 'mock', 'status' => 'queued', 'input' => [], 'queued_at' => now()->subMinutes(3)]);
 
         $this->artisan('generations:recover-stuck --dry-run')->expectsOutputToContain('1 stuck generation(s) found')->assertSuccessful();
 
         $this->assertSame('queued', $run->fresh()->status);
-        Queue::assertNothingPushed();
     }
 }
