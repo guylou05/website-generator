@@ -10,7 +10,10 @@ import {
   WordPressClient,
   WordPressDeployer,
 } from '@website-generator/wordpress';
+import { renderElementorPage } from '@website-generator/renderer';
+import { siteBlueprintSchema } from '@website-generator/shared/schema';
 import type { InternalApiClient, JobKind } from './internal-api.js';
+import { logger } from './logger.js';
 
 type GenerationContext = {
   data: {
@@ -78,21 +81,60 @@ export class JobHandlers {
       const result = await orchestrator.generateWebsite(
         context.data.project_id,
       );
+      logger.info(
+        'Blueprint generation returned; beginning post-blueprint pipeline',
+        {
+          generationRunId: id,
+        },
+      );
+      logger.info('Blueprint validation started', { generationRunId: id });
+      const validation = siteBlueprintSchema.safeParse(result.blueprint);
+      if (!validation.success) {
+        logger.error('Blueprint validation failed', {
+          generationRunId: id,
+          validationErrors: validation.error.issues,
+        });
+        throw validation.error;
+      }
+      logger.info('Blueprint validation completed', {
+        generationRunId: id,
+        pages: validation.data.pages.length,
+      });
+      const documents = [];
+      for (const page of validation.data.pages) {
+        logger.info('Page creation started', {
+          generationRunId: id,
+          pageId: page.id,
+        });
+        const document = renderElementorPage(validation.data, page.id);
+        documents.push({ page: page.id, elements: document.content });
+        logger.info('Page creation completed', {
+          generationRunId: id,
+          pageId: page.id,
+        });
+      }
       await this.cancelGuard('generations', id);
+      logger.info('Blueprint persistence and generation completion started', {
+        generationRunId: id,
+      });
       await this.api.post('generations', id, 'completed', {
         output: {
-          blueprint: result.blueprint,
+          blueprint: validation.data,
           elementor: {
             status: 'ready',
-            documents: (result.blueprint.pages ?? []).map((p: any) => ({
-              page: p.id,
-              elements: [],
-            })),
+            documents,
           },
-          summary: { pages_generated: result.blueprint.pages?.length ?? 0 },
+          summary: { pages_generated: validation.data.pages.length },
         },
       });
+      logger.info('Blueprint persistence and generation completion completed', {
+        generationRunId: id,
+      });
     } catch (error) {
+      logger.error('Generation failed with exception', {
+        generationRunId: id,
+        error: serializeException(error),
+      });
       await this.fail('generations', id, error);
     } finally {
       stop();
@@ -167,14 +209,31 @@ export class JobHandlers {
   }
   private async fail(kind: JobKind, id: string, error: unknown): Promise<void> {
     const cancelled = error instanceof Cancelled;
+    const details = serializeException(error);
     await this.api.post(kind, id, 'failed', {
-      code: cancelled ? 'cancelled' : 'job_failed',
-      message: cancelled
-        ? 'Job cancelled.'
-        : 'The job could not be completed. Please retry.',
+      code: cancelled ? 'cancelled' : details.name,
+      message: details.message,
+      details,
       cancelled,
     });
   }
+}
+
+export function serializeException(error: unknown): Record<string, any> {
+  if (!(error instanceof Error))
+    return { name: 'NonError', message: String(error) };
+  const own = Object.fromEntries(
+    Object.getOwnPropertyNames(error)
+      .filter((key) => !['name', 'message', 'stack', 'cause'].includes(key))
+      .map((key) => [key, (error as any)[key]]),
+  );
+  return {
+    name: error.name,
+    message: error.message,
+    stack: error.stack ?? null,
+    ...own,
+    ...(error.cause ? { cause: serializeException(error.cause) } : {}),
+  };
 }
 function mockResponses(profile: Record<string, unknown>): any {
   const name = String(profile.businessName ?? 'Website');
