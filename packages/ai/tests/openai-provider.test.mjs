@@ -64,6 +64,20 @@ test('every OpenAI stage schema is strict and fully required', () => {
   assert.equal(audience.nullable, true);
   assert.ok(analysis.properties.offerings.items.required.includes('audience'));
 });
+test('website_copy pages contain a complete page value schema', () => {
+  const schema = validateOpenAISchema(
+    'website_copy',
+    openAISchemas.website_copy,
+  );
+  const page = schema.properties.pages.additionalProperties;
+
+  assert.ok(page.properties.sections);
+  assert.ok(page.required.includes('sections'));
+  assert.deepEqual(
+    page.required.toSorted(),
+    Object.keys(page.properties).toSorted(),
+  );
+});
 test('stages use an injected client and never call the network', async () => {
   const analysis = await new OpenAIBusinessAnalyzer(fake).analyze(profile, {
     runId: 'test',
