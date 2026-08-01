@@ -2,10 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\DeployWebsite;
-use App\Jobs\GenerateWebsite;
-use App\Models\Deployment;
-use App\Models\GenerationRun;
+use App\Services\StaleJobRecoveryService;
 use Illuminate\Console\Command;
 
 class RecoverStaleJobs extends Command
@@ -14,28 +11,15 @@ class RecoverStaleJobs extends Command
 
     protected $description = 'Recover jobs whose worker heartbeat expired';
 
-    public function handle(): int
+    public function handle(StaleJobRecoveryService $recovery): int
     {
-        $cutoff = now()->subSeconds(config('app.job_stale_after_seconds'));
-        $count = GenerationRun::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->count()
-            + Deployment::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->count();
+        $count = $recovery->countAll();
         if (! $this->option('execute')) {
             $this->info("Dry run: {$count} stale job(s) found; no records changed. Pass --execute to recover them.");
 
             return self::SUCCESS;
         }
-        foreach ([[GenerationRun::class, GenerateWebsite::class], [Deployment::class, DeployWebsite::class]] as [$model, $job]) {
-            $model::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->each(function ($record) use ($job) {
-                $record->update(['status' => 'stale', 'worker_id' => null]);
-                $record->events()->create(['stage' => 'system', 'event_type' => 'job.stale', 'progress' => $record->progress, 'message' => 'Worker heartbeat expired; recovery started.', 'created_at' => now()]);
-                if ($record->attempt < $record->max_attempts) {
-                    $record->update(['status' => 'queued', 'attempt' => $record->attempt + 1, 'queued_at' => now()]);
-                    $job::dispatch($record->id);
-                } else {
-                    $record->update(['status' => 'failed', 'error' => ['code' => 'retry_exhausted', 'message' => 'The job could not be recovered.'], 'completed_at' => now()]);
-                }
-            });
-        }
+        $recovery->recoverAll();
 
         return self::SUCCESS;
     }
