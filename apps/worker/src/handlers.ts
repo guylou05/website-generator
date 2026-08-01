@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 /* eslint-disable @typescript-eslint/no-explicit-any -- callback data crosses a validated JSON API boundary */
 import {
   MockAiProvider,
+  OpenAIProviderError,
   WebsiteGenerationOrchestrator,
   createOpenAIProvider,
 } from '@website-generator/ai';
@@ -140,8 +141,10 @@ export class JobHandlers {
         generationRunId: id,
       });
     } catch (error) {
+      const providerError = findOpenAIError(error);
       logger.error('Generation failed with exception', {
         generationRunId: id,
+        ...(providerError?.details ?? {}),
         error: serializeException(error),
       });
       await this.fail('generations', id, error);
@@ -219,14 +222,30 @@ export class JobHandlers {
   private async fail(kind: JobKind, id: string, error: unknown): Promise<void> {
     const cancelled = error instanceof Cancelled;
     const details = serializeException(error);
+    const providerError = findOpenAIError(error);
     const validation = error instanceof BlueprintValidationError;
     await this.api.post(kind, id, 'failed', {
-      code: cancelled ? 'cancelled' : validation ? error.code : details.name,
-      message: details.message,
-      details: validation ? error.details : details,
+      code: cancelled
+        ? 'cancelled'
+        : validation
+          ? error.code
+          : (providerError?.details.code ?? details.name),
+      message: providerError?.message ?? details.message,
+      details: validation ? error.details : (providerError?.details ?? details),
       cancelled,
     });
   }
+}
+
+function findOpenAIError(error: unknown): OpenAIProviderError | undefined {
+  let current = error;
+  const seen = new Set<unknown>();
+  while (current && !seen.has(current)) {
+    if (current instanceof OpenAIProviderError) return current;
+    seen.add(current);
+    current = current instanceof Error ? current.cause : undefined;
+  }
+  return undefined;
 }
 
 export function serializeException(error: unknown): Record<string, any> {

@@ -20,6 +20,65 @@ export interface StructuredOpenAIClient {
   readonly usage: readonly UsageMetadata[];
 }
 
+export interface OpenAIErrorDetails {
+  provider: 'openai';
+  model: string;
+  status?: number;
+  type?: string;
+  code?: string;
+  message: string;
+  requestId?: string;
+  endpoint: string;
+}
+
+/** A lossless, serializable view of an error returned by OpenAI. */
+export class OpenAIProviderError extends Error {
+  readonly details: OpenAIErrorDetails;
+
+  constructor(details: OpenAIErrorDetails, cause: unknown) {
+    super(details.message, { cause });
+    this.name = 'OpenAIProviderError';
+    this.details = details;
+  }
+}
+
+const endpoint = '/v1/chat/completions';
+
+function providerError(error: unknown, model: string): OpenAIProviderError {
+  const value = error as {
+    status?: number;
+    code?: string;
+    type?: string;
+    message?: string;
+    request_id?: string;
+    headers?: { get?(name: string): string | null };
+    error?: { code?: string; type?: string; message?: string };
+  };
+  const body = value?.error;
+  const requestId =
+    value?.request_id ?? value?.headers?.get?.('x-request-id') ?? undefined;
+  return new OpenAIProviderError(
+    {
+      provider: 'openai',
+      model,
+      ...(typeof value?.status === 'number' ? { status: value.status } : {}),
+      ...((body?.type ?? value?.type)
+        ? { type: body?.type ?? value.type }
+        : {}),
+      ...((body?.code ?? value?.code)
+        ? { code: body?.code ?? value.code }
+        : {}),
+      message:
+        body?.message ??
+        value?.message ??
+        (typeof error === 'string' ? error : String(error)),
+      ...(requestId ? { requestId } : {}),
+      endpoint,
+    },
+    error,
+  );
+}
+
 export class OpenAIStructuredClient implements StructuredOpenAIClient {
   private readonly sdk: OpenAI;
   private readonly records: UsageMetadata[] = [];
@@ -35,7 +94,9 @@ export class OpenAIStructuredClient implements StructuredOpenAIClient {
       new OpenAI({
         apiKey: config.apiKey,
         timeout: config.timeoutMs,
-        maxRetries: config.maxRetries,
+        // Pipeline retries are status-aware; SDK retries would also retry statuses
+        // (such as 408/409) that are explicitly not safe for this worker.
+        maxRetries: 0,
       });
   }
   async generate<T>(
@@ -73,20 +134,13 @@ export class OpenAIStructuredClient implements StructuredOpenAIClient {
         throw new Error('The model returned invalid structured output');
       return schema.parse(message.parsed);
     } catch (error) {
-      if (error instanceof OpenAI.APIConnectionTimeoutError)
-        throw new Error('The AI service timed out. Please try again.');
-      if (error instanceof OpenAI.RateLimitError)
-        throw new Error('The AI service is busy. Please try again shortly.');
-      if (error instanceof OpenAI.AuthenticationError)
-        throw new Error('The AI service is not configured correctly.');
       if (
         error instanceof Error &&
         (error.message.startsWith('The model') || error.name === 'AbortError')
       )
         throw error;
-      throw new Error(
-        'The AI service could not complete this request. Please try again.',
-      );
+      if (error instanceof OpenAIProviderError) throw error;
+      throw providerError(error, this.config.model);
     }
   }
 }

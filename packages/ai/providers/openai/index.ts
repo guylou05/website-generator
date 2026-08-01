@@ -5,6 +5,7 @@ import { readOpenAIConfig, type OpenAIProviderConfig } from './config.js';
 import { OpenAIDesignPlanner } from './designer.js';
 import { OpenAIWebsitePlanner } from './planner.js';
 import { OpenAIContentWriter, OpenAISeoGenerator } from './writer.js';
+import { OpenAIRetryPolicy } from './retry.js';
 export * from './analyzer.js';
 export * from './blueprint.js';
 export * from './client.js';
@@ -14,12 +15,14 @@ export * from './planner.js';
 export * from './prompts.js';
 export * from './schemas.js';
 export * from './writer.js';
+export * from './retry.js';
 export function createOpenAIProvider(
   config: OpenAIProviderConfig = readOpenAIConfig(),
 ) {
   const client = new OpenAIStructuredClient(config);
   return {
     client,
+    retryPolicy: new OpenAIRetryPolicy(config.maxRetries),
     analyzer: new OpenAIBusinessAnalyzer(client),
     planner: new OpenAIWebsitePlanner(client),
     writer: new OpenAIContentWriter(client),
