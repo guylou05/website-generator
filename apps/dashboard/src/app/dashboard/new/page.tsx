@@ -4,6 +4,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from 'lucide-react';
 import { type WebsiteWizardData } from '@/lib/website-generation';
 import { dashboardApi } from '@/lib/api-client';
+import {
+  completeServicesStep,
+  parseServices,
+  toWebsiteWizardData,
+  updateRawServices,
+  type WebsiteWizardForm,
+} from '@/lib/wizard-services';
 
 const steps = [
   'Business name',
@@ -14,11 +21,12 @@ const steps = [
   'Website goal',
   'Review & generate',
 ];
-const initialForm: WebsiteWizardData = {
+const initialForm: WebsiteWizardForm = {
   businessName: '',
   description: '',
   businessType: '',
   services: [],
+  rawServices: '',
   brandColors: ['#6658E8', '#141B2D', '#F6F7FB'],
   targetAudience: '',
   websiteGoal: '',
@@ -37,16 +45,18 @@ export default function NewWebsite() {
       try {
         const draft = JSON.parse(saved) as {
           step: number;
-          form: WebsiteWizardData;
+          form: WebsiteWizardData & { rawServices?: string };
         };
         setStep(Math.min(draft.step, 6));
-        setForm(draft.form);
+        setForm({
+          ...draft.form,
+          rawServices: draft.form.rawServices ?? draft.form.services.join('\n'),
+        });
       } catch {
         window.localStorage.removeItem('sitefoundry.website-draft');
       }
     const template = search.get('template');
-    if (template)
-      setForm((current) => ({ ...current, template }) as WebsiteWizardData);
+    if (template) setForm((current) => ({ ...current, template }));
   }, [search]);
   useEffect(() => {
     window.localStorage.setItem(
@@ -61,11 +71,13 @@ export default function NewWebsite() {
       return;
     }
     setError('');
+    if (step === 2) setForm((current) => completeServicesStep(current));
     setStep((value) => value + 1);
   };
   const start = () => {
     if (submitted.current || submitting) return;
-    const issue = validateStep(6, form);
+    const normalizedForm = completeServicesStep(form);
+    const issue = validateStep(6, normalizedForm);
     if (issue) {
       setError(issue);
       return;
@@ -75,13 +87,14 @@ export default function NewWebsite() {
     setError('');
     void (async () => {
       try {
+        const wizardData = toWebsiteWizardData(normalizedForm);
         const project = await dashboardApi.createProject({
-          name: form.businessName,
-          business_profile: { ...form },
-          brand_settings: { colors: form.brandColors },
+          name: wizardData.businessName,
+          business_profile: { ...wizardData },
+          brand_settings: { colors: wizardData.brandColors },
         });
         const run = await dashboardApi.createGeneration(project.id, {
-          ...form,
+          ...wizardData,
         });
         window.localStorage.removeItem('sitefoundry.website-draft');
         router.push(`/dashboard/projects/${project.id}/generations/${run.id}`);
@@ -181,8 +194,8 @@ function WizardStep({
   setForm,
 }: {
   step: number;
-  form: WebsiteWizardData;
-  setForm: (data: WebsiteWizardData) => void;
+  form: WebsiteWizardForm;
+  setForm: (data: WebsiteWizardForm) => void;
 }) {
   const headings = [
     [
@@ -199,9 +212,9 @@ function WizardStep({
       'Review your details before we bring it to life.',
     ],
   ];
-  const update = <K extends keyof WebsiteWizardData>(
+  const update = <K extends keyof WebsiteWizardForm>(
     key: K,
-    value: WebsiteWizardData[K],
+    value: WebsiteWizardForm[K],
   ) => setForm({ ...form, [key]: value });
   const heading = headings[step] ?? headings[0]!;
   return (
@@ -258,15 +271,9 @@ function WizardStep({
             Services, one per line
             <textarea
               className="field mt-2 min-h-32"
-              value={form.services.join('\n')}
-              onChange={(e) =>
-                update(
-                  'services',
-                  e.target.value
-                    .split('\n')
-                    .map((value) => value.trim())
-                    .filter(Boolean),
-                )
+              value={form.rawServices}
+              onChange={(event) =>
+                setForm(updateRawServices(form, event.target.value))
               }
             />
           </label>
@@ -348,12 +355,15 @@ function WizardStep({
   );
 }
 
-function validateStep(step: number, form: WebsiteWizardData): string {
+function validateStep(step: number, form: WebsiteWizardForm): string {
   if ((step === 0 || step === 6) && form.businessName.trim().length < 2)
     return 'Enter a business name of at least two characters.';
   if ((step === 1 || step === 6) && !form.businessType)
     return 'Choose a business type.';
-  if ((step === 2 || step === 6) && form.services.length === 0)
+  if (
+    (step === 2 || step === 6) &&
+    parseServices(form.rawServices).length === 0
+  )
     return 'Add at least one service, one per line.';
   if ((step === 3 || step === 6) && form.brandColors.length === 0)
     return 'Choose at least one brand color.';
