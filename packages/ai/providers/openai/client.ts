@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import type { z } from 'zod';
+import { z } from 'zod';
 import type { OpenAIProviderConfig } from './config.js';
 import { SYSTEM_PROMPT } from './prompts.js';
 import {
@@ -145,6 +145,9 @@ export class OpenAIStructuredClient implements StructuredOpenAIClient {
         throw new Error('The model returned invalid structured output');
       return schema.parse(message.parsed);
     } catch (error) {
+      // Parsing the SDK response against our local transport schema is not an
+      // OpenAI service failure and must retain its validation classification.
+      if (error instanceof z.ZodError) throw error;
       if (
         error instanceof Error &&
         (error.message.startsWith('The model') || error.name === 'AbortError')
