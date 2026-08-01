@@ -178,7 +178,24 @@ export default function GenerationProgressPage() {
                 role="alert"
                 className="mt-5 rounded-lg bg-red-50 p-4 text-sm text-red-800"
               >
-                <strong>Generation failed.</strong> {run.error.message}
+                <strong>Generation failed.</strong>{' '}
+                {run.error.code === 'blueprint_validation_failed'
+                  ? 'The generated website structure did not pass validation. You can retry without re-entering your project information.'
+                  : run.error.message}
+                {run.error.code === 'blueprint_validation_failed' &&
+                run.error.details?.issues?.length ? (
+                  <details className="mt-2">
+                    <summary>Technical details</summary>
+                    <ul className="mt-1 list-disc pl-5">
+                      {run.error.details.issues.slice(0, 5).map((issue) => (
+                        <li key={`${issue.path}:${issue.message}`}>
+                          {issue.path || 'blueprint'}: {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1">Error reference: {run.id}</p>
+                  </details>
+                ) : null}
               </div>
             )}
             <div className="mt-6 flex flex-wrap gap-3">

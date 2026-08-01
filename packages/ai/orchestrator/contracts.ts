@@ -21,6 +21,12 @@ export interface BlueprintGenerator {
     input: Readonly<BlueprintGenerationInput>,
     context: GenerationContext,
   ): Promise<SiteBlueprint>;
+  repair?(
+    input: Readonly<BlueprintGenerationInput>,
+    invalidBlueprint: unknown,
+    issues: readonly { path: readonly (string | number)[]; message: string }[],
+    context: GenerationContext,
+  ): Promise<SiteBlueprint>;
 }
 
 export interface GenerationContext {

@@ -1,4 +1,5 @@
 export * from './branding.js';
+export * from './blueprint-validation.js';
 export * from './component.js';
 export * from './navigation.js';
 export * from './page.js';

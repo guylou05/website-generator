@@ -36,7 +36,11 @@ export interface GenerationRun {
       elementor_ready?: boolean;
     };
   } | null;
-  error: { code: string; message: string } | null;
+  error: {
+    code: string;
+    message: string;
+    details?: { issues?: Array<{ path: string; message: string }> };
+  } | null;
   events: GenerationEvent[];
   createdAt: string;
 }

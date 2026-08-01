@@ -16,4 +16,18 @@ export class OpenAIBlueprintGenerator implements BlueprintGenerator {
       context.signal,
     )) as Awaited<ReturnType<BlueprintGenerator['generate']>>;
   }
+  async repair(
+    input: Parameters<NonNullable<BlueprintGenerator['repair']>>[0],
+    invalidBlueprint: unknown,
+    issues: Parameters<NonNullable<BlueprintGenerator['repair']>>[2],
+    context: Parameters<NonNullable<BlueprintGenerator['repair']>>[3],
+  ) {
+    return (await this.client.generate(
+      'website_blueprint_repair',
+      `${prompts.blueprint}\nCorrect the supplied blueprint. Change only fields required by these validation issues: ${JSON.stringify(issues)}.`,
+      { source: input, invalidBlueprint },
+      siteBlueprintSchema,
+      context.signal,
+    )) as Awaited<ReturnType<NonNullable<BlueprintGenerator['repair']>>>;
+  }
 }

@@ -1,4 +1,8 @@
-import type { SiteBlueprint } from '@website-generator/shared/schema';
+import {
+  normalizeBlueprint,
+  siteBlueprintSchema,
+  type SiteBlueprint,
+} from '@website-generator/shared/schema';
 import type { BusinessProfile } from '../analyzer/index.js';
 import type { DesignPlan } from '../designer/index.js';
 import type { WebsitePlan } from '../planner/index.js';
@@ -235,18 +239,40 @@ export class WebsiteGenerationOrchestrator {
       'blueprint',
       5,
       state,
-      (signal) =>
-        this.dependencies.blueprintGenerator.generate(
-          {
-            profile: state.profile,
-            analysis: state.analysis!,
-            plan: state.plan!,
-            content: state.content!,
-            seo: state.seo!,
-            design: state.design!,
-          },
+      async (signal) => {
+        const blueprintInput = {
+          profile: state.profile,
+          analysis: state.analysis!,
+          plan: state.plan!,
+          content: state.content!,
+          seo: state.seo!,
+          design: state.design!,
+        };
+        const generated = await this.dependencies.blueprintGenerator.generate(
+          blueprintInput,
           { runId, signal },
-        ),
+        );
+        // Structured providers opt into repair; legacy/custom generators remain
+        // compatible and are still validated at the worker boundary.
+        if (!this.dependencies.blueprintGenerator.repair) return generated;
+        const first = normalizeBlueprint(generated);
+        const validation = siteBlueprintSchema.safeParse(first.value);
+        if (validation.success) return validation.data;
+        this.logger.info('Blueprint repair attempt started', {
+          projectId,
+          runId,
+          issueCount: validation.error.issues.length,
+        });
+        const repaired = await this.dependencies.blueprintGenerator.repair(
+          {
+            ...blueprintInput,
+          },
+          first.value,
+          validation.error.issues,
+          { runId, signal },
+        );
+        return siteBlueprintSchema.parse(normalizeBlueprint(repaired).value);
+      },
       (value) => {
         state.blueprint = value;
       },
