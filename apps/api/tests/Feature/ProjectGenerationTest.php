@@ -55,7 +55,19 @@ class ProjectGenerationTest extends TestCase
         $this->assertDatabaseHas('generation_events', ['generation_run_id' => $run->id, 'event_type' => 'run.cancelling']);
     }
 
-    public function test_failed_generation_cannot_be_retried_while_another_generation_is_active(): void
+    public function test_worker_confirms_requested_cancellation(): void
+    {
+        config(['app.internal_worker_token' => 'worker-token']);
+        $run = $this->project()->generationRuns()->create(['provider' => 'mock', 'status' => 'cancelling', 'progress' => 35, 'input' => []]);
+
+        $this->withToken('worker-token')->postJson('/api/internal/generations/'.$run->id.'/failed', [
+            'code' => 'cancelled', 'message' => 'Worker stopped.', 'cancelled' => true,
+        ])->assertOk()->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertDatabaseHas('generation_runs', ['id' => $run->id, 'status' => 'cancelled']);
+    }
+
+    public function test_retry_is_rejected_while_another_generation_is_active(): void
     {
         $project = $this->project();
         $failed = $project->generationRuns()->create(['provider' => 'mock', 'status' => 'failed', 'progress' => 10, 'input' => []]);
