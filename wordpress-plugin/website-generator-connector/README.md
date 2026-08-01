@@ -27,3 +27,11 @@ WordPress handles Application Password authentication before permission callback
 ## Connection verification
 
 Authenticated administrators can call `GET /wp-json/website-generator/v1/status` to inspect WordPress, connector, and Elementor availability and versions. All mutation endpoints require administrator capabilities and are designed for repeatable server-side deployments.
+
+## Requirements and secure credentials
+
+Version 1.0.0 requires WordPress 6.5+, PHP 8.1+, and Elementor 3.20+ for Elementor deployment. Upload `sitefoundry-connector.zip`, activate it, and resolve any activation error before connecting.
+
+In **Users → Profile → Application Passwords**, create a dedicated `SiteFoundry` password for an administrator over HTTPS. Copy it directly into SiteFoundry, verify the connection, and discard the displayed copy. Do not use the account password, send the credential by email, or place it in a URL. Revoking the Application Password disconnects SiteFoundry without changing the WordPress login.
+
+Upgrades retain schema state and all customer pages/media. Uninstall also preserves customer content; connector settings are removed only when `SITEFOUNDRY_CONNECTOR_REMOVE_SETTINGS` is explicitly set to `true`.

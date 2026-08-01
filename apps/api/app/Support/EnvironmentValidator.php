@@ -5,6 +5,62 @@ namespace App\Support;
 class EnvironmentValidator
 {
     /** @return list<string> */
+    public function mailErrors(): array
+    {
+        $mailer = (string) env('MAIL_MAILER', 'log');
+        if (! in_array($mailer, ['smtp', 'log'], true)) {
+            return ['MAIL_MAILER must be smtp or log.'];
+        }
+        if ($mailer === 'smtp' && (! env('MAIL_HOST') || ! env('MAIL_PORT'))) {
+            return ['SMTP requires MAIL_HOST and MAIL_PORT.'];
+        }
+        if (! filter_var(env('MAIL_FROM_ADDRESS'), FILTER_VALIDATE_EMAIL)) {
+            return ['MAIL_FROM_ADDRESS must be a valid email address.'];
+        }
+
+        return [];
+    }
+
+    /** @return list<string> */
+    public function openAiErrors(): array
+    {
+        if (env('AI_PROVIDER', 'mock') !== 'openai') {
+            return [];
+        }
+        $errors = [];
+        if (! env('OPENAI_API_KEY')) {
+            $errors[] = 'OPENAI_API_KEY is required when AI_PROVIDER=openai.';
+        }
+        if (! env('OPENAI_MODEL')) {
+            $errors[] = 'OPENAI_MODEL is required when AI_PROVIDER=openai.';
+        }
+        if ((int) env('OPENAI_TIMEOUT_MS', 0) < 1000) {
+            $errors[] = 'OPENAI_TIMEOUT_MS must be at least 1000.';
+        }
+        if ((int) env('OPENAI_MAX_RETRIES', -1) < 0) {
+            $errors[] = 'OPENAI_MAX_RETRIES must be zero or greater.';
+        }
+
+        return $errors;
+    }
+
+    /** @return list<string> */
+    public function billingErrors(): array
+    {
+        if (! filter_var(env('BILLING_ENABLED', false), FILTER_VALIDATE_BOOL)) {
+            return [];
+        }
+        $errors = [];
+        foreach (['STRIPE_SECRET', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_BUSINESS'] as $key) {
+            if (! env($key)) {
+                $errors[] = "$key is required when billing is enabled.";
+            }
+        }
+
+        return $errors;
+    }
+
+    /** @return list<string> */
     public function errors(?array $environment = null): array
     {
         $value = static fn (string $key, mixed $default = null): mixed => $environment !== null
@@ -57,7 +113,11 @@ class EnvironmentValidator
             $errors[] = 'QUEUE_CONNECTION must use an asynchronous driver in production.';
         }
 
-        return $errors;
+        if ($environment === null) {
+            $errors = [...$errors, ...$this->mailErrors(), ...$this->openAiErrors(), ...$this->billingErrors()];
+        }
+
+        return array_values(array_unique($errors));
     }
 
     private function isPlaceholderEmail(string $email): bool

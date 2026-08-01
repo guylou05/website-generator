@@ -17,29 +17,38 @@ class OperationsController extends Controller
 {
     public function health(): JsonResponse
     {
-        $check = fn (callable $callback) => $this->check($callback);
-        try {
-            $worker = GenerationRun::query()->whereNotNull('heartbeat_at')->max('heartbeat_at')
-                ?? Deployment::query()->whereNotNull('heartbeat_at')->max('heartbeat_at');
-        } catch (Throwable) {
-            $worker = null;
-        }
-        $checks = [
-            'database' => $check(fn () => DB::select('select 1')),
-            'redis' => $check(fn () => Redis::connection()->ping()),
-            'storage' => $check(fn () => Storage::disk(config('filesystems.default'))->exists('.')),
-            'queue' => ['status' => config('queue.default') === 'sync' ? 'degraded' : 'ok', 'driver' => config('queue.default')],
-            'mail' => ['status' => config('mail.default') ? 'ok' : 'error', 'driver' => config('mail.default')],
-            'worker' => ['status' => $worker ? 'ok' : 'unknown', 'last_heartbeat' => $worker],
-            'scheduler' => ['status' => Cache::get('scheduler:heartbeat') ? 'ok' : 'unknown', 'last_heartbeat' => Cache::get('scheduler:heartbeat')],
-        ];
-        $failed = collect($checks)->contains(fn ($value) => ($value['status'] ?? null) === 'error');
+        return response()->json(['status' => 'ok', 'version' => config('app.version', '0.1.0')]);
+    }
 
-        return response()->json([
-            'status' => $failed ? 'degraded' : 'ok', 'checks' => $checks,
-            'version' => config('app.version', '0.1.0'), 'git_commit' => env('GIT_COMMIT_SHA', env('RAILWAY_GIT_COMMIT_SHA')),
-            'deployed_at' => env('DEPLOYMENT_TIMESTAMP'),
-        ], $failed ? 503 : 200);
+    public function readiness(): JsonResponse
+    {
+        $result = Cache::remember('operations:readiness', 15, function (): array {
+            $check = fn (callable $callback) => $this->check($callback);
+            try {
+                $worker = GenerationRun::query()->whereNotNull('heartbeat_at')->max('heartbeat_at')
+                    ?? Deployment::query()->whereNotNull('heartbeat_at')->max('heartbeat_at');
+            } catch (Throwable) {
+                $worker = null;
+            }
+            $checks = [
+                'database' => $check(fn () => DB::select('select 1')),
+                'redis' => $check(fn () => Redis::connection()->ping()),
+                'storage' => $check(fn () => Storage::disk(config('filesystems.default'))->exists('.')),
+                'queue' => ['status' => config('queue.default') === 'sync' ? 'degraded' : 'ok', 'driver' => config('queue.default')],
+                'mail' => ['status' => config('mail.default') ? 'ok' : 'error', 'driver' => config('mail.default')],
+                'worker' => ['status' => $worker ? 'ok' : 'unknown', 'last_heartbeat' => $worker],
+                'scheduler' => ['status' => Cache::get('scheduler:heartbeat') ? 'ok' : 'unknown', 'last_heartbeat' => Cache::get('scheduler:heartbeat')],
+            ];
+            $failed = collect($checks)->contains(fn ($value) => ($value['status'] ?? null) === 'error');
+
+            return ['body' => [
+                'status' => $failed ? 'degraded' : 'ok', 'checks' => $checks,
+                'version' => config('app.version', '0.1.0'), 'git_commit' => env('GIT_COMMIT_SHA', env('RAILWAY_GIT_COMMIT_SHA')),
+                'deployed_at' => env('DEPLOYMENT_TIMESTAMP'),
+            ], 'status' => $failed ? 503 : 200];
+        });
+
+        return response()->json($result['body'], $result['status']);
     }
 
     public function environment(Request $request, EnvironmentValidator $validator): JsonResponse
@@ -66,7 +75,7 @@ class OperationsController extends Controller
 
             return ['status' => 'ok'];
         } catch (Throwable $exception) {
-            return ['status' => 'error', 'message' => $exception->getMessage()];
+            return ['status' => 'error', 'message' => 'Check unavailable'];
         }
     }
 }

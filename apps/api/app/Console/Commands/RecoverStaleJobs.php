@@ -10,13 +10,20 @@ use Illuminate\Console\Command;
 
 class RecoverStaleJobs extends Command
 {
-    protected $signature = 'jobs:recover-stale';
+    protected $signature = 'jobs:recover-stale {--dry-run : Report stale jobs without changing them} {--execute : Recover stale jobs}';
 
     protected $description = 'Recover jobs whose worker heartbeat expired';
 
     public function handle(): int
     {
         $cutoff = now()->subSeconds(config('app.job_stale_after_seconds'));
+        $count = GenerationRun::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->count()
+            + Deployment::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->count();
+        if (! $this->option('execute')) {
+            $this->info("Dry run: {$count} stale job(s) found; no records changed. Pass --execute to recover them.");
+
+            return self::SUCCESS;
+        }
         foreach ([[GenerationRun::class, GenerateWebsite::class], [Deployment::class, DeployWebsite::class]] as [$model, $job]) {
             $model::where('status', 'running')->where(fn ($q) => $q->whereNull('heartbeat_at')->orWhere('heartbeat_at', '<', $cutoff))->each(function ($record) use ($job) {
                 $record->update(['status' => 'stale', 'worker_id' => null]);
