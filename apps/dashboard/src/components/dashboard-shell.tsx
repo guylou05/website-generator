@@ -40,6 +40,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [dark, setDark] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [verificationMessage, setVerificationMessage] = useState('');
   const router = useRouter();
   useEffect(() => {
     const value = localStorage.getItem('theme') === 'dark';
@@ -194,6 +195,33 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
+        {user?.email_verification_pending && (
+          <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-2">
+              <span>
+                Verify your email to generate, invite teammates, manage billing,
+                connect WordPress, or deploy.
+              </span>
+              <button
+                className="font-semibold underline disabled:opacity-60"
+                disabled={verificationMessage !== ''}
+                onClick={async () => {
+                  setVerificationMessage('Sending…');
+                  try {
+                    const result = await dashboardApi.resendVerification();
+                    setVerificationMessage(result.message);
+                  } catch {
+                    setVerificationMessage(
+                      'Could not resend. Try again shortly or contact support.',
+                    );
+                  }
+                }}
+              >
+                {verificationMessage || 'Resend verification email'}
+              </button>
+            </div>
+          </div>
+        )}
         <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
           {children}
         </main>

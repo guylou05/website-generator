@@ -140,3 +140,7 @@ Organization-scoped Stripe subscriptions, centralized entitlements, append-only 
 # Website Generator
 
 The platform includes a tenant-safe, revision-aware media pipeline for private uploads, AI and stock imports, optimized responsive variants, and idempotent WordPress attachment deployment. See [the media operations guide](docs/media.md).
+
+## Production operations
+
+The controlled-production runbook is in [production readiness](docs/production-readiness.md), the complete 17-step journey is in [smoke testing](docs/smoke-testing.md), and restore/key-rotation procedures are in [backup and recovery](docs/backup-recovery.md). Build the installable connector with `pnpm build:wordpress-plugin`; the artifact is `dist/sitefoundry-connector.zip`.

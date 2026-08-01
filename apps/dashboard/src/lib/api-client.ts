@@ -394,6 +394,11 @@ export class DashboardApiClient {
   currentUser(): Promise<AuthUser> {
     return this.call('/auth/user');
   }
+  resendVerification(): Promise<{ message: string }> {
+    return this.call('/auth/email/verification-notification', {
+      method: 'POST',
+    });
+  }
   forgotPassword(email: string) {
     return this.call<{ message: string }>('/auth/forgot-password', {
       method: 'POST',

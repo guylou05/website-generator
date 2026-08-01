@@ -12,6 +12,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         if (Schema::hasTable('users') && $user = User::where('email', 'legacy-owner@localhost.invalid')->first()) {
+            $user->forceFill(['email_verified_at' => $user->email_verified_at ?? now()])->save();
             $this->actingAs($user);
         }
     }

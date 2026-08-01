@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/stripe', StripeWebhookController::class);
 Route::get('/health', [OperationsController::class, 'health']);
+Route::get('/readiness', [OperationsController::class, 'readiness']);
 Route::get('/preview/{token}', [PreviewSessionController::class, 'public'])->middleware('throttle:30,1');
 Route::prefix('auth')->group(function () {
     Route::get('/csrf-token', [AuthController::class, 'csrfToken'])->middleware('throttle:60,1');
@@ -29,7 +30,7 @@ Route::prefix('auth')->group(function () {
 });
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/debug/environment', [OperationsController::class, 'environment'])->middleware('throttle:10,1');
-    Route::prefix('billing')->middleware('throttle:20,1')->group(function () {
+    Route::prefix('billing')->middleware(['throttle:20,1', 'verified.email'])->group(function () {
         Route::get('/plans', [BillingController::class, 'plans']);
         Route::get('/summary', [BillingController::class, 'summary']);
         Route::get('/usage', [BillingController::class, 'usage']);
@@ -50,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/organizations/{organization}/members/{membership}', [OrganizationController::class, 'removeMember']);
     Route::post('/organizations/{organization}/transfer-ownership', [OrganizationController::class, 'transfer']);
     Route::get('/organizations/{organization}/invitations', [InvitationController::class, 'index']);
-    Route::post('/organizations/{organization}/invitations', [InvitationController::class, 'store']);
+    Route::post('/organizations/{organization}/invitations', [InvitationController::class, 'store'])->middleware('verified.email');
     Route::delete('/organizations/{organization}/invitations/{invitation}', [InvitationController::class, 'destroy']);
     Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept']);
     Route::middleware('tenant.access')->group(function () {
@@ -85,18 +86,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/revisions/{revision}/preview-sessions', [PreviewSessionController::class, 'store']);
         Route::delete('/preview-sessions/{previewSession}', [PreviewSessionController::class, 'destroy']);
         Route::get('/projects/{project}/generations', [GenerationController::class, 'index']);
-        Route::post('/projects/{project}/generations', [GenerationController::class, 'store']);
+        Route::post('/projects/{project}/generations', [GenerationController::class, 'store'])->middleware('verified.email');
         Route::get('/generations/{generationRun}', [GenerationController::class, 'show']);
         Route::post('/generations/{generationRun}/retry', [GenerationController::class, 'retry']);
         Route::post('/generations/{generationRun}/cancel', [GenerationController::class, 'cancel']);
         Route::get('/projects/{project}/wordpress-connections', [WordPressConnectionController::class, 'index']);
-        Route::post('/projects/{project}/wordpress-connections', [WordPressConnectionController::class, 'store']);
+        Route::post('/projects/{project}/wordpress-connections', [WordPressConnectionController::class, 'store'])->middleware('verified.email');
         Route::get('/wordpress-connections/{connection}', [WordPressConnectionController::class, 'show']);
         Route::patch('/wordpress-connections/{connection}', [WordPressConnectionController::class, 'update']);
         Route::delete('/wordpress-connections/{connection}', [WordPressConnectionController::class, 'destroy']);
-        Route::post('/wordpress-connections/{connection}/verify', [WordPressConnectionController::class, 'verify']);
-        Route::post('/projects/{project}/deployments/preview', [DeploymentController::class, 'preview']);
-        Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store']);
+        Route::post('/wordpress-connections/{connection}/verify', [WordPressConnectionController::class, 'verify'])->middleware('verified.email');
+        Route::post('/projects/{project}/deployments/preview', [DeploymentController::class, 'preview'])->middleware('verified.email');
+        Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployments', [DeploymentController::class, 'index']);
         Route::get('/deployments/{deployment}', [DeploymentController::class, 'show']);
         Route::post('/deployments/{deployment}/retry', [DeploymentController::class, 'retry']);
