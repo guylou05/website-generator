@@ -3,7 +3,11 @@ import { zodResponseFormat } from 'openai/helpers/zod';
 import type { z } from 'zod';
 import type { OpenAIProviderConfig } from './config.js';
 import { SYSTEM_PROMPT } from './prompts.js';
-import { validateOpenAISchema } from './schema-validation.js';
+import {
+  assertNoSchemaFormats,
+  prepareOpenAISchema,
+  validateOpenAISchema,
+} from './schema-validation.js';
 
 export interface UsageMetadata {
   inputTokens?: number;
@@ -109,6 +113,11 @@ export class OpenAIStructuredClient implements StructuredOpenAIClient {
   ): Promise<T> {
     try {
       validateOpenAISchema(name, schema);
+      const responseFormat = zodResponseFormat(schema, name);
+      responseFormat.json_schema.schema = prepareOpenAISchema(
+        responseFormat.json_schema.schema,
+      );
+      assertNoSchemaFormats(name, responseFormat.json_schema.schema);
       const completion = await this.sdk.chat.completions.parse(
         {
           model: this.config.model,
@@ -119,7 +128,7 @@ export class OpenAIStructuredClient implements StructuredOpenAIClient {
               content: `${prompt}\n\nInput JSON:\n${JSON.stringify(input)}`,
             },
           ],
-          response_format: zodResponseFormat(schema, name),
+          response_format: responseFormat,
         },
         signal ? { signal } : undefined,
       );

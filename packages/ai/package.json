@@ -40,7 +40,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc --build tsconfig.json",
     "lint": "eslint analyzer designer orchestrator planner prompts providers writer index.ts",
     "typecheck": "tsc --build --pretty false",
     "test": "pnpm run build && node --test tests/*.test.mjs"
