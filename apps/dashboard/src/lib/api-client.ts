@@ -477,61 +477,20 @@ export class DashboardApiClient {
 
     const apiBase =
       this.baseUrl === '/api/proxy' ? '/api/proxy/api' : this.baseUrl;
-    const controller = new AbortController();
-    const forwardAbort = () => controller.abort(init?.signal?.reason);
-    init?.signal?.addEventListener('abort', forwardAbort, { once: true });
-    const timeout = setTimeout(
-      () => controller.abort('request timeout'),
-      15_000,
-    );
-    let response: Response;
-    let rawBody: string;
-    try {
-      response = await this.request(`${apiBase}${path}`, {
-        ...init,
-        headers,
-        cache: 'no-store',
-        credentials: 'include',
-        signal: controller.signal,
-      });
-      rawBody = response.status === 204 ? '' : await response.text();
-    } catch (error) {
-      if (
-        controller.signal.aborted ||
-        (error instanceof Error && error.name === 'AbortError')
-      )
-        throw new DashboardApiError(
-          'Projects could not be loaded. Retry.',
-          504,
-          'request_timeout',
-        );
-      throw error;
-    } finally {
-      clearTimeout(timeout);
-      init?.signal?.removeEventListener('abort', forwardAbort);
-    }
-    let parsed: {
-      data?: T;
-      error?: {
-        message?: string;
-        code?: string;
-        details?: Record<string, string[]>;
-      };
-    } = {};
-    if (rawBody) {
-      try {
-        parsed = JSON.parse(rawBody) as typeof parsed;
-      } catch {
-        throw new DashboardApiError(
-          response.ok
-            ? 'The API returned an invalid response.'
-            : 'API request failed.',
-          response.status,
-          'invalid_response',
-        );
-      }
-    }
+    const response = await this.request(`${apiBase}${path}`, {
+      ...init,
+      headers,
+      cache: 'no-store',
+      credentials: 'include',
+    });
     if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as {
+        error?: {
+          message?: string;
+          code?: string;
+          details?: Record<string, string[]>;
+        };
+      };
       // A stale CSRF/session cookie is common after a deployment. Refresh once,
       // never recursively, then return the authoritative second response.
       if (retry && (response.status === 401 || response.status === 419)) {
@@ -540,19 +499,15 @@ export class DashboardApiClient {
         return this.call<T>(path, init, false);
       }
       throw new DashboardApiError(
-        parsed.error?.message ??
-          (response.status === 401
-            ? 'Your session has expired. Please sign in again.'
-            : response.status === 403
-              ? 'You do not have access to these projects.'
-              : 'API request failed.'),
+        body?.error?.message ?? 'API request failed.',
         response.status,
-        parsed.error?.code,
-        parsed.error?.details,
+        body.error?.code,
+        body.error?.details,
       );
     }
     if (response.status === 204) return null as T;
-    return parsed.data as T;
+    const envelope = (await response.json()) as { data: T };
+    return envelope.data;
   }
   register(input: {
     name: string;
