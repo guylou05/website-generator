@@ -76,7 +76,7 @@ class WebsiteRevisionService
         $errors = [];
         $ids = [];
         $slugs = [];
-        $supported = ['hero', 'text', 'custom', 'services', 'features', 'testimonials', 'cta', 'contact', 'faq', 'image-text', 'business-hours', 'logo-strip', 'statistics', 'header', 'footer'];
+        $supported = ['hero', 'content', 'text', 'custom', 'services', 'features', 'testimonials', 'cta', 'contact', 'faq', 'image-text', 'business-hours', 'logo-strip', 'statistics', 'header', 'footer'];
         foreach (($revision->blueprint['pages'] ?? []) as $pi => $page) {
             if (empty($page['title'])) {
                 $errors[] = ['path' => "pages.$pi.title", 'message' => 'Page title is required.'];

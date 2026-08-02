@@ -42,9 +42,9 @@ class DeploymentController extends Controller
             return response()->json(['error' => $entitlements->denial($organization, 'live_deployments')], 402);
         }
         $data = $request->validate(['wordpress_connection_id' => 'required|uuid']);
-        $revision = $project->approvedRevision;
-        if (! $revision || $revision->status !== 'approved') {
-            return response()->json(['error' => ['code' => 'approved_revision_required', 'message' => 'Approve a rendered website revision before deployment.']], 409);
+        $revision = $project->approvedRevision ?? $project->latestRevision;
+        if (! $revision || ! in_array($revision->status, ['ready', 'approved'], true) || ! ($revision->validation['valid'] ?? false) || ($revision->elementor_output['status'] ?? null) !== 'ready') {
+            return response()->json(['error' => ['code' => 'rendered_revision_required', 'message' => 'A validated, fully rendered website revision is required before deployment.']], 409);
         }
         $run = $revision->generation_run_id ? $project->generationRuns()->findOrFail($revision->generation_run_id) : $project->generationRuns()->whereIn('status', ['succeeded', 'completed'])->latest()->firstOrFail();
         $connection = $project->wordpressConnections()->findOrFail($data['wordpress_connection_id']);

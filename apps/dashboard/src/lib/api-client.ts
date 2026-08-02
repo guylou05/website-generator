@@ -52,6 +52,16 @@ export interface Project {
   businessProfile: Record<string, unknown>;
   brandSettings: Record<string, unknown> | null;
   generationRuns: GenerationRun[];
+  summary: {
+    generation: { status: string; completedAt: string | null };
+    latestRevision: {
+      id: string;
+      pageCount: number;
+      blueprintStatus: 'valid' | 'invalid' | 'pending' | 'not_generated';
+      elementorStatus: 'ready' | 'partial' | 'pending' | 'not_generated';
+    } | null;
+    deploymentReady: boolean;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -306,6 +316,24 @@ interface Wire {
   dry_run?: boolean;
   operations?: Deployment['operations'];
   result?: Deployment['result'];
+  summary?: {
+    generation: { status: string; completed_at: string | null };
+    latest_revision: {
+      id: string;
+      page_count: number;
+      blueprint_status: Project['summary']['latestRevision'] extends infer R
+        ? R extends { blueprintStatus: infer S }
+          ? S
+          : never
+        : never;
+      elementor_status: Project['summary']['latestRevision'] extends infer R
+        ? R extends { elementorStatus: infer S }
+          ? S
+          : never
+        : never;
+    } | null;
+    deployment_ready: boolean;
+  };
 }
 const mapEvent = (x: Wire): GenerationEvent => ({
   id: String(x.id),
@@ -337,6 +365,21 @@ export const mapProject = (x: Wire): Project => ({
   businessProfile: x.business_profile,
   brandSettings: x.brand_settings,
   generationRuns: (x.generation_runs ?? []).map(mapGeneration),
+  summary: {
+    generation: {
+      status: x.summary?.generation.status ?? 'not_generated',
+      completedAt: x.summary?.generation.completed_at ?? null,
+    },
+    latestRevision: x.summary?.latest_revision
+      ? {
+          id: x.summary.latest_revision.id,
+          pageCount: x.summary.latest_revision.page_count,
+          blueprintStatus: x.summary.latest_revision.blueprint_status,
+          elementorStatus: x.summary.latest_revision.elementor_status,
+        }
+      : null,
+    deploymentReady: x.summary?.deployment_ready ?? false,
+  },
   createdAt: x.created_at,
   updatedAt: x.updated_at,
 });

@@ -12,8 +12,8 @@ export default async function DeployPage({
     dashboardApi.connections(projectId).catch(() => []),
   ]);
   if (!project) notFound();
-  const run = project.generationRuns.find((x) => x.status === 'completed');
-  if (!run) notFound();
+  const run = project.generationRuns.find((x) => x.status === 'succeeded');
+  if (!run || !project.summary.deploymentReady) notFound();
   return (
     <div className="space-y-6">
       <header>
