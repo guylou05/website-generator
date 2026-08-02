@@ -49,9 +49,23 @@ test('maps Laravel snake_case resources to dashboard types', () => {
         created_at: '2026-01-01',
       },
     ],
+    summary: {
+      generation: { status: 'succeeded', completed_at: '2026-01-02' },
+      latest_revision: {
+        id: 'revision',
+        page_count: 8,
+        blueprint_status: 'valid',
+        elementor_status: 'ready',
+      },
+      deployment_ready: true,
+    },
   });
   assert.equal(project.businessProfile.industry, 'Tech');
   assert.equal(project.generationRuns[0]?.projectId, 'uuid');
+  assert.equal(project.summary.latestRevision?.pageCount, 8);
+  assert.equal(project.summary.latestRevision?.blueprintStatus, 'valid');
+  assert.equal(project.summary.latestRevision?.elementorStatus, 'ready');
+  assert.equal(project.summary.deploymentReady, true);
 });
 
 test('client creates a generation and maps its response', async () => {

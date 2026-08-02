@@ -12,7 +12,7 @@ class Project extends Model
 {
     use HasUuids, TenantBound { TenantBound::resolveRouteBindingQuery insteadof HasUuids; }
 
-    protected $fillable = ['name', 'slug', 'status', 'business_profile', 'brand_settings', 'organization_id', 'approved_revision_id'];
+    protected $fillable = ['name', 'slug', 'status', 'business_profile', 'brand_settings', 'organization_id', 'approved_revision_id', 'latest_revision_id'];
 
     protected function casts(): array
     {
@@ -42,6 +42,11 @@ class Project extends Model
     public function approvedRevision(): BelongsTo
     {
         return $this->belongsTo(WebsiteRevision::class, 'approved_revision_id');
+    }
+
+    public function latestRevision(): BelongsTo
+    {
+        return $this->belongsTo(WebsiteRevision::class, 'latest_revision_id');
     }
 
     public function mediaAssets(): HasMany

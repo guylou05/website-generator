@@ -70,7 +70,8 @@ export default function ProjectDetail() {
       </section>
     );
   const run = project.generationRuns[0];
-  const summary = run?.output?.summary;
+  const summary = project.summary;
+  const revision = summary.latestRevision;
   return (
     <div className="space-y-6">
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -99,7 +100,7 @@ export default function ProjectDetail() {
             )
           }
         />
-        {run?.status === 'completed' && (
+        {summary.deploymentReady && (
           <Link
             className="bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium"
             href={`/dashboard/projects/${projectId}/deploy`}
@@ -111,15 +112,15 @@ export default function ProjectDetail() {
       <section className="grid gap-4 sm:grid-cols-3">
         <Metric
           label="Pages generated"
-          value={String(summary?.pages_generated ?? 0)}
+          value={String(revision?.pageCount ?? 0)}
         />
         <Metric
           label="Blueprint validation"
-          value={summary?.blueprint_valid ? 'Validated' : 'Not validated'}
+          value={statusLabel(revision?.blueprintStatus ?? 'not_generated')}
         />
         <Metric
           label="Elementor render"
-          value={summary?.elementor_ready ? 'Ready' : 'Not ready'}
+          value={statusLabel(revision?.elementorStatus ?? 'not_generated')}
         />
       </section>
       <section className="card p-6">
@@ -197,4 +198,10 @@ function Metric({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-xl font-semibold">{value}</p>
     </div>
   );
+}
+
+function statusLabel(status: string): string {
+  return status
+    .replaceAll('_', ' ')
+    .replace(/^./, (letter) => letter.toUpperCase());
 }

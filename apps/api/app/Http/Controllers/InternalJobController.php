@@ -85,7 +85,7 @@ class InternalJobController extends Controller
         Log::info('Post-blueprint completion request received', ['generation_run_id' => $generationRun->id]);
         try {
             Log::info('Generation completion payload validation started', ['generation_run_id' => $generationRun->id]);
-            $data = $request->validate(['output' => 'required|array', 'output.blueprint' => 'required|array', 'output.elementor' => 'required|array']);
+            $data = $request->validate(['output' => 'required|array', 'output.blueprint' => 'required|array', 'output.blueprint.pages' => 'required|array|min:1', 'output.elementor' => 'required|array', 'output.elementor.status' => 'required|in:ready', 'output.elementor.documents' => 'required|array|min:1', 'output.elementor.documents.*.page' => 'required|string', 'output.elementor.documents.*.elements' => 'present|array']);
             Log::info('Generation completion payload validation completed', ['generation_run_id' => $generationRun->id]);
 
             Log::info('Generation completion database transaction starting', ['generation_run_id' => $generationRun->id]);
@@ -105,10 +105,6 @@ class InternalJobController extends Controller
                     return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'Job is not running.']], 409);
                 }
 
-                Log::info('Blueprint persistence started', ['generation_run_id' => $job->id]);
-                $job->update(['output' => $data['output']]);
-                Log::info('Blueprint persistence completed', ['generation_run_id' => $job->id]);
-
                 $revision = $job->project->websiteRevisions()->where('generation_run_id', $job->id)->first();
                 if (! $revision) {
                     Log::info('Website revision and pages creation started', ['generation_run_id' => $job->id]);
@@ -119,11 +115,28 @@ class InternalJobController extends Controller
                 Log::info('Persisted blueprint validation started', ['generation_run_id' => $job->id, 'revision_id' => $revision->id]);
                 $validation = app(WebsiteRevisionService::class)->validate($revision);
                 Log::info('Persisted blueprint validation completed', ['generation_run_id' => $job->id, 'revision_id' => $revision->id, 'valid' => $validation['valid'], 'validation_errors' => $validation['errors']]);
-                $revision->update(['elementor_output' => $data['output']['elementor'], 'status' => $validation['valid'] ? 'ready' : 'invalid']);
+                if (! $validation['valid']) {
+                    throw ValidationException::withMessages(['output.blueprint' => ['The persisted blueprint failed canonical validation.']]);
+                }
+
+                $pageIds = collect($revision->blueprint['pages'])->pluck('id')->sort()->values();
+                $renderedPageIds = collect($data['output']['elementor']['documents'])->pluck('page')->unique()->sort()->values();
+                if ($pageIds->all() !== $renderedPageIds->all() || count($data['output']['elementor']['documents']) !== $pageIds->count()) {
+                    throw ValidationException::withMessages(['output.elementor.documents' => ['Every blueprint page must have exactly one Elementor render document.']]);
+                }
+
+                $pageCount = $pageIds->count();
+                $output = $data['output'];
+                $output['summary'] = ['pages_generated' => $pageCount, 'blueprint_valid' => true, 'elementor_ready' => true];
+                Log::info('Blueprint persistence started', ['generation_run_id' => $job->id]);
+                $job->update(['output' => $output]);
+                Log::info('Blueprint persistence completed', ['generation_run_id' => $job->id]);
+
+                $revision->update(['elementor_output' => $output['elementor'], 'status' => 'ready']);
                 Log::info('Rendered pages persistence completed', ['generation_run_id' => $job->id, 'revision_id' => $revision->id]);
 
                 Log::info('Project status update started', ['generation_run_id' => $job->id]);
-                $job->project()->update(['status' => 'ready']);
+                $job->project()->update(['latest_revision_id' => $revision->id, 'status' => 'ready']);
                 Log::info('Project status update completed', ['generation_run_id' => $job->id]);
 
                 Log::info('Generation run completion update started', ['generation_run_id' => $job->id]);
