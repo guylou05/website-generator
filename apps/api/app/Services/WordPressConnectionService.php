@@ -15,6 +15,10 @@ class WordPressConnectionService
         if (! filter_var($url, FILTER_VALIDATE_URL) || ! in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true)) {
             throw new InvalidArgumentException('Enter a valid WordPress site URL.');
         }
+        $path = strtolower(rtrim((string) parse_url($url, PHP_URL_PATH), '/'));
+        if (str_ends_with($path, '/wp-admin') || str_ends_with($path, '/wp-json')) {
+            throw new InvalidArgumentException('Enter the WordPress base URL, not a wp-admin or wp-json URL.');
+        }
         if (! app()->environment(['local', 'testing']) && parse_url($url, PHP_URL_SCHEME) !== 'https') {
             throw new InvalidArgumentException('WordPress connections must use HTTPS.');
         }
@@ -35,12 +39,15 @@ class WordPressConnectionService
     public function verify(WordPressConnection $connection): array
     {
         try {
-            $http = Http::timeout((int) config('app.wordpress_timeout', 15))->acceptJson()->withBasicAuth($connection->username, $connection->encrypted_application_password);
+            $http = Http::timeout((int) config('app.wordpress_timeout', 15))->maxRedirects(0)->acceptJson();
+            $http = $connection->authentication_type === 'connector'
+                ? $http->withToken($connection->encrypted_connector_token)
+                : $http->withBasicAuth($connection->username, $connection->encrypted_application_password);
             $root = $http->get($connection->site_url.'/wp-json')->throw()->json();
             $user = $http->get($connection->site_url.'/wp-json/wp/v2/users/me', ['context' => 'edit'])->throw()->json();
             $status = $http->get($connection->site_url.'/wp-json/website-generator/v1/status')->throw()->json();
             $capabilities = $user['capabilities'] ?? [];
-            foreach (['edit_pages', 'publish_pages', 'upload_files', 'manage_options'] as $capability) {
+            foreach (['edit_pages', 'upload_files', 'manage_options'] as $capability) {
                 if (empty($capabilities[$capability])) {
                     throw new \RuntimeException('The WordPress user does not have all required permissions.');
                 }
@@ -54,8 +61,14 @@ class WordPressConnectionService
                     throw new \RuntimeException('The connector plugin is missing required endpoints.');
                 }
             }
-            $result = ['wordpress_version' => $status['wordpress']['version'] ?? null, 'elementor_version' => $status['elementor']['version'] ?? null, 'connector_version' => $status['connector']['version'] ?? null];
-            $connection->update($result + ['status' => 'verified', 'last_verified_at' => now(), 'last_error' => null]);
+            $result = [
+                'connected' => true,
+                'wordpress_version' => $status['wordpress']['version'] ?? null,
+                'elementor' => ['installed' => true, 'active' => true, 'version' => $status['elementor']['version'] ?? null],
+                'connector' => ['installed' => isset($status['connector']), 'active' => isset($status['connector']), 'version' => $status['connector']['version'] ?? null],
+                'permissions' => ['can_manage_options' => true, 'can_edit_pages' => true, 'can_upload_files' => true],
+            ];
+            $connection->update(['wordpress_version' => $result['wordpress_version'], 'elementor_version' => $result['elementor']['version'], 'connector_version' => $result['connector']['version'], 'status' => 'verified', 'last_verified_at' => now(), 'last_error' => null]);
 
             return $result;
         } catch (Throwable $e) {

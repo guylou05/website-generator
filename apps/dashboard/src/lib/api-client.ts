@@ -70,7 +70,9 @@ export interface GenerationSummary {
 export interface WordPressConnection {
   id: string;
   projectId: string;
+  name: string;
   siteUrl: string;
+  authenticationType: 'connector' | 'application_password';
   username: string;
   status: 'unverified' | 'verified' | 'failed';
   wordpressVersion: string | null;
@@ -308,6 +310,7 @@ interface Wire {
   created_at: string;
   updated_at: string;
   site_url?: string;
+  authentication_type?: string;
   username?: string;
   wordpress_version?: string | null;
   elementor_version?: string | null;
@@ -355,7 +358,10 @@ export const mapProject = (x: Wire): Project => ({
 export const mapConnection = (x: Wire): WordPressConnection => ({
   id: String(x.id),
   projectId: x.project_id,
+  name: x.name ?? '',
   siteUrl: x.site_url ?? '',
+  authenticationType: (x.authentication_type ??
+    'application_password') as WordPressConnection['authenticationType'],
   username: x.username ?? '',
   status: x.status as WordPressConnection['status'],
   wordpressVersion: x.wordpress_version ?? null,
@@ -684,7 +690,14 @@ export class DashboardApiClient {
   }
   async createConnection(
     projectId: string,
-    input: { site_url: string; username: string; application_password: string },
+    input: {
+      name: string;
+      site_url: string;
+      authentication_type: 'connector' | 'application_password';
+      username?: string;
+      application_password?: string;
+      connector_token?: string;
+    },
   ): Promise<WordPressConnection> {
     return mapConnection(
       await this.call<Wire>(`/projects/${projectId}/wordpress-connections`, {
@@ -705,9 +718,21 @@ export class DashboardApiClient {
       mapDeployment,
     );
   }
+  async deployment(id: string): Promise<Deployment> {
+    return mapDeployment(await this.call<Wire>(`/deployments/${id}`));
+  }
   async previewDeployment(
     projectId: string,
-    input: { generation_run_id: string; wordpress_connection_id: string },
+    input: {
+      generation_run_id: string;
+      wordpress_connection_id: string;
+      included_pages?: string[];
+      overwrite_existing?: boolean;
+      set_homepage?: boolean;
+      update_navigation?: boolean;
+      regenerate_elementor_css?: boolean;
+      page_status?: 'draft' | 'publish';
+    },
   ): Promise<Deployment> {
     return mapDeployment(
       await this.call<Wire>(`/projects/${projectId}/deployments/preview`, {
@@ -718,7 +743,16 @@ export class DashboardApiClient {
   }
   async deploy(
     projectId: string,
-    input: { generation_run_id: string; wordpress_connection_id: string },
+    input: {
+      generation_run_id: string;
+      wordpress_connection_id: string;
+      included_pages?: string[];
+      overwrite_existing?: boolean;
+      set_homepage?: boolean;
+      update_navigation?: boolean;
+      regenerate_elementor_css?: boolean;
+      page_status?: 'draft' | 'publish';
+    },
   ): Promise<Deployment> {
     return mapDeployment(
       await this.call<Wire>(`/projects/${projectId}/deployments`, {

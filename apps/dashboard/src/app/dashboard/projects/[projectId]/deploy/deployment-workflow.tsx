@@ -1,10 +1,12 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   dashboardApi,
   type Deployment,
   type WordPressConnection,
 } from '@/lib/api-client';
+
 export function DeploymentWorkflow({
   projectId,
   runId,
@@ -19,9 +21,12 @@ export function DeploymentWorkflow({
     initialConnections[0],
   );
   const [deployment, setDeployment] = useState<Deployment>();
+  const [method, setMethod] = useState<'connector' | 'application_password'>(
+    'connector',
+  );
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const perform = async (fn: () => Promise<unknown>) => {
+  const perform = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError('');
     try {
@@ -32,64 +37,153 @@ export function DeploymentWorkflow({
       setBusy(false);
     }
   };
+  const options = (form?: HTMLFormElement) => {
+    const data = form ? new FormData(form) : new FormData();
+    return {
+      generation_run_id: runId,
+      wordpress_connection_id: connection!.id,
+      included_pages: [],
+      overwrite_existing: data.get('overwrite') === 'on',
+      set_homepage: data.get('homepage') === 'on',
+      update_navigation: data.get('navigation') === 'on',
+      regenerate_elementor_css: data.get('css') === 'on',
+      page_status:
+        data.get('status') === 'publish'
+          ? ('publish' as const)
+          : ('draft' as const),
+    };
+  };
   return (
     <div className="space-y-6">
-      <form
-        className="card grid gap-4 p-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const data = new FormData(e.currentTarget);
-          void perform(async () => {
-            const next = await dashboardApi.createConnection(projectId, {
-              site_url: String(data.get('site_url')),
-              username: String(data.get('username')),
-              application_password: String(data.get('application_password')),
+      <section className="card p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">WordPress connection</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              The connector plugin is recommended. Credentials are encrypted and
+              never shown again.
+            </p>
+          </div>
+          {connections.length > 0 && (
+            <select
+              className="rounded-lg border p-2"
+              value={connection?.id}
+              onChange={(e) =>
+                setConnection(connections.find((x) => x.id === e.target.value))
+              }
+            >
+              {connections.map((x) => (
+                <option value={x.id} key={x.id}>
+                  {x.name || x.siteUrl}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+        <form
+          className="mt-5 grid gap-3 sm:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const d = new FormData(e.currentTarget);
+            void perform(async () => {
+              const next = await dashboardApi.createConnection(projectId, {
+                name: String(d.get('name')),
+                site_url: String(d.get('site_url')),
+                authentication_type: method,
+                username: String(d.get('username') || ''),
+                application_password: String(
+                  d.get('application_password') || '',
+                ),
+                connector_token: String(d.get('connector_token') || ''),
+              });
+              setConnections([next, ...connections]);
+              setConnection(next);
             });
-            setConnections([next, ...connections]);
-            setConnection(next);
-          });
-        }}
-      >
-        <h2 className="text-lg font-semibold">WordPress connection</h2>
-        <input
-          className="rounded-lg border p-3"
-          name="site_url"
-          type="url"
-          placeholder="https://example.com"
-          required
-        />
-        <input
-          className="rounded-lg border p-3"
-          name="username"
-          placeholder="Username"
-          required
-        />
-        <input
-          className="rounded-lg border p-3"
-          name="application_password"
-          type="password"
-          placeholder="Application Password"
-          required
-        />
-        <button
-          disabled={busy}
-          className="bg-primary text-primary-foreground rounded-lg p-3"
+          }}
         >
-          Save connection
-        </button>
-      </form>
+          <input
+            className="rounded-lg border p-3"
+            name="name"
+            placeholder="Site name"
+            required
+          />
+          <input
+            className="rounded-lg border p-3"
+            name="site_url"
+            type="url"
+            placeholder="https://example.com"
+            required
+          />
+          <select
+            className="rounded-lg border p-3 sm:col-span-2"
+            value={method}
+            onChange={(e) => setMethod(e.target.value as typeof method)}
+          >
+            <option value="connector">
+              SiteFoundry connector (recommended)
+            </option>
+            <option value="application_password">
+              WordPress Application Password
+            </option>
+          </select>
+          {method === 'connector' ? (
+            <>
+              <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+                Install and activate the SiteFoundry Connector plugin, generate
+                a token in WordPress, then paste it here.
+              </div>
+              <input
+                className="rounded-lg border p-3"
+                name="connector_token"
+                type="password"
+                placeholder="Connector token"
+                required
+              />
+            </>
+          ) : (
+            <>
+              <input
+                className="rounded-lg border p-3"
+                name="username"
+                placeholder="WordPress username"
+                required
+              />
+              <input
+                className="rounded-lg border p-3"
+                name="application_password"
+                type="password"
+                placeholder="Application Password (not your account password)"
+                required
+              />
+            </>
+          )}
+          <button
+            disabled={busy}
+            className="bg-primary text-primary-foreground rounded-lg p-3 sm:col-span-2"
+          >
+            Connect WordPress site
+          </button>
+        </form>
+      </section>
       {connection && (
-        <section className="card space-y-4 p-6">
-          <div className="flex justify-between">
+        <section className="card p-6">
+          <div className="flex flex-wrap justify-between gap-4">
             <div>
-              <h2 className="font-semibold">{connection.siteUrl}</h2>
+              <h2 className="font-semibold">
+                {connection.name || connection.siteUrl}
+              </h2>
               <p className="text-muted-foreground text-sm">
-                Connector: {connection.connectorVersion ?? connection.status} ·
-                Elementor: {connection.elementorVersion ?? 'not verified'}
+                {connection.siteUrl} ·{' '}
+                <span className="capitalize">{connection.status}</span>
+              </p>
+              <p className="mt-2 text-sm">
+                WordPress {connection.wordpressVersion ?? 'not tested'} ·
+                Elementor {connection.elementorVersion ?? 'not tested'} ·
+                Connector {connection.connectorVersion ?? 'not tested'}
               </p>
             </div>
             <button
-              className="rounded-lg border px-4"
+              className="rounded-lg border px-4 py-2"
               disabled={busy}
               onClick={() =>
                 void perform(async () => {
@@ -97,34 +191,83 @@ export function DeploymentWorkflow({
                     connection.id,
                   );
                   setConnection(next);
+                  setConnections((xs) =>
+                    xs.map((x) => (x.id === next.id ? next : x)),
+                  );
                 })
               }
             >
-              Verify connection
+              Test connection
             </button>
           </div>
-          <button
-            disabled={busy || connection.status !== 'verified'}
-            className="bg-primary text-primary-foreground rounded-lg px-4 py-3"
-            onClick={() =>
-              void perform(async () =>
-                setDeployment(
-                  await dashboardApi.previewDeployment(projectId, {
-                    generation_run_id: runId,
-                    wordpress_connection_id: connection.id,
-                  }),
-                ),
-              )
-            }
-          >
-            Preview deployment
-          </button>
+          {connection.lastError && (
+            <p className="mt-3 rounded bg-red-50 p-3 text-sm text-red-700">
+              {connection.lastError.message}
+            </p>
+          )}
         </section>
+      )}
+      {connection?.status === 'verified' && (
+        <form
+          className="card space-y-4 p-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void perform(async () =>
+              setDeployment(
+                await dashboardApi.previewDeployment(
+                  projectId,
+                  options(e.currentTarget),
+                ),
+              ),
+            );
+          }}
+        >
+          <div>
+            <h2 className="text-lg font-semibold">Deployment review</h2>
+            <p className="text-muted-foreground text-sm">
+              Dry run compares pages, media, menus, homepage, Elementor
+              documents, site settings, and SEO without modifying WordPress.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label>
+              <input name="overwrite" type="checkbox" /> Overwrite reviewed
+              existing pages
+            </label>
+            <label>
+              <input name="homepage" type="checkbox" /> Set homepage
+            </label>
+            <label>
+              <input name="navigation" type="checkbox" /> Update navigation
+            </label>
+            <label>
+              <input name="css" type="checkbox" defaultChecked /> Regenerate
+              Elementor CSS
+            </label>
+            <label>
+              Page status{' '}
+              <select name="status" className="ml-2 rounded border p-1">
+                <option value="draft">Draft (safe default)</option>
+                <option value="publish">Publish</option>
+              </select>
+            </label>
+          </div>
+          <p className="rounded bg-amber-50 p-3 text-sm text-amber-900">
+            Existing content is never deleted. Existing pages are not
+            overwritten unless explicitly selected.
+          </p>
+          <button
+            disabled={busy}
+            className="bg-primary text-primary-foreground rounded-lg px-4 py-3"
+          >
+            Run dry run
+          </button>
+        </form>
       )}
       {deployment && (
         <section className="card space-y-4 p-6">
           <h2 className="text-lg font-semibold">
-            {deployment.dryRun ? 'Deployment preview' : 'Deployment progress'} ·{' '}
+            {deployment.dryRun ? 'Dry-run result' : 'Deployment'} ·{' '}
             {deployment.progress}%
           </h2>
           <div className="space-y-2">
@@ -132,54 +275,43 @@ export function DeploymentWorkflow({
               <p className="rounded bg-slate-50 p-3 text-sm" key={i}>
                 <strong>{op.action}</strong> {op.resource}: {op.identifier}
               </p>
-            ))}
+            )) ?? (
+              <p className="text-muted-foreground text-sm">
+                Queued on the wordpress-deployment worker. Open progress to
+                follow each stage.
+              </p>
+            )}
           </div>
-          {deployment.dryRun && deployment.status === 'completed' && (
-            <button
-              disabled={busy}
-              className="bg-primary text-primary-foreground rounded-lg px-4 py-3"
-              onClick={() => {
-                if (confirm('Deploy these changes to WordPress?'))
-                  void perform(async () =>
-                    setDeployment(
-                      await dashboardApi.deploy(projectId, {
-                        generation_run_id: runId,
-                        wordpress_connection_id: connection!.id,
-                      }),
-                    ),
-                  );
-              }}
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="rounded-lg border px-4 py-2"
+              href={`/dashboard/projects/${projectId}/deployments/${deployment.id}`}
             >
-              Confirm live deployment
-            </button>
-          )}
-          {deployment.result?.site_url && (
-            <div className="flex gap-3">
-              <a className="underline" href={deployment.result.site_url}>
-                Open Website
-              </a>
-              <a className="underline" href={deployment.result.admin_url}>
-                View WordPress Admin
-              </a>
-            </div>
-          )}
-          {deployment.error && (
-            <button
-              onClick={() =>
-                void perform(async () =>
-                  setDeployment(
-                    await dashboardApi.retryDeployment(deployment.id),
-                  ),
-                )
-              }
-            >
-              Retry: {deployment.error.message}
-            </button>
-          )}
+              View progress
+            </Link>
+            {deployment.dryRun &&
+              ['succeeded', 'completed'].includes(deployment.status) && (
+                <button
+                  disabled={busy}
+                  className="bg-primary text-primary-foreground rounded-lg px-4 py-2"
+                  onClick={() =>
+                    void perform(async () =>
+                      setDeployment(
+                        await dashboardApi.deploy(projectId, options()),
+                      ),
+                    )
+                  }
+                >
+                  Start deployment
+                </button>
+              )}
+          </div>
         </section>
       )}
       {error && (
-        <p className="rounded-lg bg-red-50 p-3 text-red-700">{error}</p>
+        <p className="rounded-lg bg-red-50 p-3 text-red-700" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );

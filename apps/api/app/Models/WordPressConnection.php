@@ -14,13 +14,13 @@ class WordPressConnection extends Model
 
     protected $table = 'wordpress_connections';
 
-    protected $fillable = ['project_id', 'organization_id', 'site_url', 'username', 'encrypted_application_password', 'status', 'wordpress_version', 'elementor_version', 'connector_version', 'last_verified_at', 'last_error'];
+    protected $fillable = ['project_id', 'organization_id', 'name', 'site_url', 'authentication_type', 'username', 'encrypted_application_password', 'encrypted_connector_token', 'status', 'wordpress_version', 'elementor_version', 'connector_version', 'last_verified_at', 'last_error', 'created_by'];
 
-    protected $hidden = ['encrypted_application_password'];
+    protected $hidden = ['encrypted_application_password', 'encrypted_connector_token'];
 
     protected function casts(): array
     {
-        return ['encrypted_application_password' => 'encrypted', 'last_verified_at' => 'datetime', 'last_error' => 'array'];
+        return ['encrypted_application_password' => 'encrypted', 'encrypted_connector_token' => 'encrypted', 'last_verified_at' => 'datetime', 'last_error' => 'array'];
     }
 
     public function project(): BelongsTo
