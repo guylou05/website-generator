@@ -480,7 +480,10 @@ export class DashboardApiClient {
     const controller = new AbortController();
     const forwardAbort = () => controller.abort(init?.signal?.reason);
     init?.signal?.addEventListener('abort', forwardAbort, { once: true });
-    const timeout = setTimeout(() => controller.abort('request timeout'), 15_000);
+    const timeout = setTimeout(
+      () => controller.abort('request timeout'),
+      15_000,
+    );
     let response: Response;
     let rawBody: string;
     try {
@@ -493,7 +496,10 @@ export class DashboardApiClient {
       });
       rawBody = response.status === 204 ? '' : await response.text();
     } catch (error) {
-      if (controller.signal.aborted || (error instanceof Error && error.name === 'AbortError'))
+      if (
+        controller.signal.aborted ||
+        (error instanceof Error && error.name === 'AbortError')
+      )
         throw new DashboardApiError(
           'Projects could not be loaded. Retry.',
           504,
@@ -504,13 +510,22 @@ export class DashboardApiClient {
       clearTimeout(timeout);
       init?.signal?.removeEventListener('abort', forwardAbort);
     }
-    let parsed: { data?: T; error?: { message?: string; code?: string; details?: Record<string, string[]> } } = {};
+    let parsed: {
+      data?: T;
+      error?: {
+        message?: string;
+        code?: string;
+        details?: Record<string, string[]>;
+      };
+    } = {};
     if (rawBody) {
       try {
         parsed = JSON.parse(rawBody) as typeof parsed;
       } catch {
         throw new DashboardApiError(
-          response.ok ? 'The API returned an invalid response.' : 'API request failed.',
+          response.ok
+            ? 'The API returned an invalid response.'
+            : 'API request failed.',
           response.status,
           'invalid_response',
         );
@@ -525,9 +540,12 @@ export class DashboardApiClient {
         return this.call<T>(path, init, false);
       }
       throw new DashboardApiError(
-        parsed.error?.message ?? (response.status === 401
-          ? 'Your session has expired. Please sign in again.'
-          : response.status === 403 ? 'You do not have access to these projects.' : 'API request failed.'),
+        parsed.error?.message ??
+          (response.status === 401
+            ? 'Your session has expired. Please sign in again.'
+            : response.status === 403
+              ? 'You do not have access to these projects.'
+              : 'API request failed.'),
         response.status,
         parsed.error?.code,
         parsed.error?.details,

@@ -34,29 +34,45 @@ async function proxy(
   const url = upstreamUrl(path, request.nextUrl.search);
   const started = Date.now();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort('upstream timeout'), proxyTimeoutMs);
+  const timeout = setTimeout(
+    () => controller.abort('upstream timeout'),
+    proxyTimeoutMs,
+  );
   try {
     const upstream = await fetch(url, {
-      method: request.method, headers, body: hasBody ? request.body : undefined,
-      cache: 'no-store', redirect: 'manual', signal: controller.signal,
+      method: request.method,
+      headers,
+      body: hasBody ? request.body : undefined,
+      cache: 'no-store',
+      redirect: 'manual',
+      signal: controller.signal,
       ...(hasBody ? { duplex: 'half' } : {}),
     } as RequestInit & { duplex?: 'half' });
     const response = await bufferedProxyResponse(upstream, (cookie) =>
       rewriteSetCookieForProxy(cookie, request.nextUrl.protocol === 'https:'),
     );
     console.info('dashboard_api_proxy', {
-      method: request.method, path: new URL(url).pathname, status: upstream.status,
-      contentType: upstream.headers.get('content-type'), durationMs: Date.now() - started,
+      method: request.method,
+      path: new URL(url).pathname,
+      status: upstream.status,
+      contentType: upstream.headers.get('content-type'),
+      durationMs: Date.now() - started,
     });
     return response;
   } catch {
     const timedOut = controller.signal.aborted;
     console.error('dashboard_api_proxy_failed', {
-      method: request.method, path: new URL(url).pathname,
-      durationMs: Date.now() - started, reason: timedOut ? 'timeout' : 'upstream fetch failed',
+      method: request.method,
+      path: new URL(url).pathname,
+      durationMs: Date.now() - started,
+      reason: timedOut ? 'timeout' : 'upstream fetch failed',
     });
-    return proxyErrorResponse(timedOut ? 504 : 502,
-      timedOut ? 'The API timed out. Please retry.' : 'The API is unavailable. Please retry.');
+    return proxyErrorResponse(
+      timedOut ? 504 : 502,
+      timedOut
+        ? 'The API timed out. Please retry.'
+        : 'The API is unavailable. Please retry.',
+    );
   } finally {
     clearTimeout(timeout);
   }

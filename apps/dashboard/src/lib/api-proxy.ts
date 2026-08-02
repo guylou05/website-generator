@@ -35,24 +35,40 @@ export async function bufferedProxyResponse(
   upstream: Response,
   rewriteCookie: (cookie: string) => string,
 ): Promise<Response> {
-  const body = upstream.status === 204 || upstream.status === 304
-    ? null
-    : await upstream.text();
+  const body =
+    upstream.status === 204 || upstream.status === 304
+      ? null
+      : await upstream.text();
   const headers = new Headers();
   upstream.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase()) && key.toLowerCase() !== 'set-cookie')
+    if (
+      !HOP_BY_HOP.has(key.toLowerCase()) &&
+      key.toLowerCase() !== 'set-cookie'
+    )
       headers.set(key, value);
   });
   for (const cookie of getSetCookies(upstream.headers))
     headers.append('set-cookie', rewriteCookie(cookie));
-  headers.set('content-type', upstream.headers.get('content-type') ?? 'application/json');
+  headers.set(
+    'content-type',
+    upstream.headers.get('content-type') ?? 'application/json',
+  );
   headers.set('cache-control', 'no-store');
-  return new Response(body, { status: upstream.status, statusText: upstream.statusText, headers });
+  return new Response(body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers,
+  });
 }
 
 export function proxyErrorResponse(status: number, message: string): Response {
   return Response.json(
-    { error: { code: status === 504 ? 'upstream_timeout' : 'upstream_unavailable', message } },
+    {
+      error: {
+        code: status === 504 ? 'upstream_timeout' : 'upstream_unavailable',
+        message,
+      },
+    },
     { status, headers: { 'cache-control': 'no-store' } },
   );
 }
