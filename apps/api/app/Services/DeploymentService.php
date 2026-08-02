@@ -21,7 +21,7 @@ class DeploymentService
             if (! $revision || $revision->status !== 'approved' || empty($revision->blueprint['pages']) || empty($revision->elementor_output)) {
                 throw new \RuntimeException('Approved revision output is incomplete or invalid.');
             }
-            $connection = $deployment->connection;
+            $connection = $deployment->wordpressConnection;
             $pages = $revision->blueprint['pages'];
             $documents = collect($revision->elementor_output['documents'] ?? [])->keyBy('page');
             $operations = [];

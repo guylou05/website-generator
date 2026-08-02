@@ -31,7 +31,7 @@ class InternalJobController extends Controller
 
     public function deploymentContext(Deployment $deployment, EntitlementService $entitlements): JsonResponse
     {
-        $c = $deployment->connection;
+        $c = $deployment->wordpressConnection;
         $organization = Organization::findOrFail($deployment->organization_id);
         if (! $deployment->dry_run && config('billing.enforcement') && $entitlements->currentPlan($organization) === 'free') {
             return response()->json(['error' => $entitlements->denial($organization, 'live_deployments')], 402);

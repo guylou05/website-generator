@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\Organization;
 use App\Models\Project;
+use App\Models\User;
 use App\Models\WordPressConnection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class WordPressConnectionTest extends TestCase
@@ -147,5 +150,99 @@ class WordPressConnectionTest extends TestCase
         Http::fake(['*' => Http::response([], 404)]);
         $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'username' => 'admin', 'encrypted_application_password' => 'secret']);
         $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertStatus(422)->assertJsonPath('error.code', 'connection_verification_failed')->assertJsonMissing(['secret']);
+    }
+
+    public function test_wordpress_connection_and_deployment_relationships_use_the_existing_foreign_key(): void
+    {
+        $project = $this->project();
+        $connection = $project->wordpressConnections()->create([
+            'site_url' => 'https://wordpress.test',
+            'username' => 'admin',
+            'encrypted_application_password' => 'secret',
+        ]);
+        $run = $project->generationRuns()->create(['provider' => 'test', 'status' => 'completed', 'input' => []]);
+        $deployments = collect([1, 2])->map(fn (int $attempt) => $project->deployments()->create([
+            'organization_id' => $project->organization_id,
+            'generation_run_id' => $run->id,
+            'wordpress_connection_id' => $connection->id,
+            'status' => 'completed',
+            'dry_run' => false,
+            'attempt' => $attempt,
+        ]));
+
+        $this->assertCount(2, $connection->deployments);
+        $this->assertTrue($connection->deployments->pluck('id')->contains($deployments->first()->id));
+        $this->assertTrue($deployments->first()->wordpressConnection->is($connection));
+        $this->assertSame('wordpress_connection_id', $connection->deployments()->getForeignKeyName());
+        $this->assertSame('wordpress_connection_id', $deployments->first()->wordpressConnection()->getForeignKeyName());
+    }
+
+    public function test_with_max_deployments_uses_wordpress_connection_id(): void
+    {
+        $project = $this->project();
+        $connection = $project->wordpressConnections()->create([
+            'site_url' => 'https://wordpress.test',
+            'username' => 'admin',
+            'encrypted_application_password' => 'secret',
+        ]);
+        $run = $project->generationRuns()->create(['provider' => 'test', 'status' => 'completed', 'input' => []]);
+        $project->deployments()->create([
+            'organization_id' => $project->organization_id,
+            'generation_run_id' => $run->id,
+            'wordpress_connection_id' => $connection->id,
+            'status' => 'completed',
+            'dry_run' => false,
+            'completed_at' => '2026-08-02 12:00:00',
+        ]);
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+
+        $result = WordPressConnection::withMax('deployments', 'completed_at')->findOrFail($connection->id);
+
+        $this->assertNotNull($result->deployments_max_completed_at);
+        $sql = implode("\n", $queries);
+        $this->assertStringContainsString('wordpress_connection_id', $sql);
+        $this->assertStringNotContainsString('word_press_connection_id', $sql);
+    }
+
+    public function test_wordpress_sites_list_succeeds_and_remains_scoped_to_the_current_organization(): void
+    {
+        $user = $this->app['auth']->user();
+        $visible = WordPressConnection::create([
+            'organization_id' => $user->current_organization_id,
+            'site_url' => 'https://visible.wordpress.test',
+            'username' => 'admin',
+            'encrypted_application_password' => 'secret',
+        ]);
+        $otherUser = User::create([
+            'name' => 'Other owner',
+            'email' => 'other-'.Str::uuid().'@example.test',
+            'password' => 'secret-password',
+        ]);
+        $otherOrganization = Organization::create([
+            'name' => 'Other organization',
+            'slug' => 'other-'.Str::uuid(),
+            'owner_user_id' => $otherUser->id,
+        ]);
+        $hidden = WordPressConnection::create([
+            'organization_id' => $otherOrganization->id,
+            'site_url' => 'https://hidden.wordpress.test',
+            'username' => 'admin',
+            'encrypted_application_password' => 'secret',
+        ]);
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+
+        $response = $this->getJson('/api/wordpress-connections')->assertOk();
+
+        $response->assertJsonFragment(['id' => $visible->id]);
+        $response->assertJsonMissing(['id' => $hidden->id]);
+        $sql = implode("\n", $queries);
+        $this->assertStringContainsString('wordpress_connection_id', $sql);
+        $this->assertStringNotContainsString('word_press_connection_id', $sql);
     }
 }
