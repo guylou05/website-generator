@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('deployment_plans', function (Blueprint $table) {
@@ -25,5 +26,9 @@ return new class extends Migration {
             $table->index(['project_id', 'created_at']);
         });
     }
-    public function down(): void { Schema::dropIfExists('deployment_plans'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('deployment_plans');
+    }
 };
