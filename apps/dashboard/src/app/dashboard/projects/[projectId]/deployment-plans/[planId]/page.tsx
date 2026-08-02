@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { RevisionViewer } from '@/components/revision-viewer';
+import { DeploymentApprovalPanel } from '@/components/deployment-approval-panel';
 import { dashboardApi, type DeploymentPlan } from '@/lib/api-client';
 
 export default function SavedDeploymentPlanPage() {
@@ -49,6 +50,7 @@ export default function SavedDeploymentPlanPage() {
           aria-label="Loading saved revision review"
         />
       )}
+      {plan && <DeploymentApprovalPanel plan={plan} onChange={setPlan} />}
       {plan && <RevisionViewer plan={plan} />}
     </div>
   );

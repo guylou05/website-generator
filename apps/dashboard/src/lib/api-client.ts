@@ -121,6 +121,15 @@ export interface DeploymentPlan {
   warnings: string[];
   estimatedSeconds: number;
   createdAt: string;
+  websiteRevisionId?: string | undefined;
+  wordpressConnectionId?: string | undefined;
+  expiresAt?: string | undefined;
+  snapshotCapturedAt?: string | undefined;
+  approvedAt?: string | undefined;
+  approvedBy?: string | undefined;
+  approvalComment?: string | undefined;
+  rejectionReason?: string | undefined;
+  options?: Record<string, unknown>;
 }
 export interface AuthUser {
   id: string;
@@ -353,6 +362,14 @@ interface Wire {
   changes?: DeploymentPlan['changes'];
   warnings?: string[];
   estimated_seconds?: number;
+  website_revision_id?: string;
+  expires_at?: string;
+  snapshot_captured_at?: string;
+  approved_at?: string;
+  approved_by?: string;
+  approval_comment?: string;
+  rejection_reason?: string;
+  options?: Record<string, unknown>;
 }
 const mapEvent = (x: Wire): GenerationEvent => ({
   id: String(x.id),
@@ -792,6 +809,9 @@ export class DashboardApiClient {
   }
   async deploymentPlan(id: string): Promise<DeploymentPlan> {
     const x = await this.call<Wire>(`/deployment-plans/${id}`);
+    return this.mapDeploymentPlan(x);
+  }
+  private mapDeploymentPlan(x: Wire): DeploymentPlan {
     return {
       id: String(x.id),
       status: x.status,
@@ -801,7 +821,42 @@ export class DashboardApiClient {
       warnings: x.warnings ?? [],
       estimatedSeconds: x.estimated_seconds ?? 0,
       createdAt: x.created_at,
+      websiteRevisionId: x.website_revision_id,
+      wordpressConnectionId: x.wordpress_connection_id,
+      expiresAt: x.expires_at,
+      snapshotCapturedAt: x.snapshot_captured_at,
+      approvedAt: x.approved_at,
+      approvedBy: x.approved_by,
+      approvalComment: x.approval_comment,
+      rejectionReason: x.rejection_reason,
+      options: x.options ?? {},
     };
+  }
+  async approveDeploymentPlan(
+    id: string,
+    acknowledgedWarningIds: string[],
+    comment: string,
+  ): Promise<DeploymentPlan> {
+    return this.mapDeploymentPlan(
+      await this.call<Wire>(`/deployment-plans/${id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({
+          acknowledged_warning_ids: acknowledgedWarningIds,
+          comment,
+        }),
+      }),
+    );
+  }
+  async rejectDeploymentPlan(
+    id: string,
+    reason: string,
+  ): Promise<DeploymentPlan> {
+    return this.mapDeploymentPlan(
+      await this.call<Wire>(`/deployment-plans/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }),
+    );
   }
   async previewDeployment(
     projectId: string,
