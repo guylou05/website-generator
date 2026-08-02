@@ -126,9 +126,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/deployment-plans/{deploymentPlan}/approve', [DeploymentPlanController::class, 'approve'])->middleware('verified.email');
         Route::post('/deployment-plans/{deploymentPlan}/reject', [DeploymentPlanController::class, 'reject'])->middleware('verified.email');
         Route::post('/deployment-plans/{deploymentPlan}/reopen', [DeploymentPlanController::class, 'reopen'])->middleware('verified.email');
+        Route::post('/deployment-plans/{plan}/deploy', [DeploymentController::class, 'deploy'])->middleware('verified.email');
         Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployments', [DeploymentController::class, 'index']);
         Route::get('/deployments/{deployment}', [DeploymentController::class, 'show']);
+        Route::get('/deployments/{deployment}/events', [DeploymentController::class, 'events']);
+        Route::get('/deployments/{deployment}/items', [DeploymentController::class, 'items']);
         Route::post('/deployments/{deployment}/retry', [DeploymentController::class, 'retry']);
         Route::post('/deployments/{deployment}/cancel', [DeploymentController::class, 'cancel']);
     });
@@ -141,4 +144,6 @@ Route::middleware('internal.worker')->prefix('internal')->group(function () {
         $suffix = ['deploymentContext' => 'execution-context', 'deploymentCancellation' => 'cancellation-status', 'deploymentStarted' => 'started', 'deploymentEvent' => 'events', 'deploymentHeartbeat' => 'heartbeat', 'deploymentCompleted' => 'completed', 'deploymentFailed' => 'failed'][$action];
         Route::match(str_contains($action, 'Context') || str_contains($action, 'Cancellation') ? ['GET'] : ['POST'], "/deployments/{deployment}/$suffix", [InternalJobController::class, $action]);
     }
+    Route::get('/deployments/{deployment}/context', [InternalJobController::class, 'deploymentContext']);
+    Route::post('/deployments/{deployment}/rollback-snapshot', [InternalJobController::class, 'deploymentRollbackSnapshot']);
 });

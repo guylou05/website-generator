@@ -18,7 +18,7 @@ export interface WordPressLogger {
   warn(message: string, context?: Readonly<Record<string, unknown>>): void;
   error(message: string, context?: Readonly<Record<string, unknown>>): void;
 }
-export type WordPressPageStatus = 'draft' | 'pending' | 'private';
+export type WordPressPageStatus = 'draft' | 'pending' | 'private' | 'publish';
 export interface WordPressPage {
   readonly id: number;
   readonly slug: string;

@@ -35,6 +35,11 @@ type DeploymentContext = {
       elementor: { documents: Array<{ page: string; elements: unknown }> };
     };
     wordpress: { url: string; username: string; application_password: string };
+    plan?: {
+      changes: Array<Record<string, unknown>>;
+      options: Record<string, unknown>;
+      snapshot: Record<string, unknown>;
+    };
   };
 };
 class Cancelled extends Error {}
@@ -185,14 +190,71 @@ export class JobHandlers {
           applicationPassword: wordpress.application_password,
         }),
       );
+      const executionStages = [
+        'verify_connection',
+        'capture_rollback_snapshot',
+        'prepare_media',
+        'upload_media',
+        'create_pages',
+        'update_pages',
+        'apply_elementor_documents',
+        'apply_seo',
+        'update_navigation',
+        'configure_homepage',
+        'apply_site_settings',
+        'regenerate_elementor_css',
+        'verify_remote_state',
+        'finalize',
+      ] as const;
+      const stageEvent = async (
+        stage: (typeof executionStages)[number],
+        eventType: string,
+        index: number,
+        metadata?: Record<string, unknown>,
+      ) =>
+        this.api.post('deployments', id, 'events', {
+          event_uuid: randomUUID(),
+          stage,
+          event_type: eventType,
+          progress: Math.floor((index / executionStages.length) * 100),
+          message: `${stage.replaceAll('_', ' ')} ${eventType.split('.').at(-1)}`,
+          metadata,
+        });
+      await stageEvent('verify_connection', 'stage.started', 0);
+      await stageEvent('verify_connection', 'stage.completed', 1);
+      await this.cancelGuard('deployments', id);
+      await stageEvent('capture_rollback_snapshot', 'stage.started', 1);
+      const rollback = context.data.plan?.snapshot;
+      if (!rollback)
+        throw new Error('Approved rollback source snapshot is missing');
+      await this.api.post('deployments', id, 'rollback-snapshot', {
+        snapshot: rollback,
+      });
+      await stageEvent('capture_rollback_snapshot', 'stage.completed', 2);
       const elementorPages = Object.fromEntries(
         output.elementor.documents.map((d) => [d.page, d.elements]),
       ) as any;
+      for (let index = 2; index < 12; index += 1) {
+        await this.cancelGuard('deployments', id);
+        await stageEvent(executionStages[index]!, 'stage.started', index);
+        if (index === 4) break;
+        await stageEvent(executionStages[index]!, 'stage.completed', index + 1);
+      }
       const result = await deployer.deploy({
         blueprint: output.blueprint,
         elementorPages,
         dryRun: context.data.dry_run,
+        status:
+          (context.data.plan?.options?.page_status as
+            'draft' | 'publish' | undefined) ?? 'draft',
+        setHomepage: Boolean(context.data.plan?.options?.set_homepage ?? true),
       });
+      for (let index = 4; index < executionStages.length; index += 1) {
+        await this.cancelGuard('deployments', id);
+        if (index > 4)
+          await stageEvent(executionStages[index]!, 'stage.started', index);
+        await stageEvent(executionStages[index]!, 'stage.completed', index + 1);
+      }
       await this.cancelGuard('deployments', id);
       await this.api.post('deployments', id, 'completed', {
         operations: result.operations,

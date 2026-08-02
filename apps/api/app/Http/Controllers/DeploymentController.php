@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deployment;
+use App\Models\DeploymentPlan;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\WordPressConnection;
+use App\Services\ApprovedDeploymentService;
 use App\Services\EntitlementService;
 use App\Services\JobTransport;
 use App\Services\UsageService;
@@ -14,6 +16,13 @@ use Illuminate\Http\Request;
 
 class DeploymentController extends Controller
 {
+    public function deploy(Request $request, DeploymentPlan $plan, ApprovedDeploymentService $service): JsonResponse
+    {
+        $deployment = $service->start($plan, $request);
+
+        return response()->json(['deployment_id' => $deployment->id, 'status' => $deployment->status, 'progress_url' => '/api/deployments/'.$deployment->id], 202);
+    }
+
     public function index(Project $project): JsonResponse
     {
         return response()->json(['data' => $project->deployments()->with('events')->latest()->get()]);
@@ -21,7 +30,17 @@ class DeploymentController extends Controller
 
     public function show(Deployment $deployment): JsonResponse
     {
-        return response()->json(['data' => $deployment->load('events')]);
+        return response()->json(['data' => $deployment->load(['events', 'items'])]);
+    }
+
+    public function events(Deployment $deployment): JsonResponse
+    {
+        return response()->json(['data' => $deployment->events()->oldest('created_at')->get()]);
+    }
+
+    public function items(Deployment $deployment): JsonResponse
+    {
+        return response()->json(['data' => $deployment->items()->oldest()->get()]);
     }
 
     public function preview(Request $request, Project $project): JsonResponse
