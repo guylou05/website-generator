@@ -29,12 +29,16 @@ class WordPressConnectionController extends Controller
         if (config('billing.enforcement') && ! $entitlements->canCreateWordPressConnection($organization)) {
             return response()->json(['error' => $entitlements->denial($organization, 'wordpress_connections')], 402);
         }
+        $request->merge([
+            'authentication_type' => $request->input('authentication_type', 'application_password'),
+        ]);
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:255', 'site_url' => 'required|string|max:2048',
-            'authentication_type' => 'sometimes|in:connector,application_password',
-            'username' => 'nullable|required_if:authentication_type,application_password|string|max:255',
-            'application_password' => 'nullable|required_if:authentication_type,application_password|string|max:512',
-            'connector_token' => 'nullable|required_if:authentication_type,connector|string|max:2048',
+            'authentication_type' => 'required|in:connector,application_password',
+            'username' => 'required_if:authentication_type,application_password|prohibited_if:authentication_type,connector|string|max:255',
+            'application_password' => 'required_if:authentication_type,application_password|prohibited_if:authentication_type,connector|string|max:512',
+            'connector_token' => 'required_if:authentication_type,connector|prohibited_if:authentication_type,application_password|string|max:2048',
         ]);
         try {
             $data['site_url'] = $service->normalize($data['site_url']);
@@ -42,7 +46,6 @@ class WordPressConnectionController extends Controller
             return response()->json(['error' => ['code' => 'invalid_site_url', 'message' => $e->getMessage()]], 422);
         }
         $data['name'] ??= (string) parse_url($data['site_url'], PHP_URL_HOST);
-        $data['authentication_type'] ??= 'application_password';
         $connection = $project->wordpressConnections()->create([
             'organization_id' => $project->organization_id, 'created_by' => $request->user()?->id,
             'name' => $data['name'], 'site_url' => $data['site_url'], 'authentication_type' => $data['authentication_type'],
