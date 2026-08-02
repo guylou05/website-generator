@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardOverviewController;
 use App\Http\Controllers\DeploymentController;
+use App\Http\Controllers\DeploymentPlanController;
 use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\ImageGenerationController;
 use App\Http\Controllers\InternalJobController;
@@ -117,6 +118,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/wordpress-connections/{connection}/verify', [WordPressConnectionController::class, 'test'])->middleware('verified.email');
         Route::post('/wordpress-connections/{connection}/rotate-token', [WordPressConnectionController::class, 'rotateToken'])->middleware('verified.email');
         Route::post('/projects/{project}/deployments/preview', [DeploymentController::class, 'preview'])->middleware('verified.email');
+        Route::post('/projects/{project}/deployment-plans', [DeploymentPlanController::class, 'store'])->middleware('verified.email');
+        Route::get('/projects/{project}/deployment-plans', [DeploymentPlanController::class, 'index']);
+        Route::get('/deployment-plans/{deploymentPlan}', [DeploymentPlanController::class, 'show']);
         Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployments', [DeploymentController::class, 'index']);
         Route::get('/deployments/{deployment}', [DeploymentController::class, 'show']);

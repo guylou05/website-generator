@@ -33,6 +33,11 @@ class WordPressConnection extends Model
         return $this->hasMany(Deployment::class, 'wordpress_connection_id');
     }
 
+    public function deploymentPlans(): HasMany
+    {
+        return $this->hasMany(DeploymentPlan::class, 'wordpress_connection_id');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

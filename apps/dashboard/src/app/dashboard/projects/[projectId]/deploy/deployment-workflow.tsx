@@ -3,13 +3,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import {
   dashboardApi,
-  type Deployment,
+  type DeploymentPlan,
   type WordPressConnection,
 } from '@/lib/api-client';
 
 export function DeploymentWorkflow({
   projectId,
-  runId,
   initialConnections,
 }: {
   projectId: string;
@@ -20,7 +19,7 @@ export function DeploymentWorkflow({
   const [connection, setConnection] = useState<WordPressConnection | undefined>(
     initialConnections[0],
   );
-  const [deployment, setDeployment] = useState<Deployment>();
+  const [plan, setPlan] = useState<DeploymentPlan>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const perform = async (fn: () => Promise<void>) => {
@@ -33,22 +32,6 @@ export function DeploymentWorkflow({
     } finally {
       setBusy(false);
     }
-  };
-  const options = (form?: HTMLFormElement) => {
-    const data = form ? new FormData(form) : new FormData();
-    return {
-      generation_run_id: runId,
-      wordpress_connection_id: connection!.id,
-      included_pages: [],
-      overwrite_existing: data.get('overwrite') === 'on',
-      set_homepage: data.get('homepage') === 'on',
-      update_navigation: data.get('navigation') === 'on',
-      regenerate_elementor_css: data.get('css') === 'on',
-      page_status:
-        data.get('status') === 'publish'
-          ? ('publish' as const)
-          : ('draft' as const),
-    };
   };
   return (
     <div className="space-y-6">
@@ -138,20 +121,7 @@ export function DeploymentWorkflow({
         </section>
       )}
       {connection?.status === 'verified' && (
-        <form
-          className="card space-y-4 p-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void perform(async () =>
-              setDeployment(
-                await dashboardApi.previewDeployment(
-                  projectId,
-                  options(e.currentTarget),
-                ),
-              ),
-            );
-          }}
-        >
+        <section className="card space-y-4 p-6">
           <div>
             <h2 className="text-lg font-semibold">Deployment review</h2>
             <p className="text-muted-foreground text-sm">
@@ -159,83 +129,116 @@ export function DeploymentWorkflow({
               documents, site settings, and SEO without modifying WordPress.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label>
-              <input name="overwrite" type="checkbox" /> Overwrite reviewed
-              existing pages
-            </label>
-            <label>
-              <input name="homepage" type="checkbox" /> Set homepage
-            </label>
-            <label>
-              <input name="navigation" type="checkbox" /> Update navigation
-            </label>
-            <label>
-              <input name="css" type="checkbox" defaultChecked /> Regenerate
-              Elementor CSS
-            </label>
-            <label>
-              Page status{' '}
-              <select name="status" className="ml-2 rounded border p-1">
-                <option value="draft">Draft (safe default)</option>
-                <option value="publish">Publish</option>
-              </select>
-            </label>
-          </div>
           <p className="rounded bg-amber-50 p-3 text-sm text-amber-900">
-            Existing content is never deleted. Existing pages are not
-            overwritten unless explicitly selected.
+            Read-only analysis: SiteFoundry only sends GET requests and will not
+            create, update, or delete WordPress content.
           </p>
           <button
             disabled={busy}
             className="bg-primary text-primary-foreground rounded-lg px-4 py-3"
+            onClick={() =>
+              void perform(async () =>
+                setPlan(
+                  await dashboardApi.createDeploymentPlan(
+                    projectId,
+                    connection.id,
+                  ),
+                ),
+              )
+            }
           >
-            Run dry run
+            {busy ? 'Comparing site…' : 'Create deployment plan'}
           </button>
-        </form>
-      )}
-      {deployment && (
-        <section className="card space-y-4 p-6">
-          <h2 className="text-lg font-semibold">
-            {deployment.dryRun ? 'Dry-run result' : 'Deployment'} ·{' '}
-            {deployment.progress}%
-          </h2>
-          <div className="space-y-2">
-            {deployment.operations?.map((op, i) => (
-              <p className="rounded bg-slate-50 p-3 text-sm" key={i}>
-                <strong>{op.action}</strong> {op.resource}: {op.identifier}
-              </p>
-            )) ?? (
-              <p className="text-muted-foreground text-sm">
-                Queued on the wordpress-deployment worker. Open progress to
-                follow each stage.
-              </p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              className="rounded-lg border px-4 py-2"
-              href={`/dashboard/projects/${projectId}/deployments/${deployment.id}`}
+          {busy && (
+            <div
+              className="h-2 overflow-hidden rounded bg-slate-200"
+              role="progressbar"
+              aria-label="Collecting WordPress snapshot"
             >
-              View progress
-            </Link>
-            {deployment.dryRun &&
-              ['succeeded', 'completed'].includes(deployment.status) && (
-                <button
-                  disabled={busy}
-                  className="bg-primary text-primary-foreground rounded-lg px-4 py-2"
-                  onClick={() =>
-                    void perform(async () =>
-                      setDeployment(
-                        await dashboardApi.deploy(projectId, options()),
-                      ),
-                    )
-                  }
-                >
-                  Start deployment
-                </button>
-              )}
+              <div className="bg-primary h-full w-2/3 animate-pulse" />
+            </div>
+          )}
+        </section>
+      )}
+      {plan && (
+        <section className="card space-y-4 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Deployment plan</h2>
+              <p className="text-muted-foreground text-sm">
+                Estimated deployment time:{' '}
+                {plan.estimatedSeconds < 60
+                  ? `${plan.estimatedSeconds} seconds`
+                  : `${Math.ceil(plan.estimatedSeconds / 60)} minutes`}
+              </p>
+            </div>
+            <span
+              className={`rounded-full px-3 py-1 text-sm font-medium ${plan.safetyStatus === 'safe' ? 'bg-emerald-100 text-emerald-800' : plan.safetyStatus === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}
+            >
+              {plan.safetyStatus === 'safe'
+                ? 'Safe to review'
+                : plan.safetyStatus === 'warning'
+                  ? 'Review warnings'
+                  : 'Blocked'}
+            </span>
           </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ['Total', plan.statistics.total],
+              ['Create', plan.statistics.create],
+              ['Update', plan.statistics.update],
+              ['Unchanged', plan.statistics.unchanged],
+            ].map(([label, value]) => (
+              <div className="rounded-lg bg-slate-50 p-3" key={label}>
+                <p className="text-muted-foreground text-xs uppercase">
+                  {label}
+                </p>
+                <p className="text-2xl font-semibold">{value}</p>
+              </div>
+            ))}
+          </div>
+          {plan.warnings.map((warning) => (
+            <p
+              className="rounded bg-amber-50 p-3 text-sm text-amber-900"
+              key={warning}
+            >
+              ⚠ {warning}
+            </p>
+          ))}
+          <div className="space-y-2">
+            {Object.entries(
+              Object.groupBy(plan.changes, (change) => change.resource),
+            ).map(([resource, changes]) => (
+              <details className="rounded-lg border p-3" key={resource}>
+                <summary className="cursor-pointer font-medium capitalize">
+                  {resource}{' '}
+                  <span className="text-muted-foreground font-normal">
+                    ({changes?.length ?? 0})
+                  </span>
+                </summary>
+                <div className="mt-3 space-y-2">
+                  {changes?.map((change) => (
+                    <div
+                      className="flex flex-wrap justify-between gap-2 border-t pt-2 text-sm"
+                      key={`${change.action}-${change.identifier}`}
+                    >
+                      <div>
+                        <strong>{change.label}</strong>
+                        <p className="text-muted-foreground">{change.reason}</p>
+                      </div>
+                      <span className="h-fit rounded bg-slate-100 px-2 py-1 capitalize">
+                        {change.action}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Plan saved at {new Date(plan.createdAt).toLocaleString()}. Approval
+            and deployment are intentionally unavailable in Phase 5.1.
+          </p>
         </section>
       )}
       {error && (
