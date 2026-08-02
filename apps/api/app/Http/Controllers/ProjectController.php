@@ -17,7 +17,7 @@ class ProjectController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return ProjectResource::collection(Project::where('organization_id', request()->user()->current_organization_id)->with(['latestRevision', 'generationRuns' => fn ($query) => $query->latest()->limit(1)])->latest()->get());
+        return ProjectResource::collection(Project::where('organization_id', request()->user()->current_organization_id)->with(['generationRuns' => fn ($query) => $query->latest()->limit(1)])->latest()->get());
     }
 
     public function store(StoreProjectRequest $request, EntitlementService $entitlements): ProjectResource|JsonResponse
@@ -35,7 +35,7 @@ class ProjectController extends Controller
 
     public function show(Project $project): ProjectResource
     {
-        return new ProjectResource($project->load(['latestRevision', 'generationRuns' => fn ($query) => $query->latest(), 'generationRuns.events']));
+        return new ProjectResource($project->load(['generationRuns' => fn ($query) => $query->latest(), 'generationRuns.events']));
     }
 
     public function update(UpdateProjectRequest $request, Project $project): ProjectResource

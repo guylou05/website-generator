@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { dashboardApi, type Deployment, type Project } from '@/lib/api-client';
+import {
+  dashboardApi,
+  type Deployment,
+  type GenerationSummary,
+  type Project,
+} from '@/lib/api-client';
 import { GenerationActions } from '@/components/generation-actions';
 import Link from 'next/link';
 
@@ -12,6 +17,7 @@ export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [summary, setSummary] = useState<GenerationSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -20,10 +26,12 @@ export default function ProjectDetail() {
     Promise.all([
       dashboardApi.project(projectId),
       dashboardApi.deployments(projectId),
+      dashboardApi.generationSummary(projectId),
     ])
-      .then(([nextProject, nextDeployments]) => {
+      .then(([nextProject, nextDeployments, nextSummary]) => {
         setProject(nextProject);
         setDeployments(nextDeployments);
+        setSummary(nextSummary);
       })
       .catch((reason: unknown) =>
         setError(
@@ -70,8 +78,6 @@ export default function ProjectDetail() {
       </section>
     );
   const run = project.generationRuns[0];
-  const summary = project.summary;
-  const revision = summary.latestRevision;
   return (
     <div className="space-y-6">
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -100,7 +106,7 @@ export default function ProjectDetail() {
             )
           }
         />
-        {summary.deploymentReady && (
+        {summary?.deploymentReady && (
           <Link
             className="bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium"
             href={`/dashboard/projects/${projectId}/deploy`}
@@ -112,15 +118,15 @@ export default function ProjectDetail() {
       <section className="grid gap-4 sm:grid-cols-3">
         <Metric
           label="Pages generated"
-          value={String(revision?.pageCount ?? 0)}
+          value={String(summary?.pageCount ?? 0)}
         />
         <Metric
           label="Blueprint validation"
-          value={statusLabel(revision?.blueprintStatus ?? 'not_generated')}
+          value={statusLabel(summary?.blueprintStatus ?? 'not_generated')}
         />
         <Metric
           label="Elementor render"
-          value={statusLabel(revision?.elementorStatus ?? 'not_generated')}
+          value={statusLabel(summary?.elementorStatus ?? 'not_ready')}
         />
       </section>
       <section className="card p-6">

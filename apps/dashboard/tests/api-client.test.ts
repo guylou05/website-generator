@@ -49,23 +49,9 @@ test('maps Laravel snake_case resources to dashboard types', () => {
         created_at: '2026-01-01',
       },
     ],
-    summary: {
-      generation: { status: 'succeeded', completed_at: '2026-01-02' },
-      latest_revision: {
-        id: 'revision',
-        page_count: 8,
-        blueprint_status: 'valid',
-        elementor_status: 'ready',
-      },
-      deployment_ready: true,
-    },
   });
   assert.equal(project.businessProfile.industry, 'Tech');
   assert.equal(project.generationRuns[0]?.projectId, 'uuid');
-  assert.equal(project.summary.latestRevision?.pageCount, 8);
-  assert.equal(project.summary.latestRevision?.blueprintStatus, 'valid');
-  assert.equal(project.summary.latestRevision?.elementorStatus, 'ready');
-  assert.equal(project.summary.deploymentReady, true);
 });
 
 test('client creates a generation and maps its response', async () => {
@@ -97,6 +83,37 @@ test('client creates a generation and maps its response', async () => {
     fakeFetch,
   ).createGeneration('project', {});
   assert.equal(run.status, 'completed');
+});
+
+test('client loads generation summary independently from project serialization', async () => {
+  const fakeFetch: typeof fetch = async () =>
+    new Response(
+      JSON.stringify({
+        data: {
+          generation_status: 'succeeded',
+          latest_revision: {
+            id: 'revision',
+            revision_number: 2,
+            status: 'ready',
+          },
+          page_count: 8,
+          blueprint_status: 'valid',
+          elementor_status: 'ready',
+          deployment_ready: true,
+        },
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    );
+
+  const summary = await new DashboardApiClient(
+    'http://api.test',
+    fakeFetch,
+  ).generationSummary('project');
+
+  assert.equal(summary.generationStatus, 'succeeded');
+  assert.equal(summary.latestRevision?.revisionNumber, 2);
+  assert.equal(summary.pageCount, 8);
+  assert.equal(summary.deploymentReady, true);
 });
 
 test('registration initializes Sanctum and sends the decoded XSRF cookie', async () => {
