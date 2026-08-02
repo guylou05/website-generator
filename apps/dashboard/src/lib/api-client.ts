@@ -442,8 +442,10 @@ export class DashboardApiError extends Error {
     readonly status: number,
     readonly code = 'request_failed',
     readonly details?: Record<string, string[]>,
+    readonly requestId?: string,
   ) {
     super(message);
+    this.name = 'DashboardApiError';
   }
 }
 
@@ -469,17 +471,35 @@ export class DashboardApiClient {
         ? '/api/proxy/sanctum/csrf-cookie'
         : `${this.baseUrl.replace(/\/api$/, '')}/sanctum/csrf-cookie`;
     this.csrfInitialization = (async () => {
-      const response = await this.request(csrfUrl, {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      if (!response.ok)
-        throw new DashboardApiError(
-          'Could not initialize the secure session.',
-          response.status,
-          'csrf_failed',
-        );
-      this.csrfInitialized = true;
+      const controller = new AbortController();
+      const timer = setTimeout(
+        () => controller.abort('request_timeout'),
+        30_000,
+      );
+      try {
+        const response = await this.request(csrfUrl, {
+          credentials: 'include',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!response.ok)
+          throw new DashboardApiError(
+            'Could not initialize the secure session.',
+            response.status,
+            'csrf_failed',
+          );
+        this.csrfInitialized = true;
+      } catch (error) {
+        if (controller.signal.aborted)
+          throw new DashboardApiError(
+            'The secure session request timed out. Please retry.',
+            504,
+            'request_timeout',
+          );
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
     })().finally(() => {
       this.csrfInitialization = null;
     });
@@ -504,20 +524,61 @@ export class DashboardApiClient {
 
     const apiBase =
       this.baseUrl === '/api/proxy' ? '/api/proxy/api' : this.baseUrl;
-    const response = await this.request(`${apiBase}${path}`, {
-      ...init,
-      headers,
-      cache: 'no-store',
-      credentials: 'include',
-    });
-    if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as {
-        error?: {
-          message?: string;
-          code?: string;
-          details?: Record<string, string[]>;
-        };
+    const requestId = crypto.randomUUID();
+    headers.set('x-request-id', requestId);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort('request_timeout'), 30_000);
+    let response: Response;
+    let text: string;
+    try {
+      response = await this.request(`${apiBase}${path}`, {
+        ...init,
+        headers,
+        signal: controller.signal,
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      text = response.status === 204 ? '' : await response.text();
+    } catch (error) {
+      if (
+        controller.signal.aborted ||
+        (error instanceof Error && error.name === 'AbortError')
+      )
+        throw new DashboardApiError(
+          'The request timed out. Please retry.',
+          504,
+          'request_timeout',
+          undefined,
+          requestId,
+        );
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+    const responseRequestId = response.headers.get('x-request-id') ?? requestId;
+    let body: {
+      data?: T;
+      error?: {
+        message?: string;
+        code?: string;
+        details?: Record<string, string[]>;
+        request_id?: string;
       };
+    } = {};
+    if (text) {
+      try {
+        body = JSON.parse(text) as typeof body;
+      } catch {
+        throw new DashboardApiError(
+          'The server returned an invalid response. Please retry.',
+          response.status,
+          'malformed_response',
+          undefined,
+          responseRequestId,
+        );
+      }
+    }
+    if (!response.ok) {
       // A stale CSRF/session cookie is common after a deployment. Refresh once,
       // never recursively, then return the authoritative second response.
       if (retry && (response.status === 401 || response.status === 419)) {
@@ -530,11 +591,11 @@ export class DashboardApiClient {
         response.status,
         body.error?.code,
         body.error?.details,
+        body.error?.request_id ?? responseRequestId,
       );
     }
     if (response.status === 204) return null as T;
-    const envelope = (await response.json()) as { data: T };
-    return envelope.data;
+    return body.data as T;
   }
   register(input: {
     name: string;

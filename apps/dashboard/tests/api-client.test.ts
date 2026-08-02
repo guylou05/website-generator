@@ -1,6 +1,27 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DashboardApiClient, mapProject } from '../src/lib/api-client';
+import {
+  DashboardApiClient,
+  DashboardApiError,
+  mapProject,
+} from '../src/lib/api-client';
+
+test('reports malformed JSON with the request reference', async () => {
+  const client = new DashboardApiClient(
+    'http://api.test',
+    async () =>
+      new Response('{broken', {
+        status: 200,
+        headers: { 'x-request-id': 'upstream-ref' },
+      }),
+  );
+  await assert.rejects(client.currentUser(), (error: unknown) => {
+    assert.ok(error instanceof DashboardApiError);
+    assert.equal(error.code, 'malformed_response');
+    assert.equal(error.requestId, 'upstream-ref');
+    return true;
+  });
+});
 
 test('maps Laravel snake_case resources to dashboard types', () => {
   const project = mapProject({
