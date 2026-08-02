@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Deployment;
 use App\Models\Organization;
 use App\Models\Project;
+use App\Models\WordPressConnection;
 use App\Services\EntitlementService;
 use App\Services\JobTransport;
 use App\Services\UsageService;
@@ -52,7 +53,7 @@ class DeploymentController extends Controller
             return response()->json(['error' => ['code' => 'approved_revision_required', 'message' => 'Approve a rendered website revision before deployment.']], 409);
         }
         $run = $revision->generation_run_id ? $project->generationRuns()->findOrFail($revision->generation_run_id) : $project->generationRuns()->whereIn('status', ['succeeded', 'completed'])->latest()->firstOrFail();
-        $connection = $project->wordpressConnections()->findOrFail($data['wordpress_connection_id']);
+        $connection = WordPressConnection::where('organization_id', $project->organization_id)->findOrFail($data['wordpress_connection_id']);
         if ($connection->status !== 'verified') {
             return response()->json(['error' => ['code' => 'connection_not_verified', 'message' => 'Test the WordPress connection successfully before continuing.']], 409);
         }

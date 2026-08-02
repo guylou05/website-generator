@@ -14,6 +14,6 @@ class UpdateProjectRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['name' => ['sometimes', 'required', 'string', 'max:255'], 'slug' => ['sometimes', 'string', 'max:255', Rule::unique('projects')->ignore($this->route('project'))], 'status' => ['sometimes', 'in:draft,generating,ready,failed,cancelled'], 'business_profile' => ['sometimes', 'required', 'array'], 'brand_settings' => ['nullable', 'array']];
+        return ['name' => ['sometimes', 'required', 'string', 'max:255'], 'slug' => ['sometimes', 'string', 'max:255', Rule::unique('projects')->ignore($this->route('project'))], 'status' => ['sometimes', 'in:draft,generating,ready,failed,cancelled'], 'business_profile' => ['sometimes', 'required', 'array'], 'brand_settings' => ['nullable', 'array'], 'default_wordpress_connection_id' => ['nullable', 'uuid']];
     }
 }

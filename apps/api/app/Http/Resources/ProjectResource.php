@@ -9,6 +9,6 @@ class ProjectResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return ['id' => $this->id, 'name' => $this->name, 'slug' => $this->slug, 'status' => $this->status, 'business_profile' => $this->business_profile, 'brand_settings' => $this->brand_settings, 'created_at' => $this->created_at, 'updated_at' => $this->updated_at, 'generation_runs' => GenerationRunResource::collection($this->whenLoaded('generationRuns'))];
+        return ['id' => $this->id, 'name' => $this->name, 'slug' => $this->slug, 'status' => $this->status, 'business_profile' => $this->business_profile, 'brand_settings' => $this->brand_settings, 'default_wordpress_connection_id' => $this->default_wordpress_connection_id, 'created_at' => $this->created_at, 'updated_at' => $this->updated_at, 'generation_runs' => GenerationRunResource::collection($this->whenLoaded('generationRuns'))];
     }
 }

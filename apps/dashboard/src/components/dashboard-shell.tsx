@@ -16,6 +16,7 @@ import {
   Search,
   ShieldCheck,
   Settings,
+  PlugZap,
   Sun,
   X,
 } from 'lucide-react';
@@ -37,6 +38,11 @@ const nav = [
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/settings/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/security', label: 'Security', icon: ShieldCheck },
+  {
+    href: '/dashboard/settings/wordpress-sites',
+    label: 'WordPress Sites',
+    icon: PlugZap,
+  },
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
