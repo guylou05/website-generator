@@ -35,7 +35,7 @@ class JobTransport
 
     private function enqueue(string $type, string $uuid, string $queue, int $attempt): void
     {
-        $idempotencyKey = "{$type}:{$uuid}:{$attempt}";
+        $idempotencyKey = $type === 'deployment' ? "deployment:{$uuid}" : "{$type}:{$uuid}:{$attempt}";
         $payload = json_encode([
             'id' => $uuid,
             'type' => $type,

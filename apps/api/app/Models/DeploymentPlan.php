@@ -7,6 +7,7 @@ use App\Services\DeploymentApprovalService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
 class DeploymentPlan extends Model
@@ -35,6 +36,11 @@ class DeploymentPlan extends Model
     public function wordpressConnection(): BelongsTo
     {
         return $this->belongsTo(WordPressConnection::class);
+    }
+
+    public function deployments(): HasMany
+    {
+        return $this->hasMany(Deployment::class);
     }
 
     public function verifyIntegrity(): bool

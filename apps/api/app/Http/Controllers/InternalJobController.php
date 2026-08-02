@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deployment;
+use App\Models\DeploymentRollbackSnapshot;
 use App\Models\GenerationRun;
 use App\Models\Organization;
+use App\Services\DeploymentApprovalService;
 use App\Services\EntitlementService;
 use App\Services\WebsiteRevisionService;
 use Illuminate\Database\QueryException;
@@ -32,12 +34,40 @@ class InternalJobController extends Controller
     public function deploymentContext(Deployment $deployment, EntitlementService $entitlements): JsonResponse
     {
         $c = $deployment->wordpressConnection;
+        $plan = $deployment->deploymentPlan;
+        abort_unless($plan && $plan->organization_id === $deployment->organization_id && $plan->project_id === $deployment->project_id && $plan->website_revision_id === $deployment->website_revision_id && $plan->wordpress_connection_id === $deployment->wordpress_connection_id, 404);
+        abort_unless($plan->verifyIntegrity() && hash_equals((string) $deployment->approval_checksum, (string) $plan->approval_checksum), 409, 'Approved plan integrity verification failed.');
         $organization = Organization::findOrFail($deployment->organization_id);
         if (! $deployment->dry_run && config('billing.enforcement') && $entitlements->currentPlan($organization) === 'free') {
             return response()->json(['error' => $entitlements->denial($organization, 'live_deployments')], 402);
         }
 
-        return response()->json(['data' => ['id' => $deployment->id, 'organization_id' => $deployment->organization_id, 'dry_run' => $deployment->dry_run, 'generation_output' => $deployment->generationRun->output, 'wordpress' => ['url' => $c->site_url, 'username' => $c->username, 'application_password' => $c->encrypted_application_password]]]);
+        $revision = $deployment->websiteRevision;
+
+        return response()->json(['data' => [
+            'id' => $deployment->id, 'organization_id' => $deployment->organization_id, 'project_id' => $deployment->project_id,
+            'dry_run' => false, 'approval_checksum' => $deployment->approval_checksum,
+            'plan' => ['id' => $plan->id, 'version' => $plan->plan_version, 'changes' => $plan->changes, 'options' => $deployment->options, 'snapshot' => $plan->snapshot],
+            'generation_output' => ['blueprint' => $revision->blueprint, 'elementor' => $revision->elementor_output],
+            // This route is worker-authenticated and never mounted in the browser route group.
+            'wordpress' => ['url' => $c->site_url, 'authentication_type' => $c->authentication_type, 'username' => $c->username, 'application_password' => $c->encrypted_application_password, 'connector_token' => $c->encrypted_connector_token],
+        ]]);
+    }
+
+    public function deploymentRollbackSnapshot(Request $request, Deployment $deployment): JsonResponse
+    {
+        abort_unless(in_array($deployment->status, ['running', 'cancelling'], true), 409);
+        $data = $request->validate(['snapshot' => 'required|array|max:5000']);
+        $canonical = app(DeploymentApprovalService::class)->canonical($data['snapshot']);
+        $snapshot = DeploymentRollbackSnapshot::firstOrCreate(
+            ['deployment_id' => $deployment->id],
+            ['snapshot' => $data['snapshot'], 'checksum' => hash('sha256', $canonical), 'created_at' => now()]
+        );
+        if (! $deployment->rollback_snapshot_id) {
+            $deployment->update(['rollback_snapshot_id' => $snapshot->id]);
+        }
+
+        return response()->json(['data' => ['id' => $snapshot->id, 'checksum' => $snapshot->checksum]], $snapshot->wasRecentlyCreated ? 201 : 200);
     }
 
     public function generationCancellation(GenerationRun $generationRun): JsonResponse
@@ -164,7 +194,14 @@ class InternalJobController extends Controller
 
     public function deploymentCompleted(Request $request, Deployment $deployment): JsonResponse
     {
-        return $this->completed($request, $deployment, ['operations' => 'required|array', 'result' => 'required|array']);
+        abort_unless(! $deployment->deployment_plan_id || $deployment->rollback_snapshot_id, 409, 'Rollback snapshot is required before completion.');
+        $response = $this->completed($request, $deployment, ['operations' => 'required|array', 'result' => 'required|array']);
+        if ($deployment->deployment_plan_id && $response->getStatusCode() < 300) {
+            $deployment->wordpressConnection()->update(['last_deployment_at' => now()]);
+            $deployment->project()->update(['last_deployment_id' => $deployment->id]);
+        }
+
+        return $response;
     }
 
     public function generationFailed(Request $request, GenerationRun $generationRun): JsonResponse
