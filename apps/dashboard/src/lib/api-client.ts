@@ -52,18 +52,20 @@ export interface Project {
   businessProfile: Record<string, unknown>;
   brandSettings: Record<string, unknown> | null;
   generationRuns: GenerationRun[];
-  summary: {
-    generation: { status: string; completedAt: string | null };
-    latestRevision: {
-      id: string;
-      pageCount: number;
-      blueprintStatus: 'valid' | 'invalid' | 'pending' | 'not_generated';
-      elementorStatus: 'ready' | 'partial' | 'pending' | 'not_generated';
-    } | null;
-    deploymentReady: boolean;
-  };
   createdAt: string;
   updatedAt: string;
+}
+export interface GenerationSummary {
+  generationStatus: string;
+  latestRevision: {
+    id: string;
+    revisionNumber: number;
+    status: string;
+  } | null;
+  pageCount: number;
+  blueprintStatus: 'valid' | 'invalid' | 'pending' | 'not_generated';
+  elementorStatus: 'ready' | 'not_ready';
+  deploymentReady: boolean;
 }
 export interface WordPressConnection {
   id: string;
@@ -316,24 +318,6 @@ interface Wire {
   dry_run?: boolean;
   operations?: Deployment['operations'];
   result?: Deployment['result'];
-  summary?: {
-    generation: { status: string; completed_at: string | null };
-    latest_revision: {
-      id: string;
-      page_count: number;
-      blueprint_status: Project['summary']['latestRevision'] extends infer R
-        ? R extends { blueprintStatus: infer S }
-          ? S
-          : never
-        : never;
-      elementor_status: Project['summary']['latestRevision'] extends infer R
-        ? R extends { elementorStatus: infer S }
-          ? S
-          : never
-        : never;
-    } | null;
-    deployment_ready: boolean;
-  };
 }
 const mapEvent = (x: Wire): GenerationEvent => ({
   id: String(x.id),
@@ -365,21 +349,6 @@ export const mapProject = (x: Wire): Project => ({
   businessProfile: x.business_profile,
   brandSettings: x.brand_settings,
   generationRuns: (x.generation_runs ?? []).map(mapGeneration),
-  summary: {
-    generation: {
-      status: x.summary?.generation.status ?? 'not_generated',
-      completedAt: x.summary?.generation.completed_at ?? null,
-    },
-    latestRevision: x.summary?.latest_revision
-      ? {
-          id: x.summary.latest_revision.id,
-          pageCount: x.summary.latest_revision.page_count,
-          blueprintStatus: x.summary.latest_revision.blueprint_status,
-          elementorStatus: x.summary.latest_revision.elementor_status,
-        }
-      : null,
-    deploymentReady: x.summary?.deployment_ready ?? false,
-  },
   createdAt: x.created_at,
   updatedAt: x.updated_at,
 });
@@ -642,6 +611,35 @@ export class DashboardApiClient {
   }
   async project(id: string): Promise<Project> {
     return mapProject(await this.call<Wire>(`/projects/${id}`));
+  }
+  async generationSummary(id: string): Promise<GenerationSummary> {
+    const summary = await this.call<{
+      generation_status: string;
+      latest_revision: {
+        id: string;
+        revision_number: number;
+        status: string;
+      } | null;
+      page_count: number;
+      blueprint_status: GenerationSummary['blueprintStatus'];
+      elementor_status: GenerationSummary['elementorStatus'];
+      deployment_ready: boolean;
+    }>(`/projects/${id}/generation-summary`);
+
+    return {
+      generationStatus: summary.generation_status,
+      latestRevision: summary.latest_revision
+        ? {
+            id: summary.latest_revision.id,
+            revisionNumber: summary.latest_revision.revision_number,
+            status: summary.latest_revision.status,
+          }
+        : null,
+      pageCount: summary.page_count,
+      blueprintStatus: summary.blueprint_status,
+      elementorStatus: summary.elementor_status,
+      deploymentReady: summary.deployment_ready,
+    };
   }
   async createProject(input: {
     name: string;

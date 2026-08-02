@@ -40,13 +40,13 @@ class InternalWorkerTest extends TestCase
         $this->assertDatabaseHas('projects', ['id' => $project->id, 'status' => 'ready', 'latest_revision_id' => $revision->id]);
         $this->assertSame(count($blueprint['pages']), $run->fresh()->output['summary']['pages_generated']);
 
-        $this->getJson('/api/projects/'.$project->id)
+        $this->getJson('/api/projects/'.$project->id.'/generation-summary')
             ->assertOk()
-            ->assertJsonPath('data.summary.generation.status', 'succeeded')
-            ->assertJsonPath('data.summary.latest_revision.page_count', count($blueprint['pages']))
-            ->assertJsonPath('data.summary.latest_revision.blueprint_status', 'valid')
-            ->assertJsonPath('data.summary.latest_revision.elementor_status', 'ready')
-            ->assertJsonPath('data.summary.deployment_ready', true);
+            ->assertJsonPath('data.generation_status', 'succeeded')
+            ->assertJsonPath('data.page_count', count($blueprint['pages']))
+            ->assertJsonPath('data.blueprint_status', 'valid')
+            ->assertJsonPath('data.elementor_status', 'ready')
+            ->assertJsonPath('data.deployment_ready', true);
     }
 
     public function test_incomplete_render_persistence_fails_the_run_without_marking_project_ready(): void

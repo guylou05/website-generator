@@ -15,6 +15,7 @@ use App\Http\Controllers\OrganizationSettingsController;
 use App\Http\Controllers\PreviewSessionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectGenerationSummaryController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\WebsiteRevisionController;
 use App\Http\Controllers\WordPressConnectionController;
@@ -84,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/image-generations/{imageGenerationJob}', [ImageGenerationController::class, 'show']);
         Route::post('/image-generations/{imageGenerationJob}/cancel', [ImageGenerationController::class, 'cancel']);
         Route::post('/image-generations/{imageGenerationJob}/retry', [ImageGenerationController::class, 'retry']);
+        Route::get('/projects/{project}/generation-summary', ProjectGenerationSummaryController::class);
         Route::apiResource('projects', ProjectController::class);
         Route::get('/projects/{project}/revisions', [WebsiteRevisionController::class, 'index']);
         Route::post('/projects/{project}/revisions', [WebsiteRevisionController::class, 'store']);
