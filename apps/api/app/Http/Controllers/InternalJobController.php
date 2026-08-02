@@ -136,7 +136,7 @@ class InternalJobController extends Controller
                 Log::info('Rendered pages persistence completed', ['generation_run_id' => $job->id, 'revision_id' => $revision->id]);
 
                 Log::info('Project status update started', ['generation_run_id' => $job->id]);
-                $job->project()->update(['status' => 'ready']);
+                $job->project()->update(['latest_revision_id' => $revision->id, 'status' => 'ready']);
                 Log::info('Project status update completed', ['generation_run_id' => $job->id]);
 
                 Log::info('Generation run completion update started', ['generation_run_id' => $job->id]);

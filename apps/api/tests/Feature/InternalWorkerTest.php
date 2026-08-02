@@ -37,8 +37,7 @@ class InternalWorkerTest extends TestCase
         $this->assertSame('ready', $revision->status);
         $this->assertSame('ready', $revision->elementor_output['status']);
         $this->assertCount(count($blueprint['pages']), $revision->elementor_output['documents']);
-        $this->assertDatabaseHas('projects', ['id' => $project->id, 'status' => 'ready']);
-        $this->assertSame($revision->id, $project->fresh()->latestRevision->id);
+        $this->assertDatabaseHas('projects', ['id' => $project->id, 'status' => 'ready', 'latest_revision_id' => $revision->id]);
         $this->assertSame(count($blueprint['pages']), $run->fresh()->output['summary']['pages_generated']);
 
         $this->getJson('/api/projects/'.$project->id)
@@ -62,8 +61,7 @@ class InternalWorkerTest extends TestCase
         ])->assertUnprocessable();
 
         $this->assertDatabaseHas('generation_runs', ['id' => $run->id, 'status' => 'failed']);
-        $this->assertDatabaseHas('projects', ['id' => $project->id, 'status' => 'generating']);
-        $this->assertNull($project->fresh()->latestRevision);
+        $this->assertDatabaseHas('projects', ['id' => $project->id, 'status' => 'generating', 'latest_revision_id' => null]);
         $this->assertDatabaseMissing('website_revisions', ['generation_run_id' => $run->id]);
     }
 }
