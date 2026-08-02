@@ -6,8 +6,9 @@ A minimal companion plugin that exposes authenticated deployment operations Word
 
 1. Copy `website-generator-connector` into `wp-content/plugins/`, or create a ZIP containing this directory and upload it under **Plugins → Add New → Upload Plugin**.
 2. Activate **Website Generator Connector**.
-3. Ensure Elementor is active before using CSS regeneration.
-4. Create an administrator Application Password as described in `packages/wordpress/README.md`.
+3. Ensure Elementor is installed and active.
+4. In wp-admin, open **SiteFoundry** in the left sidebar.
+5. Select **Generate token**, copy the token immediately, and store it in the corresponding site connection in SiteFoundry. The plaintext token is displayed only once.
 
 All routes use the `website-generator/v1` namespace and accept authenticated REST requests only. Every route has a permission callback requiring `manage_options`; there are no anonymous write endpoints.
 
@@ -22,11 +23,21 @@ All routes use the `website-generator/v1` namespace and accept authenticated RES
 | `POST` | `/menus`                    | Idempotently create/update connector-managed classic menu items |
 | `POST` | `/settings/homepage`        | Assign a valid page as the static homepage                      |
 
-WordPress handles Application Password authentication before permission callbacks run. The plugin stores no credentials. Page IDs, templates, URLs, menu keys, titles, nested Elementor values, and homepage IDs are validated or sanitized before use.
+The connector accepts an administrator WordPress session, an Application Password, or a generated connector Bearer token. Only a password hash of a connector token is retained. Page IDs, templates, URLs, menu keys, titles, nested Elementor values, and homepage IDs are validated or sanitized before use.
 
 ## Connection verification
 
 Authenticated administrators can call `GET /wp-json/website-generator/v1/status` to inspect WordPress, connector, and Elementor availability and versions. All mutation endpoints require administrator capabilities and are designed for repeatable server-side deployments.
+
+The **SiteFoundry** admin page shows environment and connection details. Use **Run connection health test** to check REST availability, connector route registration, Elementor installation and activation, and administrator capabilities. Regenerating a token immediately invalidates the previous token; **Revoke token** disconnects token-based clients.
+
+## Connect to SiteFoundry
+
+1. Open **SiteFoundry** in the WordPress admin sidebar.
+2. Generate a connector token and use **Copy token** while it is visible.
+3. In SiteFoundry, add or edit the WordPress site connection.
+4. Copy the WordPress site URL and connector endpoint shown under **Connection Details**, then paste the token into the connector-token field.
+5. Save the connection and run the connection test. Never place the token in a URL, log, support message, or source-control file.
 
 ## Requirements and secure credentials
 

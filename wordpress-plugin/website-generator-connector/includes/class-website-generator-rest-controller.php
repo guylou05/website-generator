@@ -44,8 +44,10 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
         ], 200);
     }
 
-    public function permissions_check(): bool|WP_Error
+    public function permissions_check(WP_REST_Request $request): bool|WP_Error
     {
+        $authorization = trim((string) $request->get_header('authorization'));
+        if (preg_match('/^Bearer\s+(.+)$/i', $authorization, $matches) && SiteFoundry_Connector_Token::verify(trim($matches[1]))) return true;
         if (!is_user_logged_in()) return new WP_Error('rest_not_authenticated', __('Authentication is required.', 'website-generator-connector'), ['status' => 401]);
         if (!current_user_can('manage_options')) return new WP_Error('rest_forbidden', __('Administrator capabilities are required.', 'website-generator-connector'), ['status' => 403]);
         return true;
