@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { RevisionViewer } from '@/components/revision-viewer';
 import {
   dashboardApi,
   type DeploymentPlan,
@@ -161,85 +162,17 @@ export function DeploymentWorkflow({
         </section>
       )}
       {plan && (
-        <section className="card space-y-4 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold">Deployment plan</h2>
-              <p className="text-muted-foreground text-sm">
-                Estimated deployment time:{' '}
-                {plan.estimatedSeconds < 60
-                  ? `${plan.estimatedSeconds} seconds`
-                  : `${Math.ceil(plan.estimatedSeconds / 60)} minutes`}
-              </p>
-            </div>
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-medium ${plan.safetyStatus === 'safe' ? 'bg-emerald-100 text-emerald-800' : plan.safetyStatus === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}
+        <>
+          <div className="flex justify-end">
+            <Link
+              className="text-primary text-sm font-medium"
+              href={`/dashboard/projects/${projectId}/deployment-plans/${plan.id}`}
             >
-              {plan.safetyStatus === 'safe'
-                ? 'Safe to review'
-                : plan.safetyStatus === 'warning'
-                  ? 'Review warnings'
-                  : 'Blocked'}
-            </span>
+              Open this saved revision review →
+            </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ['Total', plan.statistics.total],
-              ['Create', plan.statistics.create],
-              ['Update', plan.statistics.update],
-              ['Unchanged', plan.statistics.unchanged],
-            ].map(([label, value]) => (
-              <div className="rounded-lg bg-slate-50 p-3" key={label}>
-                <p className="text-muted-foreground text-xs uppercase">
-                  {label}
-                </p>
-                <p className="text-2xl font-semibold">{value}</p>
-              </div>
-            ))}
-          </div>
-          {plan.warnings.map((warning) => (
-            <p
-              className="rounded bg-amber-50 p-3 text-sm text-amber-900"
-              key={warning}
-            >
-              ⚠ {warning}
-            </p>
-          ))}
-          <div className="space-y-2">
-            {Object.entries(
-              Object.groupBy(plan.changes, (change) => change.resource),
-            ).map(([resource, changes]) => (
-              <details className="rounded-lg border p-3" key={resource}>
-                <summary className="cursor-pointer font-medium capitalize">
-                  {resource}{' '}
-                  <span className="text-muted-foreground font-normal">
-                    ({changes?.length ?? 0})
-                  </span>
-                </summary>
-                <div className="mt-3 space-y-2">
-                  {changes?.map((change) => (
-                    <div
-                      className="flex flex-wrap justify-between gap-2 border-t pt-2 text-sm"
-                      key={`${change.action}-${change.identifier}`}
-                    >
-                      <div>
-                        <strong>{change.label}</strong>
-                        <p className="text-muted-foreground">{change.reason}</p>
-                      </div>
-                      <span className="h-fit rounded bg-slate-100 px-2 py-1 capitalize">
-                        {change.action}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ))}
-          </div>
-          <p className="text-muted-foreground text-xs">
-            Plan saved at {new Date(plan.createdAt).toLocaleString()}. Approval
-            and deployment are intentionally unavailable in Phase 5.1.
-          </p>
-        </section>
+          <RevisionViewer plan={plan} />
+        </>
       )}
       {error && (
         <p className="rounded-lg bg-red-50 p-3 text-red-700" role="alert">

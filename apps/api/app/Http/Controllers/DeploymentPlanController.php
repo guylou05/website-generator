@@ -23,6 +23,34 @@ class DeploymentPlanController extends Controller
         return response()->json(['data' => $deploymentPlan]);
     }
 
+    /** Return persisted comparison data only; this endpoint never contacts WordPress. */
+    public function diffs(Request $request, DeploymentPlan $deploymentPlan): JsonResponse
+    {
+        $filters = $request->validate([
+            'resource' => 'nullable|string|in:page,elementor,media,menu,homepage,seo,css,settings',
+            'action' => 'nullable|string|in:create,update,delete,unchanged,regenerate,configure',
+            'search' => 'nullable|string|max:100',
+        ]);
+        $changes = collect($deploymentPlan->changes ?? [])
+            ->when($filters['resource'] ?? null, fn ($items, $resource) => $items->where('resource', $resource))
+            ->when($filters['action'] ?? null, fn ($items, $action) => $items->where('action', $action))
+            ->when($filters['search'] ?? null, function ($items, $search) {
+                $needle = mb_strtolower($search);
+
+                return $items->filter(fn ($change) => str_contains(mb_strtolower(implode(' ', [$change['label'] ?? '', $change['identifier'] ?? '', $change['reason'] ?? ''])), $needle));
+            })->values();
+
+        return response()->json(['data' => [
+            'plan_id' => $deploymentPlan->id,
+            'read_only' => true,
+            'safety_status' => $deploymentPlan->safety_status,
+            'warnings' => $deploymentPlan->warnings,
+            'statistics' => $deploymentPlan->statistics,
+            'filtered_total' => $changes->count(),
+            'changes' => $changes,
+        ]]);
+    }
+
     public function store(Request $request, Project $project, DeploymentPlanService $service): JsonResponse
     {
         $data = $request->validate(['website_revision_id' => 'nullable|uuid', 'wordpress_connection_id' => 'required|uuid']);
