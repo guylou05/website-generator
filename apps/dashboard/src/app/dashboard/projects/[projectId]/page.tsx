@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import {
   dashboardApi,
+  DashboardApiError,
   type Deployment,
   type GenerationSummary,
   type Project,
 } from '@/lib/api-client';
 import { GenerationActions } from '@/components/generation-actions';
 import Link from 'next/link';
+import { RequestErrorPanel } from '@/components/request-error-panel';
 
 const activeGenerationStatuses = new Set(['queued', 'running', 'cancelling']);
 
@@ -20,28 +22,46 @@ export default function ProjectDetail() {
   const [summary, setSummary] = useState<GenerationSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [requestId, setRequestId] = useState<string>();
+  const [deploymentError, setDeploymentError] = useState<DashboardApiError>();
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      dashboardApi.project(projectId),
-      dashboardApi.deployments(projectId),
-      dashboardApi.generationSummary(projectId),
-    ])
-      .then(([nextProject, nextDeployments, nextSummary]) => {
-        setProject(nextProject);
-        setDeployments(nextDeployments);
-        setSummary(nextSummary);
-      })
-      .catch((reason: unknown) =>
+    setError('');
+    setDeploymentError(undefined);
+    dashboardApi
+      .project(projectId)
+      .then(setProject)
+      .catch((reason: unknown) => {
+        setRequestId(
+          reason instanceof DashboardApiError ? reason.requestId : undefined,
+        );
         setError(
           reason instanceof Error
             ? reason.message
             : 'This project could not be loaded.',
-        ),
-      )
+        );
+      })
       .finally(() => setLoading(false));
-  }, [projectId]);
+    void dashboardApi
+      .deployments(projectId)
+      .then(setDeployments)
+      .catch((reason: unknown) =>
+        setDeploymentError(
+          reason instanceof DashboardApiError
+            ? reason
+            : new DashboardApiError(
+                'Deployment history could not be loaded.',
+                0,
+              ),
+        ),
+      );
+    void dashboardApi
+      .generationSummary(projectId)
+      .then(setSummary)
+      .catch(() => setSummary(null));
+  }, [projectId, reload]);
 
   const latestRun = project?.generationRuns[0];
   useEffect(() => {
@@ -69,6 +89,13 @@ export default function ProjectDetail() {
         <p className="text-muted-foreground mt-2 text-sm">
           {error || 'The project was not found.'}
         </p>
+        <div className="mt-4">
+          <RequestErrorPanel
+            message={error || 'The project was not found.'}
+            requestId={requestId}
+            onRetry={() => setReload((value) => value + 1)}
+          />
+        </div>
         <Link
           href="/dashboard/projects"
           className="text-primary mt-5 inline-block text-sm font-medium"
@@ -146,6 +173,15 @@ export default function ProjectDetail() {
       </section>
       <section className="card p-6">
         <h2 className="font-semibold">Deployment history</h2>
+        {deploymentError && (
+          <div className="mt-4">
+            <RequestErrorPanel
+              message={deploymentError.message}
+              requestId={deploymentError.requestId}
+              onRetry={() => setReload((value) => value + 1)}
+            />
+          </div>
+        )}
         <div className="mt-4 space-y-3">
           {deployments.length === 0 && (
             <p className="text-muted-foreground text-sm">No deployments yet.</p>

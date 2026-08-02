@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm --filter @website-generator/dashboard^... build && next build",
-    "start": "next start",
+    "build": "pnpm --filter @website-generator/dashboard^... build && next build && node scripts/prepare-standalone.mjs",
+    "start": "node .next/standalone/apps/dashboard/server.js",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"
