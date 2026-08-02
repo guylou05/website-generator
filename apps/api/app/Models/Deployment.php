@@ -24,9 +24,15 @@ class Deployment extends Model
         return $this->hasMany(DeploymentEvent::class);
     }
 
-    public function connection(): BelongsTo
+    public function wordpressConnection(): BelongsTo
     {
         return $this->belongsTo(WordPressConnection::class, 'wordpress_connection_id');
+    }
+
+    /** @deprecated Use wordpressConnection() instead. */
+    public function connection(): BelongsTo
+    {
+        return $this->wordpressConnection();
     }
 
     public function generationRun(): BelongsTo
