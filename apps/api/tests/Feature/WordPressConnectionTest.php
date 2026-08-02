@@ -27,6 +27,105 @@ class WordPressConnectionTest extends TestCase
         $this->assertStringNotContainsString('secret value', DB::table('wordpress_connections')->value('encrypted_application_password'));
     }
 
+    public function test_connector_authentication_requires_only_a_connector_token(): void
+    {
+        $response = $this->postJson('/api/projects/'.$this->project()->id.'/wordpress-connections', [
+            'site_url' => 'https://wordpress.test',
+            'authentication_type' => 'connector',
+            'connector_token' => 'connector secret',
+        ])->assertCreated();
+
+        $response->assertJsonMissing(['connector secret'])->assertJsonMissing(['encrypted_connector_token']);
+        $connection = WordPressConnection::firstOrFail();
+        $this->assertSame('connector', $connection->authentication_type);
+        $this->assertNull($connection->username);
+        $this->assertNull($connection->encrypted_application_password);
+        $this->assertSame('connector secret', $connection->encrypted_connector_token);
+    }
+
+    public function test_connector_authentication_prohibits_application_password_credentials(): void
+    {
+        $project = $this->project();
+
+        $this->postJson('/api/projects/'.$project->id.'/wordpress-connections', [
+            'site_url' => 'https://wordpress.test',
+            'authentication_type' => 'connector',
+            'username' => 'admin',
+            'application_password' => 'secret',
+            'connector_token' => 'connector secret',
+        ])->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed')
+            ->assertJsonStructure(['error' => ['details' => ['username', 'application_password']]]);
+
+        $this->postJson('/api/projects/'.$project->id.'/wordpress-connections', [
+            'site_url' => 'https://wordpress.test',
+            'authentication_type' => 'connector',
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['connector_token']]]);
+    }
+
+    public function test_application_password_authentication_requires_only_username_and_password(): void
+    {
+        $this->postJson('/api/projects/'.$this->project()->id.'/wordpress-connections', [
+            'site_url' => 'https://wordpress.test',
+            'authentication_type' => 'application_password',
+            'username' => 'admin',
+            'application_password' => 'secret',
+        ])->assertCreated();
+
+        $connection = WordPressConnection::firstOrFail();
+        $this->assertSame('application_password', $connection->authentication_type);
+        $this->assertSame('admin', $connection->username);
+        $this->assertSame('secret', $connection->encrypted_application_password);
+        $this->assertNull($connection->encrypted_connector_token);
+    }
+
+    public function test_application_password_authentication_prohibits_connector_token(): void
+    {
+        $project = $this->project();
+
+        $this->postJson('/api/projects/'.$project->id.'/wordpress-connections', [
+            'site_url' => 'https://wordpress.test',
+            'authentication_type' => 'application_password',
+            'username' => 'admin',
+            'application_password' => 'secret',
+            'connector_token' => 'connector secret',
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['connector_token']]]);
+
+        $this->postJson('/api/projects/'.$project->id.'/wordpress-connections', [
+            'site_url' => 'https://wordpress.test',
+            'authentication_type' => 'application_password',
+        ])->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed')
+            ->assertJsonStructure(['error' => ['details' => ['username', 'application_password']]]);
+    }
+
+    public function test_nullable_credentials_migration_preserves_existing_connections(): void
+    {
+        $project = $this->project();
+        $connection = $project->wordpressConnections()->create([
+            'site_url' => 'https://wordpress.test',
+            'authentication_type' => 'connector',
+            'username' => 'legacy-placeholder',
+            'encrypted_application_password' => 'legacy-placeholder',
+            'encrypted_connector_token' => 'connector secret',
+        ]);
+
+        $migration = require database_path('migrations/2026_08_02_000002_make_wordpress_credentials_nullable.php');
+        $migration->down();
+        $migration->up();
+
+        $this->assertDatabaseHas('wordpress_connections', [
+            'id' => $connection->id,
+            'authentication_type' => 'connector',
+        ]);
+
+        DB::table('wordpress_connections')->where('id', $connection->id)->update([
+            'username' => null,
+            'encrypted_application_password' => null,
+        ]);
+        $this->assertNull(DB::table('wordpress_connections')->where('id', $connection->id)->value('username'));
+    }
+
     public function test_url_is_normalized_in_testing(): void
     {
         $this->postJson('/api/projects/'.$this->project()->id.'/wordpress-connections', ['site_url' => 'http://localhost:8080///', 'username' => 'admin', 'application_password' => 'secret'])->assertCreated()->assertJsonPath('data.site_url', 'http://localhost:8080');

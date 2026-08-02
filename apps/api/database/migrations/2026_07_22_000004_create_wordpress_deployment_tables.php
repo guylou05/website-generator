@@ -12,8 +12,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('project_id')->constrained()->cascadeOnDelete();
             $table->string('site_url');
-            $table->string('username');
-            $table->text('encrypted_application_password');
+            $table->string('username')->nullable();
+            $table->text('encrypted_application_password')->nullable();
             $table->string('status')->default('unverified');
             $table->string('wordpress_version')->nullable();
             $table->string('elementor_version')->nullable();
