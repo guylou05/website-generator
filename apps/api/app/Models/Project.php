@@ -12,7 +12,7 @@ class Project extends Model
 {
     use HasUuids, TenantBound { TenantBound::resolveRouteBindingQuery insteadof HasUuids; }
 
-    protected $fillable = ['name', 'slug', 'status', 'business_profile', 'brand_settings', 'organization_id', 'approved_revision_id', 'latest_revision_id'];
+    protected $fillable = ['name', 'slug', 'status', 'business_profile', 'brand_settings', 'organization_id', 'approved_revision_id', 'latest_revision_id', 'default_wordpress_connection_id'];
 
     protected function casts(): array
     {
@@ -27,6 +27,11 @@ class Project extends Model
     public function wordpressConnections(): HasMany
     {
         return $this->hasMany(WordPressConnection::class);
+    }
+
+    public function defaultWordPressConnection(): BelongsTo
+    {
+        return $this->belongsTo(WordPressConnection::class, 'default_wordpress_connection_id');
     }
 
     public function deployments(): HasMany

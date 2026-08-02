@@ -13,52 +13,54 @@ use InvalidArgumentException;
 
 class WordPressConnectionController extends Controller
 {
-    public function index(Project $project): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['data' => $project->wordpressConnections()->latest()->get()]);
+        $connections = WordPressConnection::where('organization_id', $request->user()->current_organization_id)
+            ->withMax('deployments', 'completed_at')->latest()->get();
+
+        return response()->json(['data' => $connections]);
+    }
+
+    public function projectIndex(Request $request, Project $project): JsonResponse
+    {
+        return $this->index($request);
     }
 
     public function show(WordPressConnection $connection): JsonResponse
     {
-        return response()->json(['data' => $connection]);
+        return response()->json(['data' => $connection->loadMax('deployments', 'completed_at')]);
     }
 
-    public function store(Request $request, Project $project, WordPressConnectionService $service, EntitlementService $entitlements): JsonResponse
+    public function store(Request $request, WordPressConnectionService $service, EntitlementService $entitlements): JsonResponse
     {
-        $organization = Organization::findOrFail($project->organization_id);
+        $organization = Organization::findOrFail($request->user()->current_organization_id);
         if (config('billing.enforcement') && ! $entitlements->canCreateWordPressConnection($organization)) {
             return response()->json(['error' => $entitlements->denial($organization, 'wordpress_connections')], 402);
         }
-        $request->merge([
-            'authentication_type' => $request->input('authentication_type', 'application_password'),
-        ]);
-
-        $data = $request->validate([
-            'name' => 'sometimes|string|max:255', 'site_url' => 'required|string|max:2048',
-            'authentication_type' => 'required|in:connector,application_password',
-            'username' => 'required_if:authentication_type,application_password|prohibited_if:authentication_type,connector|string|max:255',
-            'application_password' => 'required_if:authentication_type,application_password|prohibited_if:authentication_type,connector|string|max:512',
-            'connector_token' => 'required_if:authentication_type,connector|prohibited_if:authentication_type,application_password|string|max:2048',
-        ]);
+        $data = $this->credentials($request, true);
         try {
             $data['site_url'] = $service->normalize($data['site_url']);
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => ['code' => 'invalid_site_url', 'message' => $e->getMessage()]], 422);
         }
         $data['name'] ??= (string) parse_url($data['site_url'], PHP_URL_HOST);
-        $connection = $project->wordpressConnections()->create([
-            'organization_id' => $project->organization_id, 'created_by' => $request->user()?->id,
-            'name' => $data['name'], 'site_url' => $data['site_url'], 'authentication_type' => $data['authentication_type'],
-            'username' => $data['username'] ?? null, 'encrypted_application_password' => $data['application_password'] ?? null,
-            'encrypted_connector_token' => $data['connector_token'] ?? null,
+        $connection = WordPressConnection::create($this->attributes($data) + [
+            'organization_id' => $organization->id,
+            'created_by' => $request->user()->id,
         ]);
 
         return response()->json(['data' => $connection], 201);
     }
 
+    /** Backwards-compatible project route; the record is still organization owned. */
+    public function projectStore(Request $request, Project $project, WordPressConnectionService $service, EntitlementService $entitlements): JsonResponse
+    {
+        return $this->store($request, $service, $entitlements);
+    }
+
     public function update(Request $request, WordPressConnection $connection, WordPressConnectionService $service): JsonResponse
     {
-        $data = $request->validate(['site_url' => 'sometimes|string|max:2048', 'username' => 'sometimes|string|max:255', 'application_password' => 'sometimes|string|max:512']);
+        $data = $this->credentials($request, false, $connection->authentication_type);
         try {
             if (isset($data['site_url'])) {
                 $data['site_url'] = $service->normalize($data['site_url']);
@@ -66,22 +68,23 @@ class WordPressConnectionController extends Controller
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => ['code' => 'invalid_site_url', 'message' => $e->getMessage()]], 422);
         }
-        if (isset($data['application_password'])) {
-            $data['encrypted_application_password'] = $data['application_password'];
-            unset($data['application_password']);
-        } $connection->update($data + ['status' => 'unverified', 'last_verified_at' => null]);
+        $connection->update($this->attributes($data) + ['status' => 'unverified', 'last_verified_at' => null]);
 
         return response()->json(['data' => $connection->fresh()]);
     }
 
     public function destroy(WordPressConnection $connection): JsonResponse
     {
+        if ($connection->deployments()->exists()) {
+            return response()->json(['error' => ['code' => 'connection_in_use', 'message' => 'This connection has deployment history and cannot be deleted.']], 409);
+        }
+        Project::where('default_wordpress_connection_id', $connection->id)->update(['default_wordpress_connection_id' => null]);
         $connection->delete();
 
         return response()->json(null, 204);
     }
 
-    public function verify(WordPressConnection $connection, WordPressConnectionService $service): JsonResponse
+    public function test(WordPressConnection $connection, WordPressConnectionService $service): JsonResponse
     {
         try {
             $service->verify($connection);
@@ -92,14 +95,50 @@ class WordPressConnectionController extends Controller
         }
     }
 
-    public function test(Request $request, Project $project, WordPressConnectionService $service): JsonResponse
+    public function rotateToken(Request $request, WordPressConnection $connection): JsonResponse
     {
-        $data = $request->validate(['connection_id' => 'required|uuid']);
-        $connection = $project->wordpressConnections()->findOrFail($data['connection_id']);
-        try {
-            return response()->json($service->verify($connection));
-        } catch (\RuntimeException $e) {
-            return response()->json(['connected' => false, 'error' => ['code' => 'connection_verification_failed', 'message' => $e->getMessage()]], 422);
+        if ($connection->authentication_type !== 'connector') {
+            return response()->json(['error' => ['code' => 'wrong_authentication_type', 'message' => 'Only connector tokens can be rotated.']], 409);
         }
+        $data = $request->validate(['connector_token' => 'required|string|max:2048']);
+        $connection->update(['encrypted_connector_token' => $data['connector_token'], 'status' => 'unverified', 'last_verified_at' => null]);
+
+        return response()->json(['data' => $connection->fresh()]);
+    }
+
+    private function credentials(Request $request, bool $creating, ?string $currentType = null): array
+    {
+        if ($creating) {
+            $request->merge(['authentication_type' => $request->input('authentication_type', 'application_password')]);
+        }
+        $type = $request->input('authentication_type', $currentType);
+        $rules = [
+            'name' => ($creating ? 'sometimes' : 'sometimes').'|string|max:255',
+            'site_url' => ($creating ? 'required' : 'sometimes').'|string|max:2048',
+            'authentication_type' => ($creating ? 'required' : 'sometimes').'|in:connector,application_password',
+            'username' => 'nullable|string|max:255', 'application_password' => 'nullable|string|max:512',
+            'connector_token' => 'nullable|string|max:2048',
+        ];
+        if ($creating || $request->has('authentication_type')) {
+            $rules['username'] = $type === 'application_password' ? 'required|string|max:255' : 'prohibited';
+            $rules['application_password'] = $type === 'application_password' ? 'required|string|max:512' : 'prohibited';
+            $rules['connector_token'] = $type === 'connector' ? 'required|string|max:2048' : 'prohibited';
+        }
+
+        return $request->validate($rules);
+    }
+
+    private function attributes(array $data): array
+    {
+        if (array_key_exists('application_password', $data)) {
+            $data['encrypted_application_password'] = $data['application_password'];
+            unset($data['application_password']);
+        }
+        if (array_key_exists('connector_token', $data)) {
+            $data['encrypted_connector_token'] = $data['connector_token'];
+            unset($data['connector_token']);
+        }
+
+        return $data;
     }
 }

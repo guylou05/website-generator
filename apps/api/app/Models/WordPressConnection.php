@@ -14,7 +14,7 @@ class WordPressConnection extends Model
 
     protected $table = 'wordpress_connections';
 
-    protected $fillable = ['project_id', 'organization_id', 'name', 'site_url', 'authentication_type', 'username', 'encrypted_application_password', 'encrypted_connector_token', 'status', 'wordpress_version', 'elementor_version', 'connector_version', 'last_verified_at', 'last_error', 'created_by'];
+    protected $fillable = ['organization_id', 'name', 'site_url', 'authentication_type', 'username', 'encrypted_application_password', 'encrypted_connector_token', 'status', 'wordpress_version', 'elementor_version', 'connector_version', 'last_verified_at', 'last_error', 'created_by'];
 
     protected $hidden = ['encrypted_application_password', 'encrypted_connector_token'];
 
@@ -31,5 +31,10 @@ class WordPressConnection extends Model
     public function deployments(): HasMany
     {
         return $this->hasMany(Deployment::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

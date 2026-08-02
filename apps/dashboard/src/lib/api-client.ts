@@ -51,6 +51,7 @@ export interface Project {
   status: string;
   businessProfile: Record<string, unknown>;
   brandSettings: Record<string, unknown> | null;
+  defaultWordPressConnectionId: string | null;
   generationRuns: GenerationRun[];
   createdAt: string;
   updatedAt: string;
@@ -69,7 +70,7 @@ export interface GenerationSummary {
 }
 export interface WordPressConnection {
   id: string;
-  projectId: string;
+  projectId: string | null;
   name: string;
   siteUrl: string;
   authenticationType: 'connector' | 'application_password';
@@ -79,6 +80,8 @@ export interface WordPressConnection {
   elementorVersion: string | null;
   connectorVersion: string | null;
   lastError: { code: string; message: string } | null;
+  lastVerifiedAt: string | null;
+  deploymentsMaxCompletedAt: string | null;
 }
 export interface Deployment {
   id: string;
@@ -294,6 +297,7 @@ interface Wire {
   status: string;
   business_profile: Record<string, unknown>;
   brand_settings: Record<string, unknown> | null;
+  default_wordpress_connection_id?: string | null;
   generation_runs?: Wire[];
   project_id: string;
   provider: string;
@@ -316,6 +320,8 @@ interface Wire {
   elementor_version?: string | null;
   connector_version?: string | null;
   last_error?: WordPressConnection['lastError'];
+  last_verified_at?: string | null;
+  deployments_max_completed_at?: string | null;
   generation_run_id?: string;
   wordpress_connection_id?: string;
   dry_run?: boolean;
@@ -351,6 +357,7 @@ export const mapProject = (x: Wire): Project => ({
   status: x.status,
   businessProfile: x.business_profile,
   brandSettings: x.brand_settings,
+  defaultWordPressConnectionId: x.default_wordpress_connection_id ?? null,
   generationRuns: (x.generation_runs ?? []).map(mapGeneration),
   createdAt: x.created_at,
   updatedAt: x.updated_at,
@@ -368,6 +375,8 @@ export const mapConnection = (x: Wire): WordPressConnection => ({
   elementorVersion: x.elementor_version ?? null,
   connectorVersion: x.connector_version ?? null,
   lastError: x.last_error ?? null,
+  lastVerifiedAt: x.last_verified_at ?? null,
+  deploymentsMaxCompletedAt: x.deployments_max_completed_at ?? null,
 });
 export const mapDeployment = (x: Wire): Deployment => ({
   id: String(x.id),
@@ -683,13 +692,14 @@ export class DashboardApiClient {
       await this.call<Wire>(`/generations/${id}/cancel`, { method: 'POST' }),
     );
   }
-  async connections(projectId: string): Promise<WordPressConnection[]> {
-    return (
-      await this.call<Wire[]>(`/projects/${projectId}/wordpress-connections`)
-    ).map(mapConnection);
+  async connections(projectId?: string): Promise<WordPressConnection[]> {
+    void projectId; // Kept for callers upgrading from the project-scoped endpoint.
+    return (await this.call<Wire[]>('/wordpress-connections')).map(
+      mapConnection,
+    );
   }
   async createConnection(
-    projectId: string,
+    _projectId: string | undefined,
     input: {
       name: string;
       site_url: string;
@@ -700,7 +710,7 @@ export class DashboardApiClient {
     },
   ): Promise<WordPressConnection> {
     return mapConnection(
-      await this.call<Wire>(`/projects/${projectId}/wordpress-connections`, {
+      await this.call<Wire>('/wordpress-connections', {
         method: 'POST',
         body: JSON.stringify(input),
       }),
@@ -708,8 +718,22 @@ export class DashboardApiClient {
   }
   async verifyConnection(id: string): Promise<WordPressConnection> {
     return mapConnection(
-      await this.call<Wire>(`/wordpress-connections/${id}/verify`, {
+      await this.call<Wire>(`/wordpress-connections/${id}/test`, {
         method: 'POST',
+      }),
+    );
+  }
+  async deleteConnection(id: string): Promise<null> {
+    return this.call(`/wordpress-connections/${id}`, { method: 'DELETE' });
+  }
+  async updateConnection(
+    id: string,
+    input: Record<string, unknown>,
+  ): Promise<WordPressConnection> {
+    return mapConnection(
+      await this.call<Wire>(`/wordpress-connections/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(input),
       }),
     );
   }

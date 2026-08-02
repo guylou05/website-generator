@@ -21,9 +21,6 @@ export function DeploymentWorkflow({
     initialConnections[0],
   );
   const [deployment, setDeployment] = useState<Deployment>();
-  const [method, setMethod] = useState<'connector' | 'application_password'>(
-    'connector',
-  );
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const perform = async (fn: () => Promise<void>) => {
@@ -60,11 +57,10 @@ export function DeploymentWorkflow({
           <div>
             <h2 className="text-lg font-semibold">WordPress connection</h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              The connector plugin is recommended. Credentials are encrypted and
-              never shown again.
+              Select a reusable site saved for your organization.
             </p>
           </div>
-          {connections.length > 0 && (
+          {connections.length > 0 ? (
             <select
               className="rounded-lg border p-2"
               value={connection?.id}
@@ -78,92 +74,26 @@ export function DeploymentWorkflow({
                 </option>
               ))}
             </select>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              No WordPress sites are connected yet.
+            </p>
           )}
         </div>
-        <form
-          className="mt-5 grid gap-3 sm:grid-cols-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const d = new FormData(e.currentTarget);
-            void perform(async () => {
-              const next = await dashboardApi.createConnection(projectId, {
-                name: String(d.get('name')),
-                site_url: String(d.get('site_url')),
-                authentication_type: method,
-                username: String(d.get('username') || ''),
-                application_password: String(
-                  d.get('application_password') || '',
-                ),
-                connector_token: String(d.get('connector_token') || ''),
-              });
-              setConnections([next, ...connections]);
-              setConnection(next);
-            });
-          }}
-        >
-          <input
-            className="rounded-lg border p-3"
-            name="name"
-            placeholder="Site name"
-            required
-          />
-          <input
-            className="rounded-lg border p-3"
-            name="site_url"
-            type="url"
-            placeholder="https://example.com"
-            required
-          />
-          <select
-            className="rounded-lg border p-3 sm:col-span-2"
-            value={method}
-            onChange={(e) => setMethod(e.target.value as typeof method)}
+        <div className="mt-5 flex gap-3">
+          <Link
+            className="rounded-lg border px-4 py-2 text-sm"
+            href="/dashboard/settings/wordpress-sites"
           >
-            <option value="connector">
-              SiteFoundry connector (recommended)
-            </option>
-            <option value="application_password">
-              WordPress Application Password
-            </option>
-          </select>
-          {method === 'connector' ? (
-            <>
-              <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
-                Install and activate the SiteFoundry Connector plugin, generate
-                a token in WordPress, then paste it here.
-              </div>
-              <input
-                className="rounded-lg border p-3"
-                name="connector_token"
-                type="password"
-                placeholder="Connector token"
-                required
-              />
-            </>
-          ) : (
-            <>
-              <input
-                className="rounded-lg border p-3"
-                name="username"
-                placeholder="WordPress username"
-                required
-              />
-              <input
-                className="rounded-lg border p-3"
-                name="application_password"
-                type="password"
-                placeholder="Application Password (not your account password)"
-                required
-              />
-            </>
-          )}
-          <button
-            disabled={busy}
-            className="bg-primary text-primary-foreground rounded-lg p-3 sm:col-span-2"
+            Manage connections
+          </Link>
+          <Link
+            className="text-primary px-4 py-2 text-sm"
+            href="/dashboard/settings/wordpress-sites?connect=1"
           >
-            Connect WordPress site
-          </button>
-        </form>
+            Connect another site
+          </Link>
+        </div>
       </section>
       {connection && (
         <section className="card p-6">

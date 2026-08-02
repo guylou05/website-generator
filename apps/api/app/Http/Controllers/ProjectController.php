@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateProjectRequest;
 use App\Http\Resources\ProjectResource;
 use App\Models\Organization;
 use App\Models\Project;
+use App\Models\WordPressConnection;
 use App\Services\EntitlementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -40,7 +41,11 @@ class ProjectController extends Controller
 
     public function update(UpdateProjectRequest $request, Project $project): ProjectResource
     {
-        $project->update($request->validated());
+        $data = $request->validated();
+        if (($connectionId = $data['default_wordpress_connection_id'] ?? null) && ! WordPressConnection::where('organization_id', $project->organization_id)->whereKey($connectionId)->exists()) {
+            abort(422, 'The selected WordPress connection does not belong to this organization.');
+        }
+        $project->update($data);
 
         return new ProjectResource($project->fresh());
     }
