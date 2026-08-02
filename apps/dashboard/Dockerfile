@@ -24,4 +24,5 @@ WORKDIR /workspace
 ENV NODE_ENV=production
 COPY --from=build /workspace ./
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @website-generator/dashboard start --hostname 0.0.0.0 --port ${PORT:-3000}"]
+ENV HOSTNAME=0.0.0.0
+CMD ["node", "apps/dashboard/.next/standalone/apps/dashboard/server.js"]

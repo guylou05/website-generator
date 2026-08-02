@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "pnpm --filter @website-generator/dashboard^... build && next build",
-    "start": "next start",
+    "start": "HOSTNAME=${HOSTNAME:-0.0.0.0} node .next/standalone/apps/dashboard/server.js",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"
