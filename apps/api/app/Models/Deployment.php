@@ -12,11 +12,11 @@ class Deployment extends Model
 {
     use HasUuids, TenantBound { TenantBound::resolveRouteBindingQuery insteadof HasUuids; }
 
-    protected $fillable = ['project_id', 'organization_id', 'generation_run_id', 'website_revision_id', 'wordpress_connection_id', 'status', 'dry_run', 'progress', 'current_stage', 'operations', 'result', 'error', 'queued_at', 'heartbeat_at', 'cancellation_requested_at', 'attempt', 'max_attempts', 'worker_id', 'started_at', 'completed_at'];
+    protected $fillable = ['project_id', 'organization_id', 'generation_run_id', 'website_revision_id', 'wordpress_connection_id', 'status', 'dry_run', 'progress', 'current_stage', 'operations', 'result', 'error', 'options', 'created_by', 'queued_at', 'heartbeat_at', 'cancellation_requested_at', 'attempt', 'max_attempts', 'worker_id', 'started_at', 'completed_at'];
 
     protected function casts(): array
     {
-        return ['dry_run' => 'boolean', 'operations' => 'array', 'result' => 'array', 'error' => 'array', 'queued_at' => 'datetime', 'heartbeat_at' => 'datetime', 'cancellation_requested_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['dry_run' => 'boolean', 'operations' => 'array', 'result' => 'array', 'error' => 'array', 'options' => 'array', 'queued_at' => 'datetime', 'heartbeat_at' => 'datetime', 'cancellation_requested_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
     public function events(): HasMany

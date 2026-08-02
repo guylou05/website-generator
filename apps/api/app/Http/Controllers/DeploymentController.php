@@ -41,13 +41,21 @@ class DeploymentController extends Controller
         if (! $dryRun && config('billing.enforcement') && ! $entitlements->canStartLiveDeployment($organization)) {
             return response()->json(['error' => $entitlements->denial($organization, 'live_deployments')], 402);
         }
-        $data = $request->validate(['wordpress_connection_id' => 'required|uuid']);
+        $data = $request->validate([
+            'wordpress_connection_id' => 'required|uuid', 'included_pages' => 'sometimes|array',
+            'included_pages.*' => 'string|max:255', 'overwrite_existing' => 'sometimes|boolean',
+            'set_homepage' => 'sometimes|boolean', 'update_navigation' => 'sometimes|boolean',
+            'regenerate_elementor_css' => 'sometimes|boolean', 'page_status' => 'sometimes|in:draft,publish',
+        ]);
         $revision = $project->approvedRevision;
         if (! $revision || $revision->status !== 'approved') {
             return response()->json(['error' => ['code' => 'approved_revision_required', 'message' => 'Approve a rendered website revision before deployment.']], 409);
         }
         $run = $revision->generation_run_id ? $project->generationRuns()->findOrFail($revision->generation_run_id) : $project->generationRuns()->whereIn('status', ['succeeded', 'completed'])->latest()->firstOrFail();
         $connection = $project->wordpressConnections()->findOrFail($data['wordpress_connection_id']);
+        if ($connection->status !== 'verified') {
+            return response()->json(['error' => ['code' => 'connection_not_verified', 'message' => 'Test the WordPress connection successfully before continuing.']], 409);
+        }
         if (! in_array($run->status, ['succeeded', 'completed'], true)) {
             return response()->json(['error' => ['code' => 'generation_not_ready', 'message' => 'A successful generation is required.']], 409);
         }
@@ -57,7 +65,8 @@ class DeploymentController extends Controller
         if (! $dryRun && ! Deployment::where(['project_id' => $project->id, 'website_revision_id' => $revision->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => true, 'status' => 'succeeded'])->exists()) {
             return response()->json(['error' => ['code' => 'preview_required', 'message' => 'Run a successful deployment preview first.']], 409);
         }
-        $deployment = $project->deployments()->create(['organization_id' => $project->organization_id, 'generation_run_id' => $run->id, 'website_revision_id' => $revision->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
+        $options = ['included_pages' => $data['included_pages'] ?? [], 'overwrite_existing' => $data['overwrite_existing'] ?? false, 'set_homepage' => $data['set_homepage'] ?? false, 'update_navigation' => $data['update_navigation'] ?? false, 'regenerate_elementor_css' => $data['regenerate_elementor_css'] ?? true, 'page_status' => $data['page_status'] ?? 'draft'];
+        $deployment = $project->deployments()->create(['organization_id' => $project->organization_id, 'created_by' => $request->user()?->id, 'generation_run_id' => $run->id, 'website_revision_id' => $revision->id, 'wordpress_connection_id' => $connection->id, 'dry_run' => $dryRun, 'options' => $options, 'status' => 'queued', 'progress' => 0, 'queued_at' => now()]);
         $usage->record($organization, $dryRun ? 'deployment_preview_started' : 'live_deployments', 1, 'deployment', $deployment->id, 'deployment-started-'.$deployment->id);
         $deployment->events()->create(['stage' => 'system', 'event_type' => 'deployment.queued', 'progress' => 0, 'message' => 'Deployment queued.', 'created_at' => now()]);
         app(JobTransport::class)->deployment($deployment->id, $deployment->attempt ?? 1);

@@ -112,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/wordpress-connections/{connection}', [WordPressConnectionController::class, 'update']);
         Route::delete('/wordpress-connections/{connection}', [WordPressConnectionController::class, 'destroy']);
         Route::post('/wordpress-connections/{connection}/verify', [WordPressConnectionController::class, 'verify'])->middleware('verified.email');
+        Route::post('/projects/{project}/wordpress-connections/test', [WordPressConnectionController::class, 'test'])->middleware('verified.email');
         Route::post('/projects/{project}/deployments/preview', [DeploymentController::class, 'preview'])->middleware('verified.email');
         Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployments', [DeploymentController::class, 'index']);

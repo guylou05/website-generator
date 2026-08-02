@@ -29,13 +29,26 @@ class WordPressConnectionController extends Controller
         if (config('billing.enforcement') && ! $entitlements->canCreateWordPressConnection($organization)) {
             return response()->json(['error' => $entitlements->denial($organization, 'wordpress_connections')], 402);
         }
-        $data = $request->validate(['site_url' => 'required|string|max:2048', 'username' => 'required|string|max:255', 'application_password' => 'required|string|max:512']);
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255', 'site_url' => 'required|string|max:2048',
+            'authentication_type' => 'sometimes|in:connector,application_password',
+            'username' => 'nullable|required_if:authentication_type,application_password|string|max:255',
+            'application_password' => 'nullable|required_if:authentication_type,application_password|string|max:512',
+            'connector_token' => 'nullable|required_if:authentication_type,connector|string|max:2048',
+        ]);
         try {
             $data['site_url'] = $service->normalize($data['site_url']);
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => ['code' => 'invalid_site_url', 'message' => $e->getMessage()]], 422);
         }
-        $connection = $project->wordpressConnections()->create(['organization_id' => $project->organization_id, 'site_url' => $data['site_url'], 'username' => $data['username'], 'encrypted_application_password' => $data['application_password']]);
+        $data['name'] ??= (string) parse_url($data['site_url'], PHP_URL_HOST);
+        $data['authentication_type'] ??= 'application_password';
+        $connection = $project->wordpressConnections()->create([
+            'organization_id' => $project->organization_id, 'created_by' => $request->user()?->id,
+            'name' => $data['name'], 'site_url' => $data['site_url'], 'authentication_type' => $data['authentication_type'],
+            'username' => $data['username'] ?? null, 'encrypted_application_password' => $data['application_password'] ?? null,
+            'encrypted_connector_token' => $data['connector_token'] ?? null,
+        ]);
 
         return response()->json(['data' => $connection], 201);
     }
@@ -73,6 +86,17 @@ class WordPressConnectionController extends Controller
             return response()->json(['data' => $connection->fresh()]);
         } catch (\RuntimeException $e) {
             return response()->json(['error' => ['code' => 'connection_verification_failed', 'message' => $e->getMessage()]], 422);
+        }
+    }
+
+    public function test(Request $request, Project $project, WordPressConnectionService $service): JsonResponse
+    {
+        $data = $request->validate(['connection_id' => 'required|uuid']);
+        $connection = $project->wordpressConnections()->findOrFail($data['connection_id']);
+        try {
+            return response()->json($service->verify($connection));
+        } catch (\RuntimeException $e) {
+            return response()->json(['connected' => false, 'error' => ['code' => 'connection_verification_failed', 'message' => $e->getMessage()]], 422);
         }
     }
 }
