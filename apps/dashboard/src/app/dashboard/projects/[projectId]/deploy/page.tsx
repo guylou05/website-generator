@@ -16,6 +16,7 @@ export default function DeployPage() {
     project: Project;
     summary: GenerationSummary;
     connections: WordPressConnection[];
+    revisions: Awaited<ReturnType<typeof dashboardApi.revisions>>;
   }>();
   const [error, setError] = useState('');
   useEffect(() => {
@@ -23,9 +24,10 @@ export default function DeployPage() {
       dashboardApi.project(projectId),
       dashboardApi.generationSummary(projectId),
       dashboardApi.connections(projectId),
+      dashboardApi.revisions(projectId),
     ])
-      .then(([project, summary, connections]) =>
-        setData({ project, summary, connections }),
+      .then(([project, summary, connections, revisions]) =>
+        setData({ project, summary, connections, revisions }),
       )
       .catch((e: unknown) =>
         setError(
@@ -89,6 +91,7 @@ export default function DeployPage() {
         projectId={projectId}
         runId={run.id}
         initialConnections={data.connections}
+        revisions={data.revisions}
       />
     </div>
   );
