@@ -1,22 +1,15 @@
 import { NextRequest } from 'next/server';
 import { rewriteSetCookieForProxy } from '@/lib/cookies';
 import { internalApiBase } from '@/lib/runtime-config.server';
+import {
+  bufferedProxyResponse,
+  copyProxyRequestHeaders,
+  proxyErrorResponse,
+  proxyTimeoutMs,
+} from '@/lib/api-proxy';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const HOP_BY_HOP = new Set([
-  'connection',
-  'content-length',
-  'host',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailer',
-  'transfer-encoding',
-  'upgrade',
-]);
 
 function upstreamUrl(path: string[], search: string): string {
   const base = internalApiBase();
@@ -28,55 +21,61 @@ function upstreamUrl(path: string[], search: string): string {
   return `${base}/${apiPath.join('/')}${search}`;
 }
 
-function getSetCookies(headers: Headers): string[] {
-  const extended = headers as Headers & { getSetCookie?: () => string[] };
-  if (extended.getSetCookie) return extended.getSetCookie();
-  const value = headers.get('set-cookie');
-  return value ? [value] : [];
-}
-
 async function proxy(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await context.params;
-  const headers = new Headers();
-  request.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase())) headers.set(key, value);
-  });
+  const headers = copyProxyRequestHeaders(request.headers);
   headers.set('accept-encoding', 'identity');
   headers.set('x-forwarded-host', request.nextUrl.host);
   headers.set('x-forwarded-proto', request.nextUrl.protocol.replace(':', ''));
   const hasBody = !['GET', 'HEAD'].includes(request.method);
-  const upstream = await fetch(upstreamUrl(path, request.nextUrl.search), {
-    method: request.method,
-    headers,
-    body: hasBody ? request.body : undefined,
-    cache: 'no-store',
-    redirect: 'manual',
-    ...(hasBody ? { duplex: 'half' } : {}),
-  } as RequestInit & { duplex?: 'half' });
-
-  const responseHeaders = new Headers();
-  upstream.headers.forEach((value, key) => {
-    if (
-      !HOP_BY_HOP.has(key.toLowerCase()) &&
-      key.toLowerCase() !== 'set-cookie'
-    )
-      responseHeaders.set(key, value);
-  });
-  const secure = request.nextUrl.protocol === 'https:';
-  for (const cookie of getSetCookies(upstream.headers))
-    responseHeaders.append(
-      'set-cookie',
-      rewriteSetCookieForProxy(cookie, secure),
+  const url = upstreamUrl(path, request.nextUrl.search);
+  const started = Date.now();
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort('upstream timeout'),
+    proxyTimeoutMs,
+  );
+  try {
+    const upstream = await fetch(url, {
+      method: request.method,
+      headers,
+      body: hasBody ? request.body : undefined,
+      cache: 'no-store',
+      redirect: 'manual',
+      signal: controller.signal,
+      ...(hasBody ? { duplex: 'half' } : {}),
+    } as RequestInit & { duplex?: 'half' });
+    const response = await bufferedProxyResponse(upstream, (cookie) =>
+      rewriteSetCookieForProxy(cookie, request.nextUrl.protocol === 'https:'),
     );
-  responseHeaders.set('cache-control', 'no-store');
-  return new Response(upstream.body, {
-    status: upstream.status,
-    statusText: upstream.statusText,
-    headers: responseHeaders,
-  });
+    console.info('dashboard_api_proxy', {
+      method: request.method,
+      path: new URL(url).pathname,
+      status: upstream.status,
+      contentType: upstream.headers.get('content-type'),
+      durationMs: Date.now() - started,
+    });
+    return response;
+  } catch {
+    const timedOut = controller.signal.aborted;
+    console.error('dashboard_api_proxy_failed', {
+      method: request.method,
+      path: new URL(url).pathname,
+      durationMs: Date.now() - started,
+      reason: timedOut ? 'timeout' : 'upstream fetch failed',
+    });
+    return proxyErrorResponse(
+      timedOut ? 504 : 502,
+      timedOut
+        ? 'The API timed out. Please retry.'
+        : 'The API is unavailable. Please retry.',
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export const GET = proxy;

@@ -21,7 +21,7 @@ export default function Projects() {
         setError(
           reason instanceof Error
             ? reason.message
-            : 'Projects could not be loaded. Please try again.',
+            : 'Projects could not be loaded. Retry.',
         ),
       )
       .finally(() => setLoading(false));
@@ -61,7 +61,7 @@ export default function Projects() {
               className="mt-3 rounded-lg border px-4 py-2 text-sm"
               onClick={loadProjects}
             >
-              Try again
+              Retry
             </button>
           </div>
         )}
