@@ -114,6 +114,9 @@ export interface DeploymentPlan {
     label: string;
     safe: boolean;
     reason: string;
+    before?: unknown;
+    after?: unknown;
+    details?: Record<string, unknown>;
   }>;
   warnings: string[];
   estimatedSeconds: number;
@@ -776,6 +779,19 @@ export class DashboardApiClient {
       method: 'POST',
       body: JSON.stringify({ wordpress_connection_id: wordpressConnectionId }),
     });
+    return {
+      id: String(x.id),
+      status: x.status,
+      safetyStatus: x.safety_status ?? 'blocked',
+      statistics: x.statistics ?? { total: 0 },
+      changes: x.changes ?? [],
+      warnings: x.warnings ?? [],
+      estimatedSeconds: x.estimated_seconds ?? 0,
+      createdAt: x.created_at,
+    };
+  }
+  async deploymentPlan(id: string): Promise<DeploymentPlan> {
+    const x = await this.call<Wire>(`/deployment-plans/${id}`);
     return {
       id: String(x.id),
       status: x.status,

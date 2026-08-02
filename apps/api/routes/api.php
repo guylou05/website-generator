@@ -121,6 +121,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/projects/{project}/deployment-plans', [DeploymentPlanController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployment-plans', [DeploymentPlanController::class, 'index']);
         Route::get('/deployment-plans/{deploymentPlan}', [DeploymentPlanController::class, 'show']);
+        Route::get('/deployment-plans/{deploymentPlan}/diffs', [DeploymentPlanController::class, 'diffs']);
         Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployments', [DeploymentController::class, 'index']);
         Route::get('/deployments/{deployment}', [DeploymentController::class, 'show']);
