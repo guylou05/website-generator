@@ -68,6 +68,12 @@ export interface GenerationSummary {
   elementorStatus: 'ready' | 'not_ready';
   deploymentReady: boolean;
 }
+export interface WebsiteRevision {
+  id: string;
+  revisionNumber: number;
+  status: string;
+  createdAt: string;
+}
 export interface WordPressConnection {
   id: string;
   projectId: string | null;
@@ -760,6 +766,23 @@ export class DashboardApiClient {
       deploymentReady: summary.deployment_ready,
     };
   }
+  async revisions(projectId: string): Promise<WebsiteRevision[]> {
+    const revisions = await this.call<
+      Array<{
+        id: string;
+        revision_number: number;
+        status: string;
+        created_at: string;
+      }>
+    >(`/projects/${projectId}/revisions`);
+
+    return revisions.map((revision) => ({
+      id: revision.id,
+      revisionNumber: revision.revision_number,
+      status: revision.status,
+      createdAt: revision.created_at,
+    }));
+  }
   async createProject(input: {
     name: string;
     business_profile: Record<string, unknown>;
@@ -852,10 +875,14 @@ export class DashboardApiClient {
   async createDeploymentPlan(
     projectId: string,
     wordpressConnectionId: string,
+    websiteRevisionId: string,
   ): Promise<DeploymentPlan> {
     const x = await this.call<Wire>(`/projects/${projectId}/deployment-plans`, {
       method: 'POST',
-      body: JSON.stringify({ wordpress_connection_id: wordpressConnectionId }),
+      body: JSON.stringify({
+        wordpress_connection_id: wordpressConnectionId,
+        website_revision_id: websiteRevisionId,
+      }),
     });
     return {
       id: String(x.id),

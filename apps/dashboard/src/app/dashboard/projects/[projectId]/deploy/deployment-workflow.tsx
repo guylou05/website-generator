@@ -6,16 +6,24 @@ import {
   dashboardApi,
   type DeploymentPlan,
   type WordPressConnection,
+  type WebsiteRevision,
 } from '@/lib/api-client';
+import { deploymentRevisionState } from '@/lib/deployment-revisions';
 
 export function DeploymentWorkflow({
   projectId,
   initialConnections,
+  revisions,
 }: {
   projectId: string;
   runId: string;
   initialConnections: WordPressConnection[];
+  revisions: WebsiteRevision[];
 }) {
+  const revisionState = deploymentRevisionState(revisions);
+  const [selectedRevisionId, setSelectedRevisionId] = useState(
+    revisionState.selectedRevisionId,
+  );
   const [connections, setConnections] = useState(initialConnections);
   const [connection, setConnection] = useState<WordPressConnection | undefined>(
     initialConnections[0],
@@ -134,8 +142,29 @@ export function DeploymentWorkflow({
             Read-only analysis: SiteFoundry only sends GET requests and will not
             create, update, or delete WordPress content.
           </p>
+          {revisionState.showSelector && (
+            <label className="grid gap-2 text-sm font-medium">
+              Revision
+              <select
+                className="rounded-lg border p-2 font-normal"
+                value={selectedRevisionId}
+                onChange={(event) => setSelectedRevisionId(event.target.value)}
+              >
+                {revisions.map((revision) => (
+                  <option key={revision.id} value={revision.id}>
+                    Revision #{revision.revisionNumber}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {!revisionState.canCreatePlan && (
+            <p className="text-muted-foreground text-sm">
+              No generated revision is available to deploy.
+            </p>
+          )}
           <button
-            disabled={busy}
+            disabled={busy || !selectedRevisionId}
             className="bg-primary text-primary-foreground rounded-lg px-4 py-3"
             onClick={() =>
               void perform(async () =>
@@ -143,6 +172,7 @@ export function DeploymentWorkflow({
                   await dashboardApi.createDeploymentPlan(
                     projectId,
                     connection.id,
+                    selectedRevisionId!,
                   ),
                 ),
               )
