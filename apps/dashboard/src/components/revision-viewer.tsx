@@ -111,8 +111,8 @@ export function RevisionViewer({ plan }: { plan: DeploymentPlan }) {
               Review every planned change
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-slate-300">
-              This saved comparison cannot modify WordPress. Approval and
-              deployment remain separate future steps.
+              This saved comparison cannot modify WordPress. Review it before
+              authorizing the immutable deployment artifact.
             </p>
           </div>
           <span

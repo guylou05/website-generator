@@ -122,6 +122,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/projects/{project}/deployment-plans', [DeploymentPlanController::class, 'index']);
         Route::get('/deployment-plans/{deploymentPlan}', [DeploymentPlanController::class, 'show']);
         Route::get('/deployment-plans/{deploymentPlan}/diffs', [DeploymentPlanController::class, 'diffs']);
+        Route::get('/deployment-plans/{deploymentPlan}/approval', [DeploymentPlanController::class, 'approval']);
+        Route::post('/deployment-plans/{deploymentPlan}/approve', [DeploymentPlanController::class, 'approve'])->middleware('verified.email');
+        Route::post('/deployment-plans/{deploymentPlan}/reject', [DeploymentPlanController::class, 'reject'])->middleware('verified.email');
+        Route::post('/deployment-plans/{deploymentPlan}/reopen', [DeploymentPlanController::class, 'reopen'])->middleware('verified.email');
         Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployments', [DeploymentController::class, 'index']);
         Route::get('/deployments/{deployment}', [DeploymentController::class, 'show']);
