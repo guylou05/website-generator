@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\WordPressConnection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -136,20 +137,51 @@ class WordPressConnectionTest extends TestCase
 
     public function test_verification_persists_versions_and_permissions(): void
     {
-        Http::fake([
-            '*/wp-json' => Http::response(['routes' => ['/website-generator/v1/menus' => [], '/website-generator/v1/settings/homepage' => [], '/website-generator/v1/elementor/regenerate-css' => []]]),
-            '*/users/me*' => Http::response(['capabilities' => ['edit_pages' => true, 'publish_pages' => true, 'upload_files' => true, 'manage_options' => true]]),
-            '*/status' => Http::response(['wordpress' => ['version' => '6.8'], 'connector' => ['version' => '1.0'], 'elementor' => ['available' => true, 'version' => '3.30']]),
-        ]);
-        $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'username' => 'admin', 'encrypted_application_password' => 'secret']);
+        Http::fake(['*/wp-json/website-generator/v1/health' => Http::response([
+            'connected' => true, 'wordpress' => ['version' => '6.8'], 'plugin' => ['version' => '1.0'],
+            'elementor' => ['installed' => true, 'active' => true, 'version' => '3.30'],
+            'capabilities' => ['manage_options' => true, 'edit_pages' => true, 'upload_files' => true],
+        ])]);
+        $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'authentication_type' => 'connector', 'encrypted_connector_token' => 'connector secret']);
         $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertOk()->assertJsonPath('data.status', 'verified')->assertJsonPath('data.elementor_version', '3.30');
+        Http::assertSent(fn ($request) => $request->url() === 'http://wordpress.test/wp-json/website-generator/v1/health' && $request->hasHeader('Authorization', 'Bearer connector secret'));
+        $this->assertNotNull($connection->fresh()->last_tested_at);
     }
 
     public function test_missing_connector_returns_safe_error(): void
     {
         Http::fake(['*' => Http::response([], 404)]);
         $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'username' => 'admin', 'encrypted_application_password' => 'secret']);
-        $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertStatus(422)->assertJsonPath('error.code', 'connection_verification_failed')->assertJsonMissing(['secret']);
+        $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertStatus(422)->assertJsonPath('error.code', 'connector_route_not_found')->assertJsonPath('error.message', 'Connector route not found.')->assertJsonMissing(['secret']);
+        $this->assertSame(404, $connection->fresh()->last_error['http_status']);
+    }
+
+    public function test_verification_reports_rejected_token(): void
+    {
+        Http::fake(['*' => Http::response(['code' => 'rest_not_authenticated'], 401)]);
+        $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'authentication_type' => 'connector', 'encrypted_connector_token' => 'bad token']);
+        $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertStatus(422)->assertJsonPath('error.code', 'connector_token_rejected');
+    }
+
+    public function test_verification_reports_malformed_health_json(): void
+    {
+        Http::fake(['*' => Http::response('not json', 200, ['Content-Type' => 'application/json'])]);
+        $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'authentication_type' => 'connector', 'encrypted_connector_token' => 'token']);
+        $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertStatus(422)->assertJsonPath('error.code', 'malformed_health_response');
+    }
+
+    public function test_verification_reports_timeout(): void
+    {
+        Http::fake(fn () => throw new ConnectionException('cURL error 28: Operation timed out'));
+        $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'authentication_type' => 'connector', 'encrypted_connector_token' => 'token']);
+        $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertStatus(422)->assertJsonPath('error.code', 'request_timed_out')->assertJsonPath('error.message', 'Request timed out.');
+    }
+
+    public function test_verification_reports_elementor_inactive(): void
+    {
+        Http::fake(['*' => Http::response(['connected' => false, 'wordpress' => [], 'plugin' => [], 'elementor' => ['active' => false], 'error' => ['code' => 'elementor_inactive']])]);
+        $connection = $this->project()->wordpressConnections()->create(['site_url' => 'http://wordpress.test', 'authentication_type' => 'connector', 'encrypted_connector_token' => 'token']);
+        $this->postJson('/api/wordpress-connections/'.$connection->id.'/verify')->assertStatus(422)->assertJsonPath('error.message', 'Elementor is not active.');
     }
 
     public function test_wordpress_connection_and_deployment_relationships_use_the_existing_foreign_key(): void

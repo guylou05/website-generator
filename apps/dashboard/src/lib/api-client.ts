@@ -321,6 +321,7 @@ interface Wire {
   connector_version?: string | null;
   last_error?: WordPressConnection['lastError'];
   last_verified_at?: string | null;
+  last_tested_at?: string | null;
   deployments_max_completed_at?: string | null;
   generation_run_id?: string;
   wordpress_connection_id?: string;
@@ -375,7 +376,7 @@ export const mapConnection = (x: Wire): WordPressConnection => ({
   elementorVersion: x.elementor_version ?? null,
   connectorVersion: x.connector_version ?? null,
   lastError: x.last_error ?? null,
-  lastVerifiedAt: x.last_verified_at ?? null,
+  lastVerifiedAt: x.last_tested_at ?? x.last_verified_at ?? null,
   deploymentsMaxCompletedAt: x.deployments_max_completed_at ?? null,
 });
 export const mapDeployment = (x: Wire): Deployment => ({

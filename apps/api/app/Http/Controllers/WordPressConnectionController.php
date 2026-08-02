@@ -91,7 +91,9 @@ class WordPressConnectionController extends Controller
 
             return response()->json(['data' => $connection->fresh()]);
         } catch (\RuntimeException $e) {
-            return response()->json(['error' => ['code' => 'connection_verification_failed', 'message' => $e->getMessage()]], 422);
+            $error = $connection->fresh()->last_error ?? ['code' => 'connection_verification_failed', 'message' => $e->getMessage()];
+
+            return response()->json(['error' => ['code' => $error['code'], 'message' => $error['message']]], 422);
         }
     }
 
