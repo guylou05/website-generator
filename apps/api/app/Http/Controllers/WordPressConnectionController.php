@@ -88,6 +88,7 @@ class WordPressConnectionController extends Controller
     {
         try {
             $service->verify($connection);
+
             return response()->json(['data' => $connection->fresh()]);
         } catch (\RuntimeException $e) {
             return response()->json(['error' => ['code' => 'connection_verification_failed', 'message' => $e->getMessage()]], 422);
@@ -123,6 +124,7 @@ class WordPressConnectionController extends Controller
             $rules['application_password'] = $type === 'application_password' ? 'required|string|max:512' : 'prohibited';
             $rules['connector_token'] = $type === 'connector' ? 'required|string|max:2048' : 'prohibited';
         }
+
         return $request->validate($rules);
     }
 
@@ -136,6 +138,7 @@ class WordPressConnectionController extends Controller
             $data['encrypted_connector_token'] = $data['connector_token'];
             unset($data['connector_token']);
         }
+
         return $data;
     }
 }
