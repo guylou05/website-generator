@@ -8,4 +8,6 @@ export * from './media.js';
 export * from './menus.js';
 export * from './pages.js';
 export * from './settings.js';
+export * from './snapshot.js';
+export * from './diff.js';
 export * from './types.js';

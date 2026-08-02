@@ -14,6 +14,9 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
         register_rest_route($this->namespace, '/status', [
             'methods' => WP_REST_Server::READABLE, 'callback' => [$this, 'status'], 'permission_callback' => [$this, 'permissions_check'],
         ]);
+        register_rest_route($this->namespace, '/snapshot', [
+            'methods' => WP_REST_Server::READABLE, 'callback' => [$this, 'snapshot'], 'permission_callback' => [$this, 'permissions_check'],
+        ]);
         register_rest_route($this->namespace, '/pages/(?P<id>\d+)/elementor', [
             'methods' => WP_REST_Server::CREATABLE, 'callback' => [$this, 'save_elementor'],
             'permission_callback' => [$this, 'permissions_check'], 'args' => ['id' => $this->id_arg(), 'data' => ['required' => true, 'validate_callback' => [$this, 'is_array']], 'settings' => ['default' => [], 'validate_callback' => [$this, 'is_array']], 'version' => ['default' => '0.4', 'sanitize_callback' => 'sanitize_text_field']],
@@ -78,6 +81,25 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
             'connector' => ['available' => true, 'version' => defined('WEBSITE_GENERATOR_CONNECTOR_VERSION') ? WEBSITE_GENERATOR_CONNECTOR_VERSION : 'unknown'],
             'elementor' => ['available' => did_action('elementor/loaded') > 0, 'version' => defined('ELEMENTOR_VERSION') ? ELEMENTOR_VERSION : null],
         ], 200);
+    }
+
+    /** A read-only, bounded representation of deployment-relevant WordPress state. */
+    public function snapshot(): WP_REST_Response
+    {
+        $pages = [];
+        foreach (get_posts(['post_type' => 'page', 'post_status' => ['publish', 'draft', 'pending', 'private'], 'numberposts' => -1, 'orderby' => 'ID', 'order' => 'ASC']) as $page) {
+            $elementor = (string) get_post_meta($page->ID, '_elementor_data', true);
+            $seo = ['title' => (string) get_post_meta($page->ID, '_yoast_wpseo_title', true), 'description' => (string) get_post_meta($page->ID, '_yoast_wpseo_metadesc', true), 'canonicalUrl' => (string) get_post_meta($page->ID, '_yoast_wpseo_canonical', true), 'noIndex' => '1' === get_post_meta($page->ID, '_yoast_wpseo_meta-robots-noindex', true)];
+            $pages[] = ['id' => $page->ID, 'slug' => $page->post_name, 'title' => get_the_title($page), 'status' => $page->post_status, 'modified' => mysql_to_rfc3339($page->post_modified_gmt), 'contentHash' => hash('sha256', (string) $page->post_content), 'elementorHash' => $elementor ? hash('sha256', $elementor) : null, 'elementorDocument' => $elementor ? json_decode($elementor, true) : null, 'seo' => $seo];
+        }
+        $media = [];
+        foreach (get_posts(['post_type' => 'attachment', 'post_status' => 'inherit', 'numberposts' => -1, 'orderby' => 'ID', 'order' => 'ASC']) as $item) {
+            $path = get_attached_file($item->ID); $media[] = ['id' => $item->ID, 'filename' => wp_basename((string) $path), 'url' => wp_get_attachment_url($item->ID), 'alt' => (string) get_post_meta($item->ID, '_wp_attachment_image_alt', true), 'hash' => $path && is_readable($path) ? hash_file('sha256', $path) : null];
+        }
+        $menus = [];
+        $locations = array_flip(get_nav_menu_locations());
+        foreach (wp_get_nav_menus() as $menu) { $items = []; foreach ((array) wp_get_nav_menu_items($menu->term_id) as $item) $items[] = ['title' => $item->title, 'url' => $item->url, 'parent' => (int) $item->menu_item_parent]; $menus[] = ['id' => (int) $menu->term_id, 'name' => $menu->name, 'location' => $locations[$menu->term_id] ?? null, 'items' => $items]; }
+        return new WP_REST_Response(['capturedAt' => gmdate('c'), 'pages' => $pages, 'media' => $media, 'menus' => $menus, 'homepage' => ['showOnFront' => get_option('show_on_front'), 'pageId' => (int) get_option('page_on_front')], 'settings' => ['blogname' => get_option('blogname'), 'blogdescription' => get_option('blogdescription'), 'language' => get_locale(), 'timezone' => wp_timezone_string(), 'permalinkStructure' => get_option('permalink_structure')], 'elementor' => ['active' => did_action('elementor/loaded') > 0, 'version' => defined('ELEMENTOR_VERSION') ? ELEMENTOR_VERSION : null, 'cssCachePresent' => is_dir(WP_CONTENT_DIR.'/uploads/elementor/css')]], 200);
     }
 
     public function permissions_check(WP_REST_Request $request): bool|WP_Error

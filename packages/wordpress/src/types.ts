@@ -84,3 +84,79 @@ export interface ConnectionTestResult {
   readonly username: string;
   readonly capabilities: Readonly<Record<string, boolean>>;
 }
+
+export interface WordPressSnapshot {
+  readonly capturedAt: string;
+  readonly pages: readonly SnapshotPage[];
+  readonly media: readonly SnapshotMedia[];
+  readonly menus: readonly SnapshotMenu[];
+  readonly homepage: { readonly showOnFront: string; readonly pageId: number };
+  readonly settings: Readonly<Record<string, unknown>>;
+  readonly elementor: {
+    readonly active: boolean;
+    readonly version?: string;
+    readonly cssCachePresent: boolean;
+  };
+}
+export interface SnapshotPage {
+  readonly id: number;
+  readonly slug: string;
+  readonly title: string;
+  readonly status: string;
+  readonly modified?: string;
+  readonly contentHash?: string;
+  readonly elementorHash?: string;
+  readonly elementorDocument?: unknown;
+  readonly seo?: Readonly<Record<string, unknown>>;
+}
+export interface SnapshotMedia {
+  readonly id: number;
+  readonly filename: string;
+  readonly url: string;
+  readonly alt?: string;
+  readonly hash?: string;
+}
+export interface SnapshotMenu {
+  readonly id: number;
+  readonly name: string;
+  readonly location?: string;
+  readonly items: readonly {
+    readonly title: string;
+    readonly url: string;
+    readonly parent?: number;
+  }[];
+}
+export type PlanAction =
+  'create' | 'update' | 'delete' | 'unchanged' | 'regenerate' | 'configure';
+export type PlanResource =
+  | 'page'
+  | 'elementor'
+  | 'media'
+  | 'menu'
+  | 'homepage'
+  | 'seo'
+  | 'css'
+  | 'settings';
+export interface PlanChange {
+  readonly resource: PlanResource;
+  readonly action: PlanAction;
+  readonly identifier: string;
+  readonly label: string;
+  readonly safe: boolean;
+  readonly reason: string;
+  readonly before?: unknown;
+  readonly after?: unknown;
+}
+export interface DeploymentPlan {
+  readonly schemaVersion: '1.0';
+  readonly createdAt: string;
+  readonly snapshotCapturedAt: string;
+  readonly changes: readonly PlanChange[];
+  readonly statistics: Readonly<Record<PlanAction, number>> & {
+    readonly total: number;
+  };
+  readonly estimatedSeconds: number;
+  readonly warnings: readonly string[];
+  readonly safetyStatus: 'safe' | 'warning' | 'blocked';
+  readonly readOnly: true;
+}

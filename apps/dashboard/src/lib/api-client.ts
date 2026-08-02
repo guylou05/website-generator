@@ -102,6 +102,23 @@ export interface Deployment {
   error: { code: string; message: string } | null;
   events: GenerationEvent[];
 }
+export interface DeploymentPlan {
+  id: string;
+  status: string;
+  safetyStatus: 'safe' | 'warning' | 'blocked';
+  statistics: Record<string, number> & { total: number };
+  changes: Array<{
+    resource: string;
+    action: string;
+    identifier: string;
+    label: string;
+    safe: boolean;
+    reason: string;
+  }>;
+  warnings: string[];
+  estimatedSeconds: number;
+  createdAt: string;
+}
 export interface AuthUser {
   id: string;
   name: string;
@@ -328,6 +345,11 @@ interface Wire {
   dry_run?: boolean;
   operations?: Deployment['operations'];
   result?: Deployment['result'];
+  safety_status?: DeploymentPlan['safetyStatus'];
+  statistics?: DeploymentPlan['statistics'];
+  changes?: DeploymentPlan['changes'];
+  warnings?: string[];
+  estimated_seconds?: number;
 }
 const mapEvent = (x: Wire): GenerationEvent => ({
   id: String(x.id),
@@ -745,6 +767,25 @@ export class DashboardApiClient {
   }
   async deployment(id: string): Promise<Deployment> {
     return mapDeployment(await this.call<Wire>(`/deployments/${id}`));
+  }
+  async createDeploymentPlan(
+    projectId: string,
+    wordpressConnectionId: string,
+  ): Promise<DeploymentPlan> {
+    const x = await this.call<Wire>(`/projects/${projectId}/deployment-plans`, {
+      method: 'POST',
+      body: JSON.stringify({ wordpress_connection_id: wordpressConnectionId }),
+    });
+    return {
+      id: String(x.id),
+      status: x.status,
+      safetyStatus: x.safety_status ?? 'blocked',
+      statistics: x.statistics ?? { total: 0 },
+      changes: x.changes ?? [],
+      warnings: x.warnings ?? [],
+      estimatedSeconds: x.estimated_seconds ?? 0,
+      createdAt: x.created_at,
+    };
   }
   async previewDeployment(
     projectId: string,

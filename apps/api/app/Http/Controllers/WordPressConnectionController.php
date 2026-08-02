@@ -75,8 +75,8 @@ class WordPressConnectionController extends Controller
 
     public function destroy(WordPressConnection $connection): JsonResponse
     {
-        if ($connection->deployments()->exists()) {
-            return response()->json(['error' => ['code' => 'connection_in_use', 'message' => 'This connection has deployment history and cannot be deleted.']], 409);
+        if ($connection->deployments()->exists() || $connection->deploymentPlans()->exists()) {
+            return response()->json(['error' => ['code' => 'connection_in_use', 'message' => 'This connection has deployment plans or history and cannot be deleted.']], 409);
         }
         Project::where('default_wordpress_connection_id', $connection->id)->update(['default_wordpress_connection_id' => null]);
         $connection->delete();
