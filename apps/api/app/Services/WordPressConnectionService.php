@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Models\WordPressConnection;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use RuntimeException;
 use Throwable;
 
 class WordPressConnectionService
@@ -43,50 +46,66 @@ class WordPressConnectionService
             $http = $connection->authentication_type === 'connector'
                 ? $http->withToken($connection->encrypted_connector_token)
                 : $http->withBasicAuth($connection->username, $connection->encrypted_application_password);
-            $root = $http->get($connection->site_url.'/wp-json')->throw()->json();
-            $user = $http->get($connection->site_url.'/wp-json/wp/v2/users/me', ['context' => 'edit'])->throw()->json();
-            $status = $http->get($connection->site_url.'/wp-json/website-generator/v1/status')->throw()->json();
-            $capabilities = $user['capabilities'] ?? [];
-            foreach (['edit_pages', 'upload_files', 'manage_options'] as $capability) {
-                if (empty($capabilities[$capability])) {
-                    throw new \RuntimeException('The WordPress user does not have all required permissions.');
-                }
+            $response = $http->get($connection->site_url.'/wp-json/website-generator/v1/health');
+            $response->throw();
+            $health = $response->json();
+            if (! is_array($health) || ! isset($health['connected'], $health['wordpress'], $health['plugin'], $health['elementor'])) {
+                throw new RuntimeException('malformed_health_response');
             }
-            if (empty($status['elementor']['available'])) {
-                throw new \RuntimeException('Elementor is not installed and active.');
-            }
-            $routes = array_keys($root['routes'] ?? []);
-            foreach (['/website-generator/v1/menus', '/website-generator/v1/settings/homepage', '/website-generator/v1/elementor/regenerate-css'] as $route) {
-                if (! in_array($route, $routes, true)) {
-                    throw new \RuntimeException('The connector plugin is missing required endpoints.');
-                }
+            if (! $health['connected']) {
+                throw new RuntimeException((string) ($health['error']['code'] ?? 'connector_unavailable'));
             }
             $result = [
                 'connected' => true,
-                'wordpress_version' => $status['wordpress']['version'] ?? null,
-                'elementor' => ['installed' => true, 'active' => true, 'version' => $status['elementor']['version'] ?? null],
-                'connector' => ['installed' => isset($status['connector']), 'active' => isset($status['connector']), 'version' => $status['connector']['version'] ?? null],
-                'permissions' => ['can_manage_options' => true, 'can_edit_pages' => true, 'can_upload_files' => true],
+                'wordpress_version' => $health['wordpress']['version'] ?? null,
+                'elementor' => $health['elementor'],
+                'connector' => ['installed' => true, 'active' => true, 'version' => $health['plugin']['version'] ?? null],
+                'permissions' => $health['capabilities'] ?? [],
             ];
-            $connection->update(['wordpress_version' => $result['wordpress_version'], 'elementor_version' => $result['elementor']['version'], 'connector_version' => $result['connector']['version'], 'status' => 'verified', 'last_verified_at' => now(), 'last_error' => null]);
+            $connection->update([
+                'wordpress_version' => $result['wordpress_version'], 'elementor_version' => $result['elementor']['version'] ?? null,
+                'connector_version' => $result['connector']['version'], 'status' => 'verified', 'last_verified_at' => now(),
+                'last_tested_at' => now(), 'last_error' => null,
+            ]);
 
             return $result;
         } catch (Throwable $e) {
-            $safe = ['code' => 'connection_verification_failed', 'message' => $this->safeMessage($e)];
-            $connection->update(['status' => 'failed', 'last_error' => $safe]);
-            throw new \RuntimeException($safe['message']);
+            $safe = $this->safeError($e);
+            $connection->update(['status' => 'failed', 'last_tested_at' => now(), 'last_error' => $safe]);
+            throw new RuntimeException($safe['message']);
         }
     }
 
-    private function safeMessage(Throwable $e): string
+    private function safeError(Throwable $e): array
     {
-        $message = $e->getMessage();
-        foreach (['Elementor is not installed and active.', 'The connector plugin is missing required endpoints.', 'The WordPress user does not have all required permissions.'] as $safe) {
-            if (str_contains($message, $safe)) {
-                return $safe;
+        $status = $e instanceof RequestException ? $e->response->status() : null;
+        if ($status === 404) {
+            return ['code' => 'connector_route_not_found', 'message' => 'Connector route not found.', 'http_status' => 404];
+        }
+        if ($status === 401 || $status === 403) {
+            return ['code' => 'connector_token_rejected', 'message' => 'Connector token rejected.', 'http_status' => $status];
+        }
+        if ($e->getMessage() === 'elementor_inactive') {
+            return ['code' => 'elementor_inactive', 'message' => 'Elementor is not active.', 'http_status' => 200];
+        }
+        if ($e->getMessage() === 'elementor_not_installed') {
+            return ['code' => 'elementor_not_installed', 'message' => 'Elementor is not installed.', 'http_status' => 200];
+        }
+        if ($e->getMessage() === 'malformed_health_response') {
+            return ['code' => 'malformed_health_response', 'message' => 'The connector returned an invalid health response.', 'http_status' => 200];
+        }
+        if ($e instanceof ConnectionException) {
+            $message = strtolower($e->getMessage());
+            if (str_contains($message, 'timed out') || str_contains($message, 'timeout')) {
+                return ['code' => 'request_timed_out', 'message' => 'Request timed out.', 'http_status' => null];
             }
+            if (str_contains($message, 'ssl') || str_contains($message, 'certificate')) {
+                return ['code' => 'tls_verification_failed', 'message' => 'TLS verification failed.', 'http_status' => null];
+            }
+
+            return ['code' => 'wordpress_rest_unavailable', 'message' => 'WordPress REST API is unavailable.', 'http_status' => null];
         }
 
-        return 'Could not verify the WordPress connection. Check the URL, credentials, and required plugins.';
+        return ['code' => 'wordpress_rest_unavailable', 'message' => 'WordPress REST API is unavailable.', 'http_status' => $status];
     }
 }

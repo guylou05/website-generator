@@ -8,6 +8,9 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
 
     public function register_routes(): void
     {
+        register_rest_route($this->namespace, '/health', [
+            'methods' => WP_REST_Server::READABLE, 'callback' => [$this, 'health'], 'permission_callback' => [$this, 'connector_permissions_check'],
+        ]);
         register_rest_route($this->namespace, '/status', [
             'methods' => WP_REST_Server::READABLE, 'callback' => [$this, 'status'], 'permission_callback' => [$this, 'permissions_check'],
         ]);
@@ -35,6 +38,39 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
         ]);
     }
 
+    public function health(): WP_REST_Response
+    {
+        $elementor = $this->elementor_status();
+        $active = $elementor['active'];
+        $response = [
+            'connected' => $active,
+            'plugin' => [
+                'name' => 'SiteFoundry Connector',
+                'version' => defined('WEBSITE_GENERATOR_CONNECTOR_VERSION') ? WEBSITE_GENERATOR_CONNECTOR_VERSION : 'unknown',
+            ],
+            'wordpress' => [
+                'version' => get_bloginfo('version'),
+                'site_url' => site_url(),
+                'rest_available' => true,
+            ],
+            'php' => ['version' => PHP_VERSION],
+            'elementor' => $elementor,
+            'capabilities' => [
+                'manage_options' => true,
+                'edit_pages' => true,
+                'upload_files' => true,
+            ],
+        ];
+        if (!$active) {
+            $response['error'] = [
+                'code' => $elementor['installed'] ? 'elementor_inactive' : 'elementor_not_installed',
+                'message' => $elementor['installed'] ? __('Elementor is not active.', 'website-generator-connector') : __('Elementor is not installed.', 'website-generator-connector'),
+            ];
+        }
+
+        return new WP_REST_Response($response, 200);
+    }
+
     public function status(): WP_REST_Response
     {
         return new WP_REST_Response([
@@ -50,6 +86,19 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
         if (preg_match('/^Bearer\s+(.+)$/i', $authorization, $matches) && SiteFoundry_Connector_Token::verify(trim($matches[1]))) return true;
         if (!is_user_logged_in()) return new WP_Error('rest_not_authenticated', __('Authentication is required.', 'website-generator-connector'), ['status' => 401]);
         if (!current_user_can('manage_options')) return new WP_Error('rest_forbidden', __('Administrator capabilities are required.', 'website-generator-connector'), ['status' => 403]);
+        return true;
+    }
+
+    public function connector_permissions_check(WP_REST_Request $request): bool|WP_Error
+    {
+        $authorization = trim((string) $request->get_header('authorization'));
+        if (!preg_match('/^Bearer\s+(.+)$/i', $authorization, $matches)) {
+            return new WP_Error('connector_token_missing', __('A connector token is required.', 'website-generator-connector'), ['status' => 401]);
+        }
+        if (!SiteFoundry_Connector_Token::verify(trim($matches[1]))) {
+            return new WP_Error('connector_token_invalid', __('The connector token is invalid or has been revoked.', 'website-generator-connector'), ['status' => 401]);
+        }
+
         return true;
     }
 
@@ -152,5 +201,20 @@ final class Website_Generator_REST_Controller extends WP_REST_Controller
         if (is_string($value)) return sanitize_textarea_field($value);
         if (is_bool($value) || is_int($value) || is_float($value) || null === $value) return $value;
         return null;
+    }
+
+    private function elementor_status(): array
+    {
+        if (!function_exists('get_plugins')) require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        $plugins = get_plugins();
+        $file = 'elementor/elementor.php';
+        $installed = isset($plugins[$file]) || defined('ELEMENTOR_VERSION');
+        $active = did_action('elementor/loaded') > 0 || (function_exists('is_plugin_active') && is_plugin_active($file));
+
+        return [
+            'installed' => $installed,
+            'active' => $active,
+            'version' => defined('ELEMENTOR_VERSION') ? ELEMENTOR_VERSION : ($plugins[$file]['Version'] ?? null),
+        ];
     }
 }

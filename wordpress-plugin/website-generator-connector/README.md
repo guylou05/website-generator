@@ -22,12 +22,13 @@ All routes use the `website-generator/v1` namespace and accept authenticated RES
 | `POST` | `/pages/{id}/template`      | Set an allow-listed Elementor page template                     |
 | `POST` | `/menus`                    | Idempotently create/update connector-managed classic menu items |
 | `POST` | `/settings/homepage`        | Assign a valid page as the static homepage                      |
+| `GET`  | `/health`                   | Verify connector, WordPress, PHP, Elementor, and capabilities   |
 
 The connector accepts an administrator WordPress session, an Application Password, or a generated connector Bearer token. Only a password hash of a connector token is retained. Page IDs, templates, URLs, menu keys, titles, nested Elementor values, and homepage IDs are validated or sanitized before use.
 
 ## Connection verification
 
-Authenticated administrators can call `GET /wp-json/website-generator/v1/status` to inspect WordPress, connector, and Elementor availability and versions. All mutation endpoints require administrator capabilities and are designed for repeatable server-side deployments.
+SiteFoundry verifies a saved connection by calling exactly `GET https://example.com/wp-json/website-generator/v1/health` with the generated token in the `Authorization: Bearer <connector-token>` header. The authenticated response reports connector, WordPress, PHP, Elementor, and required-capability status without returning the token, its hash, or any other secret. A revoked, missing, or invalid token receives a structured WordPress REST authentication error with HTTP 401. All mutation endpoints use the same authentication mechanism and are designed for repeatable server-side deployments.
 
 The **SiteFoundry** admin page shows environment and connection details. Use **Run connection health test** to check REST availability, connector route registration, Elementor installation and activation, and administrator capabilities. Regenerating a token immediately invalidates the previous token; **Revoke token** disconnects token-based clients.
 
