@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DashboardApiClient, type WebsiteRevision } from '../src/lib/api-client';
+import {
+  DashboardApiClient,
+  type WebsiteRevision,
+} from '../src/lib/api-client';
 import { deploymentRevisionState } from '../src/lib/deployment-revisions';
 
 const revision = (id: string, revisionNumber: number): WebsiteRevision => ({
@@ -39,12 +42,17 @@ test('zero revisions leave plan creation disabled', () => {
 
 test('deployment plan request includes the selected revision ID', async () => {
   let requestBody = '';
-  const client = new DashboardApiClient('http://api.test/api', async (input, init) => {
-    if (String(input).endsWith('/sanctum/csrf-cookie'))
-      return new Response(null, { status: 204 });
-    requestBody = String(init?.body);
-    return Response.json({ data: { id: 'plan', status: 'ready_for_review' } });
-  });
+  const client = new DashboardApiClient(
+    'http://api.test/api',
+    async (input, init) => {
+      if (String(input).endsWith('/sanctum/csrf-cookie'))
+        return new Response(null, { status: 204 });
+      requestBody = String(init?.body);
+      return Response.json({
+        data: { id: 'plan', status: 'ready_for_review' },
+      });
+    },
+  );
 
   await client.createDeploymentPlan('project', 'connection', 'revision-3');
 
