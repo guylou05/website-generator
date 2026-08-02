@@ -55,18 +55,9 @@ export function clearAuthCookies(domain?: string): void {
 }
 
 /** Re-scope API cookies to the dashboard host when requests use the same-origin proxy. */
-export function rewriteSetCookieForProxy(
-  value: string,
-  secure: boolean,
-): string {
+export function rewriteSetCookieForProxy(value: string): string {
   const attributes = value.split(';').map((part) => part.trim());
-  const filtered = attributes.filter((part) => !/^domain=/i.test(part));
-  const sameSite = filtered.findIndex((part) => /^samesite=/i.test(part));
-  if (sameSite >= 0) filtered[sameSite] = 'SameSite=Lax';
-  else filtered.push('SameSite=Lax');
-  if (!secure)
-    return filtered
-      .filter((part) => part.toLowerCase() !== 'secure')
-      .join('; ');
-  return filtered.join('; ');
+  // The upstream API domain cannot be sent to a same-origin dashboard client.
+  // All other attributes are authoritative and must survive unchanged.
+  return attributes.filter((part) => !/^domain=/i.test(part)).join('; ');
 }

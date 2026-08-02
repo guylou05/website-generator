@@ -60,9 +60,8 @@ async function proxy(
       redirect: 'manual',
       ...(hasBody ? { duplex: 'half' } : {}),
     } as RequestInit & { duplex?: 'half' });
-    const secure = request.nextUrl.protocol === 'https:';
     const cookies = getSetCookies(upstream.headers).map((cookie) =>
-      rewriteSetCookieForProxy(cookie, secure),
+      rewriteSetCookieForProxy(cookie),
     );
     const response = await bufferUpstreamResponse(upstream, requestId, cookies);
     console.info(

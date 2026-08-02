@@ -41,10 +41,9 @@ test('cookies decode safely and proxy cookies become host-only', () => {
   assert.equal(readCookie('XSRF-TOKEN', 'a=1; XSRF-TOKEN=a%2Bb%3D'), 'a+b=');
   const rewritten = rewriteSetCookieForProxy(
     'session=x; Domain=api.example.com; Path=/; SameSite=None; Secure',
-    true,
   );
   assert.doesNotMatch(rewritten, /Domain=/i);
-  assert.match(rewritten, /SameSite=Lax/);
+  assert.match(rewritten, /SameSite=None/);
   assert.match(rewritten, /Secure/);
 });
 
