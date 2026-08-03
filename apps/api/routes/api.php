@@ -17,6 +17,7 @@ use App\Http\Controllers\PreviewSessionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectGenerationSummaryController;
+use App\Http\Controllers\RollbackController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\WebsiteRevisionController;
 use App\Http\Controllers\WordPressConnectionController;
@@ -136,6 +137,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/deployments/{deployment}/items', [DeploymentController::class, 'items']);
         Route::post('/deployments/{deployment}/retry', [DeploymentController::class, 'retry']);
         Route::post('/deployments/{deployment}/cancel', [DeploymentController::class, 'cancel']);
+        Route::post('/deployments/{deployment}/rollback-plan', [RollbackController::class, 'createPlan'])->middleware('verified.email');
+        Route::get('/rollback-plans/{rollbackPlan}', [RollbackController::class, 'showPlan']);
+        Route::post('/rollback-plans/{rollbackPlan}/approve', [RollbackController::class, 'approve'])->middleware('verified.email');
+        Route::post('/rollback-plans/{rollbackPlan}/execute', [RollbackController::class, 'execute'])->middleware('verified.email');
+        Route::get('/rollbacks/{rollback}', [RollbackController::class, 'show']);
+        Route::get('/rollbacks/{rollback}/events', [RollbackController::class, 'events']);
+        Route::get('/rollbacks/{rollback}/items', [RollbackController::class, 'items']);
+        Route::post('/rollbacks/{rollback}/cancel', [RollbackController::class, 'cancel']);
+        Route::post('/rollbacks/{rollback}/retry', [RollbackController::class, 'retry']);
     });
 });
 Route::middleware('internal.worker')->prefix('internal')->group(function () {

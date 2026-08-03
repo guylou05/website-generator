@@ -29,6 +29,11 @@ class Deployment extends Model
         return $this->hasMany(DeploymentItem::class);
     }
 
+    public function rollbacks(): HasMany
+    {
+        return $this->hasMany(Rollback::class, 'source_deployment_id');
+    }
+
     public function deploymentPlan(): BelongsTo
     {
         return $this->belongsTo(DeploymentPlan::class);

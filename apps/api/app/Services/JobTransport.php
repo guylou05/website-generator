@@ -28,6 +28,11 @@ class JobTransport
         $this->enqueue('deployment', $uuid, config('job_transport.deployment_queue'), $attempt);
     }
 
+    public function rollback(string $uuid, int $attempt = 1): void
+    {
+        $this->enqueue('rollback', $uuid, config('job_transport.rollback_queue'), $attempt);
+    }
+
     public function key(string $queue, bool $reserved = false): string
     {
         return config('job_transport.prefix').':queue:'.$queue.($reserved ? ':reserved' : '');
@@ -35,7 +40,7 @@ class JobTransport
 
     private function enqueue(string $type, string $uuid, string $queue, int $attempt): void
     {
-        $idempotencyKey = $type === 'deployment' ? "deployment:{$uuid}" : "{$type}:{$uuid}:{$attempt}";
+        $idempotencyKey = in_array($type, ['deployment', 'rollback'], true) ? "{$type}:{$uuid}" : "{$type}:{$uuid}:{$attempt}";
         $payload = json_encode([
             'id' => $uuid,
             'type' => $type,
