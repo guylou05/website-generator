@@ -8,5 +8,5 @@ class DeploymentSnapshotUploadChunk extends Model
 {
     public $timestamps = false;
 
-    protected $guarded = [];
+    protected $fillable = ['upload_id', 'sequence', 'checksum', 'data'];
 }
