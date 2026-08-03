@@ -278,7 +278,12 @@ export class JobHandlers {
       const rollback = context.data.plan?.snapshot;
       if (!rollback)
         throw new Error('Approved rollback source snapshot is missing');
-      await this.persistRollbackSnapshot(id, rollback, leaseToken, heartbeat.assertOwned);
+      await this.persistRollbackSnapshot(
+        id,
+        rollback,
+        leaseToken,
+        heartbeat.assertOwned,
+      );
       await stageEvent('capture_rollback_snapshot', 'stage.completed', 2);
       const elementorPages = Object.fromEntries(
         output.elementor.documents.map((d) => [d.page, d.elements]),
@@ -316,7 +321,10 @@ export class JobHandlers {
       });
     } catch (error) {
       if (error instanceof LeaseLost || heartbeat.lost()) {
-        logger.error('Deployment stopped after lease ownership was lost', { deploymentId: id, errorCode: 'lease_lost' });
+        logger.error('Deployment stopped after lease ownership was lost', {
+          deploymentId: id,
+          errorCode: 'lease_lost',
+        });
         return;
       }
       if (error instanceof InternalApiError) throw error;
@@ -343,7 +351,12 @@ export class JobHandlers {
       compressedSizeBytes: compressed.byteLength,
     });
     const init = await this.api.post<{
-      data: { upload_id: string; chunk_size_bytes: number; completed_chunks: number[]; verified?: boolean };
+      data: {
+        upload_id: string;
+        chunk_size_bytes: number;
+        completed_chunks: number[];
+        verified?: boolean;
+      };
     }>('deployments', id, 'rollback-snapshot/init', {
       lease_token: leaseToken,
       checksum,
@@ -357,7 +370,13 @@ export class JobHandlers {
     const chunkSize = init.data.chunk_size_bytes;
     const totalChunks = Math.ceil(compressed.length / chunkSize);
     const completed = new Set(init.data.completed_chunks ?? []);
-    logger.info('Snapshot upload initialized', { deploymentId: id, totalChunks, byteSize: compressed.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
+    logger.info('Snapshot upload initialized', {
+      deploymentId: id,
+      totalChunks,
+      byteSize: compressed.byteLength,
+      durationMs: Date.now() - stageStarted,
+      errorCode: null,
+    });
     for (
       let offset = 0, sequence = 0;
       offset < compressed.length;
@@ -366,11 +385,25 @@ export class JobHandlers {
       assertOwned();
       const chunk = compressed.subarray(offset, offset + chunkSize);
       if (completed.has(sequence)) {
-        logger.info('Snapshot chunk already persisted; skipping', { deploymentId: id, chunkNumber: sequence + 1, totalChunks, byteSize: chunk.byteLength, durationMs: 0, errorCode: null });
+        logger.info('Snapshot chunk already persisted; skipping', {
+          deploymentId: id,
+          chunkNumber: sequence + 1,
+          totalChunks,
+          byteSize: chunk.byteLength,
+          durationMs: 0,
+          errorCode: null,
+        });
         continue;
       }
       const chunkStarted = Date.now();
-      logger.info('Snapshot chunk started', { deploymentId: id, chunkNumber: sequence + 1, totalChunks, byteSize: chunk.byteLength, durationMs: 0, errorCode: null });
+      logger.info('Snapshot chunk started', {
+        deploymentId: id,
+        chunkNumber: sequence + 1,
+        totalChunks,
+        byteSize: chunk.byteLength,
+        durationMs: 0,
+        errorCode: null,
+      });
       await this.api.post('deployments', id, 'rollback-snapshot/chunks', {
         lease_token: leaseToken,
         upload_id: init.data.upload_id,
@@ -378,20 +411,51 @@ export class JobHandlers {
         checksum: createHash('sha256').update(chunk).digest('hex'),
         data: chunk.toString('base64'),
       });
-      logger.info('Snapshot chunk completed', { deploymentId: id, chunkNumber: sequence + 1, totalChunks, byteSize: chunk.byteLength, durationMs: Date.now() - chunkStarted, errorCode: null });
+      logger.info('Snapshot chunk completed', {
+        deploymentId: id,
+        chunkNumber: sequence + 1,
+        totalChunks,
+        byteSize: chunk.byteLength,
+        durationMs: Date.now() - chunkStarted,
+        errorCode: null,
+      });
     }
     if (!gunzipSync(compressed).equals(serialized))
       throw new Error('Rollback snapshot compression verification failed');
     assertOwned();
-    logger.info('Snapshot upload completed', { deploymentId: id, totalChunks, byteSize: compressed.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
+    logger.info('Snapshot upload completed', {
+      deploymentId: id,
+      totalChunks,
+      byteSize: compressed.byteLength,
+      durationMs: Date.now() - stageStarted,
+      errorCode: null,
+    });
     await this.api.post('deployments', id, 'rollback-snapshot/complete', {
       lease_token: leaseToken,
       upload_id: init.data.upload_id,
     });
     assertOwned();
-    logger.info('Snapshot checksum verified', { deploymentId: id, totalChunks, byteSize: serialized.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
-    logger.info('Snapshot manifest persisted', { deploymentId: id, totalChunks, byteSize: serialized.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
-    logger.info('Snapshot stage completed', { deploymentId: id, totalChunks, byteSize: serialized.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
+    logger.info('Snapshot checksum verified', {
+      deploymentId: id,
+      totalChunks,
+      byteSize: serialized.byteLength,
+      durationMs: Date.now() - stageStarted,
+      errorCode: null,
+    });
+    logger.info('Snapshot manifest persisted', {
+      deploymentId: id,
+      totalChunks,
+      byteSize: serialized.byteLength,
+      durationMs: Date.now() - stageStarted,
+      errorCode: null,
+    });
+    logger.info('Snapshot stage completed', {
+      deploymentId: id,
+      totalChunks,
+      byteSize: serialized.byteLength,
+      durationMs: Date.now() - stageStarted,
+      errorCode: null,
+    });
   }
   private heartbeat(kind: JobKind, id: string, leaseToken: string) {
     let stopped = false;
@@ -400,16 +464,34 @@ export class JobHandlers {
     const beat = async () => {
       if (stopped || inFlight || leaseLost) return;
       inFlight = true;
-      try { await this.api.post(kind, id, 'heartbeat', { lease_token: leaseToken }); }
-      catch (error) {
-        const status = error instanceof InternalApiError ? error.details.status : undefined;
-        logger.error('Worker heartbeat failed', { jobKind: kind, jobId: id, errorCode: status === 409 ? 'lease_lost' : 'heartbeat_failed' });
+      try {
+        await this.api.post(kind, id, 'heartbeat', { lease_token: leaseToken });
+      } catch (error) {
+        const status =
+          error instanceof InternalApiError ? error.details.status : undefined;
+        logger.error('Worker heartbeat failed', {
+          jobKind: kind,
+          jobId: id,
+          errorCode: status === 409 ? 'lease_lost' : 'heartbeat_failed',
+        });
         if (status === 409) leaseLost = true;
-      } finally { inFlight = false; }
+      } finally {
+        inFlight = false;
+      }
     };
     void beat();
     const timer = setInterval(() => void beat(), this.heartbeatMs);
-    return { stop: () => { stopped = true; clearInterval(timer); }, lost: () => leaseLost, assertOwned: () => { if (leaseLost) throw new LeaseLost('Deployment lease ownership was lost'); } };
+    return {
+      stop: () => {
+        stopped = true;
+        clearInterval(timer);
+      },
+      lost: () => leaseLost,
+      assertOwned: () => {
+        if (leaseLost)
+          throw new LeaseLost('Deployment lease ownership was lost');
+      },
+    };
   }
   private async cancelGuard(kind: JobKind, id: string): Promise<void> {
     const state = await this.api.get<{ cancelled: boolean }>(
@@ -560,7 +642,13 @@ function mockResponses(profile: Record<string, unknown>): any {
   };
 }
 
-function deterministicEventId(deploymentId: string, stage: string, eventType: string): string {
-  const hex = createHash('sha256').update(`${deploymentId}:${stage}:${eventType}`).digest('hex');
+function deterministicEventId(
+  deploymentId: string,
+  stage: string,
+  eventType: string,
+): string {
+  const hex = createHash('sha256')
+    .update(`${deploymentId}:${stage}:${eventType}`)
+    .digest('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }

@@ -46,7 +46,7 @@ const label = (value: string) =>
     ? 'Worker claimed deployment'
     : value === 'capture_rollback_snapshot'
       ? 'Capturing rollback snapshot'
-    : value.replaceAll('_', ' ');
+      : value.replaceAll('_', ' ');
 const safeUrl = (value: string | null) => {
   if (!value) return null;
   try {
@@ -207,17 +207,18 @@ export default function DeploymentProgressPage() {
           <Meta
             title="Current stage"
             value={
-              deployment.currentStage === 'capture_rollback_snapshot' && deployment.recoveryCount > 0
+              deployment.currentStage === 'capture_rollback_snapshot' &&
+              deployment.recoveryCount > 0
                 ? 'Resuming rollback snapshot upload'
                 : deployment.currentStage
-                ? label(deployment.currentStage)
-                : deployment.status === 'succeeded'
-                  ? 'Finalized'
-                  : terminal.has(deployment.status)
-                    ? deployment.errorDetails?.failed_stage
-                      ? label(String(deployment.errorDetails.failed_stage))
-                      : 'Failed before a stage was recorded'
-                    : 'Waiting for worker'
+                  ? label(deployment.currentStage)
+                  : deployment.status === 'succeeded'
+                    ? 'Finalized'
+                    : terminal.has(deployment.status)
+                      ? deployment.errorDetails?.failed_stage
+                        ? label(String(deployment.errorDetails.failed_stage))
+                        : 'Failed before a stage was recorded'
+                      : 'Waiting for worker'
             }
           />
         </dl>

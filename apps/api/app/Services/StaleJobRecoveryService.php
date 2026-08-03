@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Models\Deployment;
+use App\Models\DeploymentSnapshotUpload;
 use App\Models\GenerationRun;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use App\Models\DeploymentSnapshotUpload;
 
 class StaleJobRecoveryService
 {

@@ -27,7 +27,7 @@ class RepairStuckDeployments extends Command
             $deployment = Deployment::lockForUpdate()->findOrFail($id);
             $upload = DeploymentSnapshotUpload::where('deployment_id', $id)->withCount('chunks')->first();
             $terminal = $deployment->events()->whereIn('event_type', ['deployment.completed', 'deployment.failed', 'deployment.cancelled'])->exists();
-            $this->line("lease=".($deployment->lease_expires_at?->toIso8601String() ?? 'none')." upload=".($upload?->id ?? 'none')." chunks=".($upload?->chunks_count ?? 0)." terminal=".($terminal ? 'yes' : 'no'));
+            $this->line('lease='.($deployment->lease_expires_at?->toIso8601String() ?? 'none').' upload='.($upload?->id ?? 'none').' chunks='.($upload?->chunks_count ?? 0).' terminal='.($terminal ? 'yes' : 'no'));
             if ($terminal || ! in_array($deployment->status, ['claimed', 'running'], true) || ! $deployment->lease_expires_at?->isPast()) {
                 return;
             }
