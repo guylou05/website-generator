@@ -183,6 +183,18 @@ export default function DeploymentProgressPage() {
           />
           <Meta title="Elapsed" value={duration(elapsed)} />
           <Meta
+            title="Deployment attempt"
+            value={String(deployment.attemptNumber)}
+          />
+          <Meta
+            title="Internal retries"
+            value={String(deployment.transientRetryCount)}
+          />
+          <Meta
+            title="Recovery count"
+            value={String(deployment.recoveryCount)}
+          />
+          <Meta
             title="Current stage"
             value={
               deployment.currentStage
@@ -190,7 +202,9 @@ export default function DeploymentProgressPage() {
                 : deployment.status === 'succeeded'
                   ? 'Finalized'
                   : terminal.has(deployment.status)
-                    ? 'Stopped'
+                    ? deployment.errorDetails?.failed_stage
+                      ? label(String(deployment.errorDetails.failed_stage))
+                      : 'Failed before a stage was recorded'
                     : 'Waiting for worker'
             }
           />
@@ -199,7 +213,9 @@ export default function DeploymentProgressPage() {
           <span>
             {deployment.currentStage
               ? label(deployment.currentStage)
-              : 'Queued for deployment'}
+              : deployment.status === 'failed'
+                ? 'Deployment failed'
+                : 'Queued for deployment'}
           </span>
           <span>{deployment.progress}%</span>
         </div>
@@ -246,6 +262,14 @@ export default function DeploymentProgressPage() {
                   ? label(deployment.currentStage)
                   : 'See activity log'
               }
+            />
+            <Meta
+              title="Underlying cause"
+              value={String(
+                deployment.error.details?.last_error ??
+                  deployment.error.details?.first_error ??
+                  deployment.error.message,
+              )}
             />
             <Meta title="Error code" value={deployment.error.code} />
             <Meta title="Actionable message" value={deployment.error.message} />
