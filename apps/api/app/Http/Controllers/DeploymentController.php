@@ -26,12 +26,14 @@ class DeploymentController extends Controller
 
     public function index(Project $project): JsonResponse
     {
-        return response()->json(['data' => $project->deployments()->with('events')->latest()->get()]);
+        return response()->json(['data' => $project->deployments()->with(['events', 'wordpressConnection:id,name,site_url', 'websiteRevision:id,revision_number'])->latest()->limit(10)->get()->map(fn (Deployment $deployment) => $this->safeDeployment($deployment))]);
     }
 
     public function show(Deployment $deployment): JsonResponse
     {
-        return response()->json(['data' => $deployment->load(['events', 'items'])]);
+        $deployment->load(['events', 'items', 'project:id,name', 'wordpressConnection:id,name,site_url', 'websiteRevision:id,revision_number']);
+
+        return response()->json(['data' => $this->safeDeployment($deployment)]);
     }
 
     /** Execute a queued/failed approved deployment. Completed executions are idempotent. */
@@ -54,7 +56,7 @@ class DeploymentController extends Controller
 
     public function events(Deployment $deployment): JsonResponse
     {
-        return response()->json(['data' => $deployment->events()->oldest('created_at')->get()]);
+        return response()->json(['data' => $deployment->events()->orderBy('created_at')->orderBy('id')->get()->map(fn ($event) => $this->safeArray($event->toArray()))]);
     }
 
     public function items(Deployment $deployment): JsonResponse
@@ -115,8 +117,12 @@ class DeploymentController extends Controller
 
     public function retry(Deployment $deployment, JobTransport $jobs): JsonResponse
     {
-        if (! in_array($deployment->status, ['failed', 'cancelled', 'stale'], true)) {
+        if (! in_array($deployment->status, ['failed', 'partially_succeeded', 'cancelled', 'stale'], true)) {
             return response()->json(['error' => ['code' => 'not_retryable', 'message' => 'Deployment is not retryable.']], 409);
+        }
+        $retryable = (bool) data_get($deployment->error, 'retryable', data_get($deployment->error, 'details.retryable', false));
+        if (! $retryable || in_array(data_get($deployment->error, 'code'), ['validation_failed', 'permission_denied', 'authentication_failed', 'remote_drift'], true)) {
+            return response()->json(['error' => ['code' => 'not_retryable', 'message' => 'This failure requires review and cannot be retried safely.']], 409);
         }
         $copy = $deployment->replicate(['status', 'progress', 'current_stage', 'operations', 'result', 'error', 'queued_at', 'heartbeat_at', 'worker_id', 'started_at', 'completed_at']);
         $copy->fill(['status' => 'queued', 'progress' => 0, 'queued_at' => now(), 'attempt' => $deployment->attempt + 1]);
@@ -135,5 +141,25 @@ class DeploymentController extends Controller
         $deployment->events()->create(['stage' => $deployment->current_stage ?? 'system', 'event_type' => 'deployment.cancelling', 'progress' => $deployment->progress, 'message' => 'Cancellation requested.', 'created_at' => now()]);
 
         return response()->json(['data' => $deployment->fresh('events')]);
+    }
+
+    /** Remove secret-shaped fields from user-facing persisted diagnostics. */
+    private function safeArray(array $value): array
+    {
+        $blocked = ['password', 'token', 'secret', 'cookie', 'authorization', 'credential', 'api_key'];
+        foreach ($value as $key => $item) {
+            if (collect($blocked)->contains(fn (string $word) => str_contains(strtolower((string) $key), $word))) {
+                unset($value[$key]);
+            } elseif (is_array($item)) {
+                $value[$key] = $this->safeArray($item);
+            }
+        }
+
+        return $value;
+    }
+
+    private function safeDeployment(Deployment $deployment): array
+    {
+        return $this->safeArray($deployment->toArray());
     }
 }
