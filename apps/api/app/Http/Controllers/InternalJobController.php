@@ -8,6 +8,8 @@ use App\Models\DeploymentSnapshotUpload;
 use App\Models\DeploymentSnapshotUploadChunk;
 use App\Models\GenerationRun;
 use App\Models\Organization;
+use App\Rules\Base64Encoded;
+use App\Rules\ValidUtf8;
 use App\Services\DeploymentApprovalService;
 use App\Services\EntitlementService;
 use App\Services\WebsiteRevisionService;
@@ -102,9 +104,15 @@ class InternalJobController extends Controller
     public function deploymentRollbackSnapshotChunk(Request $request, Deployment $deployment): JsonResponse
     {
         abort_unless($deployment->status === 'running', 409);
-        $data = $request->validate(['upload_id' => 'required|size:64', 'sequence' => 'required|integer|min:0', 'checksum' => 'required|size:64', 'data' => 'required|string']);
+        $data = $request->validate([
+            'upload_id' => ['required', 'string', 'size:64', new ValidUtf8],
+            'sequence' => ['required', 'integer', 'min:0'],
+            'checksum' => ['required', 'string', 'size:64', new ValidUtf8],
+            // Transport is text, while the decoded value is deliberately stored as BYTEA.
+            'data' => ['required', 'string', new ValidUtf8, new Base64Encoded],
+        ]);
         $bytes = base64_decode($data['data'], true);
-        abort_if($bytes === false || strlen($bytes) > config('deployment.snapshot_chunk_max_bytes'), 413, 'Snapshot chunk exceeds application limit.');
+        abort_if(strlen($bytes) > config('deployment.snapshot_chunk_max_bytes'), 413, 'Snapshot chunk exceeds application limit.');
         abort_unless(hash_equals($data['checksum'], hash('sha256', $bytes)), 422, 'Snapshot chunk checksum mismatch.');
         $upload = DeploymentSnapshotUpload::whereKey($data['upload_id'])->where('deployment_id', $deployment->id)->firstOrFail();
         $chunk = DeploymentSnapshotUploadChunk::firstOrCreate(
