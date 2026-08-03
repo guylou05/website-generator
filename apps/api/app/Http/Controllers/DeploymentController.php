@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Project;
 use App\Models\WordPressConnection;
 use App\Services\ApprovedDeploymentService;
+use App\Services\DeploymentService;
 use App\Services\EntitlementService;
 use App\Services\JobTransport;
 use App\Services\UsageService;
@@ -20,7 +21,7 @@ class DeploymentController extends Controller
     {
         $deployment = $service->start($plan, $request);
 
-        return response()->json(['deployment_id' => $deployment->id, 'status' => $deployment->status, 'progress_url' => '/api/deployments/'.$deployment->id], 202);
+        return response()->json(['data' => ['deployment_id' => $deployment->id, 'status' => $deployment->status, 'progress_url' => '/api/deployments/'.$deployment->id]], 202);
     }
 
     public function index(Project $project): JsonResponse
@@ -31,6 +32,24 @@ class DeploymentController extends Controller
     public function show(Deployment $deployment): JsonResponse
     {
         return response()->json(['data' => $deployment->load(['events', 'items'])]);
+    }
+
+    /** Execute a queued/failed approved deployment. Completed executions are idempotent. */
+    public function execute(Deployment $deployment, DeploymentService $service): JsonResponse
+    {
+        if (! $deployment->deployment_plan_id) {
+            return response()->json(['error' => ['code' => 'approved_plan_required', 'message' => 'This deployment was not created from an approved plan.']], 409);
+        }
+        if ($deployment->status === 'running') {
+            return response()->json(['error' => ['code' => 'deployment_locked', 'message' => 'Deployment is already running.']], 409);
+        }
+
+        return response()->json(['data' => $service->execute($deployment, true)]);
+    }
+
+    public function progress(Deployment $deployment): JsonResponse
+    {
+        return response()->json(['data' => $deployment->only(['id', 'status', 'progress', 'current_stage', 'steps_completed', 'started_at', 'completed_at', 'duration_ms', 'error', 'warnings'])]);
     }
 
     public function events(Deployment $deployment): JsonResponse

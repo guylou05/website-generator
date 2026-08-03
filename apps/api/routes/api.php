@@ -130,6 +130,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/projects/{project}/deployments', [DeploymentController::class, 'store'])->middleware('verified.email');
         Route::get('/projects/{project}/deployments', [DeploymentController::class, 'index']);
         Route::get('/deployments/{deployment}', [DeploymentController::class, 'show']);
+        Route::post('/deployments/{deployment}/execute', [DeploymentController::class, 'execute'])->middleware('verified.email');
+        Route::get('/deployments/{deployment}/progress', [DeploymentController::class, 'progress']);
         Route::get('/deployments/{deployment}/events', [DeploymentController::class, 'events']);
         Route::get('/deployments/{deployment}/items', [DeploymentController::class, 'items']);
         Route::post('/deployments/{deployment}/retry', [DeploymentController::class, 'retry']);

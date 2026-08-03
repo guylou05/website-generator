@@ -110,6 +110,7 @@ export interface Deployment {
 }
 export interface DeploymentPlan {
   id: string;
+  projectId?: string;
   status: string;
   safetyStatus: 'safe' | 'warning' | 'blocked';
   statistics: Record<string, number> & { total: number };
@@ -872,6 +873,18 @@ export class DashboardApiClient {
   async deployment(id: string): Promise<Deployment> {
     return mapDeployment(await this.call<Wire>(`/deployments/${id}`));
   }
+  async executeDeploymentPlan(
+    id: string,
+  ): Promise<{ id: string; status: string }> {
+    const response = await this.call<{
+      deployment_id: string;
+      status: string;
+    }>(`/deployment-plans/${id}/deploy`, { method: 'POST' });
+    return {
+      id: response.deployment_id,
+      status: response.status,
+    };
+  }
   async createDeploymentPlan(
     projectId: string,
     wordpressConnectionId: string,
@@ -886,6 +899,7 @@ export class DashboardApiClient {
     });
     return {
       id: String(x.id),
+      projectId: String(x.project_id ?? projectId),
       status: x.status,
       safetyStatus: x.safety_status ?? 'blocked',
       statistics: x.statistics ?? { total: 0 },
@@ -902,6 +916,7 @@ export class DashboardApiClient {
   private mapDeploymentPlan(x: Wire): DeploymentPlan {
     return {
       id: String(x.id),
+      projectId: String(x.project_id),
       status: x.status,
       safetyStatus: x.safety_status ?? 'blocked',
       statistics: x.statistics ?? { total: 0 },
