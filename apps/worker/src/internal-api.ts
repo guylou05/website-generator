@@ -1,14 +1,62 @@
 export type JobKind = 'generations' | 'deployments';
-export class InternalApiError extends Error {
+
+export type ApiErrorDetails = {
+  kind: JobKind;
+  id: string;
+  action: string;
+  status?: number;
+  code: string;
+  responseBody?: string;
+};
+
+export abstract class InternalApiError extends Error {
+  abstract readonly retryable: boolean;
+
   constructor(
     message: string,
-    readonly details: Record<string, unknown>,
+    readonly details: ApiErrorDetails,
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
     this.name = 'InternalApiError';
   }
 }
-const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 409, 413, 422]);
+
+export class RetryableApiError extends InternalApiError {
+  readonly retryable = true;
+
+  constructor(
+    message: string,
+    details: ApiErrorDetails,
+    options?: ErrorOptions,
+  ) {
+    super(message, details, options);
+    this.name = 'RetryableApiError';
+  }
+}
+
+export class PermanentApiError extends InternalApiError {
+  readonly retryable = false;
+
+  constructor(
+    message: string,
+    details: ApiErrorDetails,
+    options?: ErrorOptions,
+  ) {
+    super(message, details, options);
+    this.name = 'PermanentApiError';
+  }
+}
+
+export class DeploymentConflictError extends PermanentApiError {
+  constructor(message: string, details: ApiErrorDetails) {
+    super(message, details);
+    this.name = 'DeploymentConflictError';
+  }
+}
+
+const RETRYABLE_HTTP_STATUSES = new Set([500, 502, 503, 504]);
+
 export class InternalApiClient {
   constructor(
     private readonly baseUrl: string,
@@ -31,69 +79,88 @@ export class InternalApiClient {
     action: string,
     body?: unknown,
   ): Promise<T> {
+    const requestDetails = { kind, id, action };
     let serializedBody: string | undefined;
     if (body !== undefined) {
       try {
         serializedBody = JSON.stringify(body);
       } catch (error) {
-        throw new InternalApiError(
+        throw new PermanentApiError(
           'Internal API request serialization failed',
-          {
-            kind,
-            id,
-            action,
-            serializationError: serializeError(error),
-          },
+          { ...requestDetails, code: 'request_serialization_failed' },
+          { cause: error },
         );
       }
     }
-    const response = await fetch(
-      `${this.baseUrl.replace(/\/$/, '')}/${kind}/${id}/${action}`,
-      {
-        method: body === undefined ? 'GET' : 'POST',
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          Accept: 'application/json',
-          ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `${this.baseUrl.replace(/\/$/, '')}/${kind}/${id}/${action}`,
+        {
+          method: body === undefined ? 'GET' : 'POST',
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            Accept: 'application/json',
+            ...(body === undefined
+              ? {}
+              : { 'Content-Type': 'application/json' }),
+          },
+          ...(serializedBody === undefined ? {} : { body: serializedBody }),
         },
-        ...(serializedBody === undefined ? {} : { body: serializedBody }),
-      },
-    );
+      );
+    } catch (error) {
+      throw new RetryableApiError(
+        'Internal API network request failed',
+        { ...requestDetails, code: networkErrorCode(error) },
+        { cause: error },
+      );
+    }
+
     if (!response.ok) {
       const responseBody = await response.text();
-      const schemaMismatch = responseBody.includes(
-        'deployment_schema_mismatch',
-      );
-      throw new InternalApiError(
-        `Internal API returned HTTP ${response.status}`,
-        {
-          kind,
-          id,
-          action,
-          status: response.status,
-          retryable:
-            !schemaMismatch &&
-            !NON_RETRYABLE_STATUSES.has(response.status) &&
-            (response.status >= 500 || response.status === 429),
-          classification:
-            schemaMismatch || NON_RETRYABLE_STATUSES.has(response.status)
-              ? 'non_retryable_data_error'
-              : 'retryable_transient_error',
-          code:
-            response.status === 413
-              ? 'rollback_snapshot_too_large'
-              : schemaMismatch
-                ? 'deployment_schema_mismatch'
-                : 'internal_api_error',
-          responseBody,
-        },
-      );
+      const code = apiErrorCode(response.status, responseBody);
+      const details = {
+        ...requestDetails,
+        status: response.status,
+        code,
+        responseBody,
+      };
+      const message = `Internal API returned HTTP ${response.status}`;
+      if (
+        kind === 'deployments' &&
+        action === 'started' &&
+        response.status === 409
+      )
+        throw new DeploymentConflictError(message, details);
+      if (RETRYABLE_HTTP_STATUSES.has(response.status))
+        throw new RetryableApiError(message, details);
+      throw new PermanentApiError(message, details);
     }
     return response.json() as Promise<T>;
   }
 }
 
-function serializeError(error: unknown): Record<string, unknown> {
-  if (!(error instanceof Error)) return { value: String(error) };
-  return { name: error.name, message: error.message, stack: error.stack };
+function apiErrorCode(status: number, body: string): string {
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: { code?: unknown };
+      code?: unknown;
+    };
+    const code = parsed.error?.code ?? parsed.code;
+    if (typeof code === 'string' && code.length > 0) return code;
+  } catch {
+    // Proxies may return text or HTML.
+  }
+  if (status === 409) return 'deployment_conflict';
+  if (status === 413) return 'rollback_snapshot_too_large';
+  return 'internal_api_error';
+}
+
+function networkErrorCode(error: unknown): string {
+  if (error instanceof Error && error.name === 'AbortError')
+    return 'network_timeout';
+  const code =
+    error instanceof Error && 'code' in error ? String(error.code) : '';
+  return code === 'ECONNRESET' ? 'connection_reset' : 'network_error';
 }

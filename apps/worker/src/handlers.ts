@@ -171,6 +171,7 @@ export class JobHandlers {
         generationRunId: id,
       });
     } catch (error) {
+      if (error instanceof InternalApiError) throw error;
       const providerError = findOpenAIError(error);
       logger.error('Generation failed with exception', {
         generationRunId: id,
@@ -315,6 +316,7 @@ export class JobHandlers {
         result: { ...result, site_url: wordpress.url },
       });
     } catch (error) {
+      if (error instanceof InternalApiError) throw error;
       await this.fail('deployments', id, error);
     } finally {
       stop();
@@ -386,9 +388,7 @@ export class JobHandlers {
     const cancelled = error instanceof Cancelled;
     const details = serializeException(error);
     const apiDetails =
-      error instanceof InternalApiError
-        ? safeApiDetails(error.details)
-        : undefined;
+      error instanceof InternalApiError ? safeApiDetails(error) : undefined;
     const providerError = findOpenAIError(error);
     const validation = error instanceof BlueprintValidationError;
     await this.api.post(kind, id, 'failed', {
@@ -408,9 +408,8 @@ export class JobHandlers {
   }
 }
 
-function safeApiDetails(
-  details: Record<string, unknown>,
-): Record<string, unknown> {
+function safeApiDetails(error: InternalApiError): Record<string, unknown> {
+  const details = error.details;
   const responseBody =
     typeof details.responseBody === 'string' ? details.responseBody : '';
   let diagnostic: Record<string, unknown> = {};
@@ -424,8 +423,10 @@ function safeApiDetails(
   }
   return {
     status: details.status,
-    retryable: details.retryable,
-    classification: details.classification,
+    retryable: error.retryable,
+    classification: error.retryable
+      ? 'retryable_transient_error'
+      : 'permanent_api_error',
     ...diagnostic,
   };
 }
