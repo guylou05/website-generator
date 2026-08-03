@@ -42,7 +42,9 @@ const date = (value: string | null) =>
 const duration = (ms: number | null) =>
   ms == null ? '—' : ms < 1000 ? `${ms} ms` : `${Math.round(ms / 1000)}s`;
 const label = (value: string) =>
-  value === 'claimed' ? 'Worker claimed deployment' : value.replaceAll('_', ' ');
+  value === 'claimed'
+    ? 'Worker claimed deployment'
+    : value.replaceAll('_', ' ');
 const safeUrl = (value: string | null) => {
   if (!value) return null;
   try {

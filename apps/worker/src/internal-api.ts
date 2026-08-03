@@ -61,7 +61,9 @@ export class InternalApiClient {
     );
     if (!response.ok) {
       const responseBody = await response.text();
-      const schemaMismatch = responseBody.includes('deployment_schema_mismatch');
+      const schemaMismatch = responseBody.includes(
+        'deployment_schema_mismatch',
+      );
       throw new InternalApiError(
         `Internal API returned HTTP ${response.status}`,
         {
@@ -70,11 +72,13 @@ export class InternalApiClient {
           action,
           status: response.status,
           retryable:
-            !schemaMismatch && !NON_RETRYABLE_STATUSES.has(response.status) &&
+            !schemaMismatch &&
+            !NON_RETRYABLE_STATUSES.has(response.status) &&
             (response.status >= 500 || response.status === 429),
-          classification: schemaMismatch || NON_RETRYABLE_STATUSES.has(response.status)
-            ? 'non_retryable_data_error'
-            : 'retryable_transient_error',
+          classification:
+            schemaMismatch || NON_RETRYABLE_STATUSES.has(response.status)
+              ? 'non_retryable_data_error'
+              : 'retryable_transient_error',
           code:
             response.status === 413
               ? 'rollback_snapshot_too_large'
