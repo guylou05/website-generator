@@ -21,7 +21,7 @@ class DeploymentController extends Controller
     {
         $deployment = $service->start($plan, $request);
 
-        return response()->json(['deployment_id' => $deployment->id, 'status' => $deployment->status, 'progress_url' => '/api/deployments/'.$deployment->id], 202);
+        return response()->json(['data' => ['deployment_id' => $deployment->id, 'status' => $deployment->status, 'progress_url' => '/api/deployments/'.$deployment->id]], 202);
     }
 
     public function index(Project $project): JsonResponse

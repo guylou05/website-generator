@@ -106,6 +106,33 @@ test('client creates a generation and maps its response', async () => {
   assert.equal(run.status, 'completed');
 });
 
+test('client starts an approved deployment plan from its execution envelope', async () => {
+  const calls: string[] = [];
+  const fakeFetch: typeof fetch = async (input) => {
+    calls.push(String(input));
+    if (String(input).endsWith('/sanctum/csrf-cookie'))
+      return new Response(null, { status: 204 });
+
+    return Response.json({
+      data: {
+        deployment_id: 'deployment-uuid',
+        status: 'queued',
+      },
+    });
+  };
+
+  const deployment = await new DashboardApiClient(
+    'http://api.test/api',
+    fakeFetch,
+  ).executeDeploymentPlan('plan-uuid');
+
+  assert.deepEqual(deployment, { id: 'deployment-uuid', status: 'queued' });
+  assert.equal(
+    calls.at(-1),
+    'http://api.test/api/deployment-plans/plan-uuid/deploy',
+  );
+});
+
 test('client loads generation summary independently from project serialization', async () => {
   const fakeFetch: typeof fetch = async () =>
     new Response(

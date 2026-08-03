@@ -876,11 +876,12 @@ export class DashboardApiClient {
   async executeDeploymentPlan(
     id: string,
   ): Promise<{ id: string; status: string }> {
-    const response = await this.call<Wire>(`/deployment-plans/${id}/deploy`, {
-      method: 'POST',
-    });
+    const response = await this.call<{
+      deployment_id: string;
+      status: string;
+    }>(`/deployment-plans/${id}/deploy`, { method: 'POST' });
     return {
-      id: String((response as { deployment_id: string }).deployment_id),
+      id: response.deployment_id,
       status: response.status,
     };
   }
