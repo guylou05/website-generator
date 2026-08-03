@@ -115,16 +115,19 @@ export default function DeploymentProgressPage() {
   const elapsed =
     deployment.durationMs ??
     (deployment.startedAt
-      ? now - new Date(deployment.startedAt).getTime()
+      ? new Date(
+          deployment.completedAt ??
+            deployment.failedAt ??
+            deployment.cancelledAt ??
+            now,
+        ).getTime() - new Date(deployment.startedAt).getTime()
       : null);
   const siteUrl = safeUrl(
     deployment.wordpressConnection?.site_url ??
       deployment.result?.site_url ??
       null,
   );
-  const canRetry =
-    !!deployment.error?.retryable &&
-    ['failed', 'partially_succeeded'].includes(deployment.status);
+  const canRetry = deployment.retryAllowed;
   return (
     <div className="space-y-6 pb-12">
       <header className="card p-6">
@@ -184,9 +187,11 @@ export default function DeploymentProgressPage() {
             value={
               deployment.currentStage
                 ? label(deployment.currentStage)
-                : terminal.has(deployment.status)
+                : deployment.status === 'succeeded'
                   ? 'Finalized'
-                  : 'Waiting for worker'
+                  : terminal.has(deployment.status)
+                    ? 'Stopped'
+                    : 'Waiting for worker'
             }
           />
         </dl>
@@ -490,6 +495,12 @@ export default function DeploymentProgressPage() {
             disabled={busy}
             className="bg-primary text-primary-foreground rounded px-4 py-2"
             onClick={async () => {
+              if (
+                !window.confirm(
+                  'Create a new deployment attempt? The failed attempt will remain in audit history.',
+                )
+              )
+                return;
               setBusy(true);
               try {
                 const retry = await dashboardApi.retryDeployment(deployment.id);
@@ -501,9 +512,16 @@ export default function DeploymentProgressPage() {
               }
             }}
           >
-            Retry failed items
+            Retry Deployment
           </button>
         )}
+        {!canRetry &&
+          deployment.retryReason &&
+          terminal.has(deployment.status) && (
+            <p className="text-muted-foreground self-center text-sm">
+              {deployment.retryReason}
+            </p>
+          )}
         {siteUrl && (
           <a
             className="rounded border px-4 py-2"

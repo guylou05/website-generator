@@ -122,9 +122,13 @@ export interface Deployment {
   websiteRevisionId: string | null;
   startedAt: string | null;
   completedAt: string | null;
+  failedAt: string | null;
+  cancelledAt: string | null;
   queuedAt: string | null;
   durationMs: number | null;
   createdBy: string | null;
+  retryAllowed: boolean;
+  retryReason: string | null;
   project: { id: string; name: string } | undefined;
   wordpressConnection:
     { id: string; name: string; site_url: string } | undefined;
@@ -419,6 +423,10 @@ interface Wire {
   queued_at?: string;
   started_at?: string;
   completed_at?: string;
+  failed_at?: string;
+  cancelled_at?: string;
+  retry_allowed?: boolean;
+  retry_reason?: string | null;
   duration_ms?: number;
   created_by?: string;
   project?: { id: string; name: string };
@@ -529,9 +537,13 @@ export const mapDeployment = (x: Wire): Deployment => ({
   websiteRevisionId: x.website_revision_id ?? null,
   startedAt: x.started_at ?? null,
   completedAt: x.completed_at ?? null,
+  failedAt: x.failed_at ?? null,
+  cancelledAt: x.cancelled_at ?? null,
   queuedAt: x.queued_at ?? null,
   durationMs: x.duration_ms ?? null,
   createdBy: x.created_by ?? null,
+  retryAllowed: x.retry_allowed ?? false,
+  retryReason: x.retry_reason ?? null,
   project: x.project,
   wordpressConnection: x.wordpress_connection,
   websiteRevision: x.website_revision,

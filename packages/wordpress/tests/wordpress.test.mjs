@@ -13,8 +13,11 @@ const jsonResponse = (body, status = 200) =>
   });
 const credentials = {
   url: 'https://wordpress.example.test',
-  username: 'admin-user',
-  applicationPassword: 'abcd EFGH 1234',
+  authentication: {
+    type: 'application_password',
+    username: 'admin-user',
+    applicationPassword: 'abcd EFGH 1234',
+  },
 };
 const wpPage = {
   id: 42,
@@ -83,8 +86,64 @@ test('uses Application Password authentication without logging credentials', asy
   const result = await client.testConnection();
   assert.equal(result.userId, 7);
   assert.match(authorization, /^Basic /);
-  assert.ok(!JSON.stringify(logs).includes(credentials.applicationPassword));
+  assert.ok(
+    !JSON.stringify(logs).includes(
+      credentials.authentication.applicationPassword,
+    ),
+  );
   assert.ok(!JSON.stringify(logs).includes(authorization));
+});
+
+test('connector authentication uses only the plugin bearer token', async () => {
+  let authorization = '';
+  const authentication = { type: 'connector', token: 'connector-secret' };
+  Object.defineProperties(authentication, {
+    username: { get: () => assert.fail('username was accessed') },
+    applicationPassword: { get: () => assert.fail('password was accessed') },
+  });
+  const client = new WordPressClient(
+    { url: credentials.url, authentication },
+    {
+      fetch: async (_url, init) => {
+        authorization = init.headers.Authorization;
+        return jsonResponse({
+          connected: true,
+          capabilities: { manage_options: true },
+        });
+      },
+    },
+  );
+  await client.testConnection();
+  assert.equal(authorization, 'Bearer connector-secret');
+});
+
+test('nullable and unsupported authentication configurations produce typed errors', () => {
+  for (const [authentication, code] of [
+    [{ type: 'connector', token: null }, 'connector_token_missing'],
+    [
+      {
+        type: 'application_password',
+        username: null,
+        applicationPassword: 'x',
+      },
+      'application_password_username_missing',
+    ],
+    [
+      {
+        type: 'application_password',
+        username: 'admin',
+        applicationPassword: null,
+      },
+      'application_password_missing',
+    ],
+    [{ type: 'unknown' }, 'unsupported_authentication_type'],
+  ])
+    assert.throws(
+      () => new WordPressClient({ url: credentials.url, authentication }),
+      (error) =>
+        error.name === 'WordPressAuthenticationConfigurationError' &&
+        error.code === code,
+    );
 });
 
 test('page upsert updates an existing slug and defaults to draft', async () => {

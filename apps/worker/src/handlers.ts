@@ -34,7 +34,13 @@ type DeploymentContext = {
       blueprint: any;
       elementor: { documents: Array<{ page: string; elements: unknown }> };
     };
-    wordpress: { url: string; username: string; application_password: string };
+    wordpress_connection: {
+      url: string;
+      authentication_type: unknown;
+      username: unknown;
+      application_password: unknown;
+      connector_token: unknown;
+    };
     plan?: {
       changes: Array<Record<string, unknown>>;
       options: Record<string, unknown>;
@@ -169,7 +175,8 @@ export class JobHandlers {
     const stop = this.heartbeat('deployments', id);
     try {
       await this.cancelGuard('deployments', id);
-      const { wordpress, generation_output: output } = context.data;
+      const { wordpress_connection: wordpress, generation_output: output } =
+        context.data;
       if (
         !output?.blueprint?.pages ||
         output.elementor?.documents === undefined
@@ -183,13 +190,21 @@ export class JobHandlers {
         message: 'WordPress deployment started',
       });
       await this.cancelGuard('deployments', id);
-      const deployer = new WordPressDeployer(
-        new WordPressClient({
-          url: wordpress.url,
-          username: wordpress.username,
-          applicationPassword: wordpress.application_password,
-        }),
-      );
+      const authentication =
+        wordpress.authentication_type === 'connector'
+          ? { type: 'connector' as const, token: wordpress.connector_token }
+          : wordpress.authentication_type === 'application_password'
+            ? {
+                type: 'application_password' as const,
+                username: wordpress.username,
+                applicationPassword: wordpress.application_password,
+              }
+            : ({ type: wordpress.authentication_type } as never);
+      const client = new WordPressClient({
+        url: wordpress.url,
+        authentication,
+      });
+      const deployer = new WordPressDeployer(client);
       const executionStages = [
         'verify_connection',
         'capture_rollback_snapshot',
@@ -221,6 +236,7 @@ export class JobHandlers {
           metadata,
         });
       await stageEvent('verify_connection', 'stage.started', 0);
+      await client.testConnection();
       await stageEvent('verify_connection', 'stage.completed', 1);
       await this.cancelGuard('deployments', id);
       await stageEvent('capture_rollback_snapshot', 'stage.started', 1);
