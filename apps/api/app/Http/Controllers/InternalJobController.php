@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Deployment;
 use App\Models\DeploymentRollbackSnapshot;
+use App\Models\DeploymentSnapshotUpload;
+use App\Models\DeploymentSnapshotUploadChunk;
 use App\Models\GenerationRun;
 use App\Models\Organization;
 use App\Services\DeploymentApprovalService;
@@ -14,7 +16,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -84,9 +85,16 @@ class InternalJobController extends Controller
             return response()->json(['error' => ['code' => 'rollback_snapshot_too_large', 'retryability' => 'non_retryable_data_error', 'size_bytes' => $data['uncompressed_size'], 'limit_bytes' => $limit]], 413);
         }
         $uploadId = hash('sha256', $deployment->id.':'.$data['checksum']);
-        $path = "rollback-snapshots/{$deployment->id}/{$uploadId}";
-        Storage::disk('local')->makeDirectory($path);
-        Storage::disk('local')->put("$path/manifest.json", json_encode($data, JSON_THROW_ON_ERROR));
+        DB::transaction(function () use ($deployment, $uploadId, $data) {
+            $existing = DeploymentSnapshotUpload::where('deployment_id', $deployment->id)->lockForUpdate()->first();
+            if ($existing && $existing->id !== $uploadId) {
+                $existing->delete();
+                $existing = null;
+            }
+            if (! $existing) {
+                DeploymentSnapshotUpload::create(['id' => $uploadId, 'deployment_id' => $deployment->id, 'manifest' => $data, 'created_at' => now()]);
+            }
+        });
 
         return response()->json(['data' => ['upload_id' => $uploadId, 'chunk_size_bytes' => config('deployment.snapshot_chunk_max_bytes')]]);
     }
@@ -98,14 +106,12 @@ class InternalJobController extends Controller
         $bytes = base64_decode($data['data'], true);
         abort_if($bytes === false || strlen($bytes) > config('deployment.snapshot_chunk_max_bytes'), 413, 'Snapshot chunk exceeds application limit.');
         abort_unless(hash_equals($data['checksum'], hash('sha256', $bytes)), 422, 'Snapshot chunk checksum mismatch.');
-        $path = "rollback-snapshots/{$deployment->id}/{$data['upload_id']}";
-        abort_unless(Storage::disk('local')->exists("$path/manifest.json"), 404);
-        $chunk = "$path/chunk-".str_pad((string) $data['sequence'], 8, '0', STR_PAD_LEFT);
-        if (Storage::disk('local')->exists($chunk)) {
-            abort_unless(hash_equals($data['checksum'], hash('sha256', Storage::disk('local')->get($chunk))), 409, 'Chunk sequence already contains different data.');
-        } else {
-            Storage::disk('local')->put($chunk, $bytes);
-        }
+        $upload = DeploymentSnapshotUpload::whereKey($data['upload_id'])->where('deployment_id', $deployment->id)->firstOrFail();
+        $chunk = DeploymentSnapshotUploadChunk::firstOrCreate(
+            ['upload_id' => $upload->id, 'sequence' => $data['sequence']],
+            ['checksum' => $data['checksum'], 'data' => $bytes]
+        );
+        abort_unless(hash_equals($data['checksum'], $chunk->checksum), 409, 'Chunk sequence already contains different data.');
 
         return response()->json(['data' => ['sequence' => $data['sequence'], 'checksum' => $data['checksum']]]);
     }
@@ -113,23 +119,30 @@ class InternalJobController extends Controller
     public function deploymentRollbackSnapshotComplete(Request $request, Deployment $deployment): JsonResponse
     {
         $data = $request->validate(['upload_id' => 'required|size:64']);
-        $path = "rollback-snapshots/{$deployment->id}/{$data['upload_id']}";
-        abort_unless(Storage::disk('local')->exists("$path/manifest.json"), 404);
-        $manifest = json_decode(Storage::disk('local')->get("$path/manifest.json"), true, flags: JSON_THROW_ON_ERROR);
-        $files = collect(Storage::disk('local')->files($path))->filter(fn ($file) => str_contains($file, '/chunk-'))->sort()->values();
-        $compressed = $files->map(fn ($file) => Storage::disk('local')->get($file))->implode('');
+        $upload = DeploymentSnapshotUpload::whereKey($data['upload_id'])->where('deployment_id', $deployment->id)->firstOrFail();
+        $manifest = $upload->manifest;
+        $compressed = DeploymentSnapshotUploadChunk::where('upload_id', $upload->id)
+            ->orderBy('sequence')
+            ->get(['data'])
+            ->map(fn ($chunk) => is_resource($chunk->data) ? stream_get_contents($chunk->data) : $chunk->data)
+            ->implode('');
         abort_unless(strlen($compressed) === $manifest['compressed_size'], 422, 'Snapshot upload is incomplete.');
         $json = gzdecode($compressed);
         abort_unless($json !== false && strlen($json) === $manifest['uncompressed_size'] && hash_equals($manifest['checksum'], hash('sha256', $json)), 422, 'Snapshot artifact checksum mismatch.');
-        abort_unless(is_array(json_decode($json, true, flags: JSON_THROW_ON_ERROR)), 422);
-        Storage::disk('local')->put("$path/snapshot.json.gz", $compressed);
-        $snapshot = DeploymentRollbackSnapshot::firstOrCreate(['deployment_id' => $deployment->id], [
-            'snapshot' => [], 'checksum' => $manifest['checksum'], 'artifact_path' => "$path/snapshot.json.gz",
-            'uncompressed_size' => $manifest['uncompressed_size'], 'compressed_size' => $manifest['compressed_size'],
-            'content_type' => $manifest['content_type'], 'content_encoding' => $manifest['content_encoding'],
-            'schema_version' => $manifest['schema_version'], 'manifest' => $manifest['metrics'], 'created_at' => now(),
-        ]);
-        $deployment->update(['rollback_snapshot_id' => $snapshot->id]);
+        $decoded = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+        abort_unless(is_array($decoded), 422);
+        $snapshot = DB::transaction(function () use ($deployment, $decoded, $manifest, $upload) {
+            $snapshot = DeploymentRollbackSnapshot::firstOrCreate(['deployment_id' => $deployment->id], [
+                'snapshot' => $decoded, 'checksum' => $manifest['checksum'], 'artifact_path' => null,
+                'uncompressed_size' => $manifest['uncompressed_size'], 'compressed_size' => $manifest['compressed_size'],
+                'content_type' => $manifest['content_type'], 'content_encoding' => $manifest['content_encoding'],
+                'schema_version' => $manifest['schema_version'], 'manifest' => $manifest['metrics'], 'created_at' => now(),
+            ]);
+            $deployment->update(['rollback_snapshot_id' => $snapshot->id]);
+            $upload->delete();
+
+            return $snapshot;
+        });
 
         return response()->json(['data' => ['id' => $snapshot->id, 'checksum' => $snapshot->checksum, 'verified' => true]]);
     }
