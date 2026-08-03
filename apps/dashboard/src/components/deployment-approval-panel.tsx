@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { dashboardApi, type DeploymentPlan } from '@/lib/api-client';
 
 const warningId = async (warning: string) =>
@@ -25,8 +26,26 @@ export function DeploymentApprovalPanel({
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [deploying, setDeploying] = useState(false);
+  const router = useRouter();
   const approved = plan.status === 'approved';
   const blocked = plan.safetyStatus === 'blocked';
+  const deploy = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const deployment = await dashboardApi.executeDeploymentPlan(plan.id);
+      router.push(
+        `/dashboard/projects/${plan.projectId}/deployments/${deployment.id}`,
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Deployment could not be started.',
+      );
+      setBusy(false);
+      setDeploying(false);
+    }
+  };
   const approve = async () => {
     setBusy(true);
     setError('');
@@ -127,11 +146,11 @@ export function DeploymentApprovalPanel({
             <p className="mt-2 italic">“{plan.approvalComment}”</p>
           )}
           <button
-            disabled
-            className="mt-4 rounded-lg bg-slate-300 px-4 py-2 font-semibold text-slate-600"
-            title="Deployment execution will be available in Phase 5.4."
+            disabled={busy}
+            className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white disabled:opacity-50"
+            onClick={() => setDeploying(true)}
           >
-            Deploy (Phase 5.4)
+            Deploy Website
           </button>
         </div>
       ) : plan.status === 'rejected' ? (
@@ -241,6 +260,39 @@ export function DeploymentApprovalPanel({
                 onClick={approve}
               >
                 Confirm approval
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deploying && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="deploy-title"
+        >
+          <div className="max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h3 id="deploy-title" className="text-xl font-semibold">
+              Deploy Website?
+            </h3>
+            <p className="mt-3 text-sm text-slate-600">
+              This will apply the approved deployment to WordPress.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="rounded-lg border px-4 py-2"
+                disabled={busy}
+                onClick={() => setDeploying(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white disabled:opacity-50"
+                disabled={busy}
+                onClick={() => void deploy()}
+              >
+                {busy ? 'Starting…' : 'Confirm deployment'}
               </button>
             </div>
           </div>
