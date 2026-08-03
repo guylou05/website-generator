@@ -8,6 +8,7 @@ export class InternalApiError extends Error {
     this.name = 'InternalApiError';
   }
 }
+const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 409, 413, 422]);
 export class InternalApiClient {
   constructor(
     private readonly baseUrl: string,
@@ -67,7 +68,16 @@ export class InternalApiClient {
           id,
           action,
           status: response.status,
-          retryable: response.status >= 500 || response.status === 429,
+          retryable:
+            !NON_RETRYABLE_STATUSES.has(response.status) &&
+            (response.status >= 500 || response.status === 429),
+          classification: NON_RETRYABLE_STATUSES.has(response.status)
+            ? 'non_retryable_data_error'
+            : 'retryable_transient_error',
+          code:
+            response.status === 413
+              ? 'rollback_snapshot_too_large'
+              : 'internal_api_error',
           responseBody,
         },
       );

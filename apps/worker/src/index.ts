@@ -46,7 +46,7 @@ async function consume(): Promise<void> {
     await consumeOne(redis, queueConfig, queue, workerId, async (job) => {
       if (job.type === 'generation') await handlers.generation(job.resource_id);
       else if (job.type === 'deployment')
-        await handlers.deployment(job.resource_id);
+        await handlers.deployment(job.resource_id, job.attempt);
       else
         throw new Error(
           'Media execution is not yet available through the internal API',

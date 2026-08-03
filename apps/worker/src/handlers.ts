@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
+import { gzipSync, gunzipSync } from 'node:zlib';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- callback data crosses a validated JSON API boundary */
 import {
@@ -13,7 +15,11 @@ import {
 } from '@website-generator/wordpress';
 import { renderElementorPage } from '@website-generator/renderer';
 import { siteBlueprintSchema } from '@website-generator/shared/schema';
-import type { InternalApiClient, JobKind } from './internal-api.js';
+import {
+  InternalApiError,
+  type InternalApiClient,
+  type JobKind,
+} from './internal-api.js';
 import { logger } from './logger.js';
 import { BlueprintValidationError } from './blueprint-validation.js';
 
@@ -163,15 +169,29 @@ export class JobHandlers {
       stop();
     }
   }
-  async deployment(id: string): Promise<void> {
+  async deployment(id: string, attempt = 1): Promise<void> {
+    const claim = await this.api.post<{ data: { claimed?: boolean } }>(
+      'deployments',
+      id,
+      'started',
+      {
+        worker_id: this.workerId,
+        attempt,
+        idempotency_key: `deployment:${id}:attempt:${attempt}`,
+      },
+    );
+    if (claim.data.claimed === false) {
+      logger.info('Duplicate or terminal deployment job ignored', {
+        deploymentId: id,
+        attempt,
+      });
+      return;
+    }
     const context = await this.api.get<DeploymentContext>(
       'deployments',
       id,
       'execution-context',
     );
-    await this.api.post('deployments', id, 'started', {
-      worker_id: this.workerId,
-    });
     const stop = this.heartbeat('deployments', id);
     try {
       await this.cancelGuard('deployments', id);
@@ -243,9 +263,7 @@ export class JobHandlers {
       const rollback = context.data.plan?.snapshot;
       if (!rollback)
         throw new Error('Approved rollback source snapshot is missing');
-      await this.api.post('deployments', id, 'rollback-snapshot', {
-        snapshot: rollback,
-      });
+      await this.persistRollbackSnapshot(id, rollback);
       await stageEvent('capture_rollback_snapshot', 'stage.completed', 2);
       const elementorPages = Object.fromEntries(
         output.elementor.documents.map((d) => [d.page, d.elements]),
@@ -282,6 +300,50 @@ export class JobHandlers {
       stop();
     }
   }
+  private async persistRollbackSnapshot(
+    id: string,
+    snapshot: Record<string, unknown>,
+  ): Promise<void> {
+    const serialized = Buffer.from(JSON.stringify(snapshot));
+    const compressed = gzipSync(serialized);
+    const checksum = createHash('sha256').update(serialized).digest('hex');
+    const metrics = snapshotMetrics(snapshot, serialized.byteLength);
+    logger.info('Rollback snapshot prepared', {
+      deploymentId: id,
+      ...metrics,
+      compressedSizeBytes: compressed.byteLength,
+    });
+    const init = await this.api.post<{
+      data: { upload_id: string; chunk_size_bytes: number };
+    }>('deployments', id, 'rollback-snapshot/init', {
+      checksum,
+      uncompressed_size: serialized.byteLength,
+      compressed_size: compressed.byteLength,
+      content_type: 'application/json',
+      content_encoding: 'gzip',
+      schema_version: '1.0',
+      metrics,
+    });
+    const chunkSize = init.data.chunk_size_bytes;
+    for (
+      let offset = 0, sequence = 0;
+      offset < compressed.length;
+      offset += chunkSize, sequence += 1
+    ) {
+      const chunk = compressed.subarray(offset, offset + chunkSize);
+      await this.api.post('deployments', id, 'rollback-snapshot/chunks', {
+        upload_id: init.data.upload_id,
+        sequence,
+        checksum: createHash('sha256').update(chunk).digest('hex'),
+        data: chunk.toString('base64'),
+      });
+    }
+    if (!gunzipSync(compressed).equals(serialized))
+      throw new Error('Rollback snapshot compression verification failed');
+    await this.api.post('deployments', id, 'rollback-snapshot/complete', {
+      upload_id: init.data.upload_id,
+    });
+  }
   private heartbeat(kind: JobKind, id: string): () => void {
     const timer = setInterval(
       () => void this.api.post(kind, id, 'heartbeat').catch(() => {}),
@@ -300,6 +362,10 @@ export class JobHandlers {
   private async fail(kind: JobKind, id: string, error: unknown): Promise<void> {
     const cancelled = error instanceof Cancelled;
     const details = serializeException(error);
+    const apiDetails =
+      error instanceof InternalApiError
+        ? safeApiDetails(error.details)
+        : undefined;
     const providerError = findOpenAIError(error);
     const validation = error instanceof BlueprintValidationError;
     await this.api.post(kind, id, 'failed', {
@@ -307,12 +373,67 @@ export class JobHandlers {
         ? 'cancelled'
         : validation
           ? error.code
-          : (providerError?.details.code ?? details.name),
+          : error instanceof InternalApiError && error.details.status === 413
+            ? 'rollback_snapshot_too_large'
+            : (providerError?.details.code ?? details.name),
       message: providerError?.message ?? details.message,
-      details: validation ? error.details : (providerError?.details ?? details),
+      details: validation
+        ? error.details
+        : (providerError?.details ?? apiDetails ?? details),
       cancelled,
     });
   }
+}
+
+function safeApiDetails(
+  details: Record<string, unknown>,
+): Record<string, unknown> {
+  const responseBody =
+    typeof details.responseBody === 'string' ? details.responseBody : '';
+  let diagnostic: Record<string, unknown> = {};
+  try {
+    const parsed = JSON.parse(responseBody) as {
+      error?: Record<string, unknown>;
+    };
+    diagnostic = parsed.error ?? {};
+  } catch {
+    /* The response may be a proxy-generated plain-text error. */
+  }
+  return {
+    status: details.status,
+    retryable: details.retryable,
+    classification: details.classification,
+    ...diagnostic,
+  };
+}
+
+function snapshotMetrics(snapshot: Record<string, unknown>, sizeBytes: number) {
+  const pages = Array.isArray(snapshot.pages) ? snapshot.pages : [];
+  const elementor = (snapshot.elementor_documents ??
+    snapshot.elementor ??
+    []) as unknown;
+  const elementorBytes = Buffer.byteLength(JSON.stringify(elementor));
+  const counts: Record<string, number> = {
+    pages: Buffer.byteLength(JSON.stringify(pages)),
+    elementor_documents: elementorBytes,
+    seo_metadata: Buffer.byteLength(JSON.stringify(snapshot.seo ?? {})),
+    menus: Buffer.byteLength(JSON.stringify(snapshot.menus ?? [])),
+    media_references: Buffer.byteLength(JSON.stringify(snapshot.media ?? [])),
+    site_settings: Buffer.byteLength(
+      JSON.stringify(snapshot.site_settings ?? {}),
+    ),
+  };
+  return {
+    size_bytes: sizeBytes,
+    page_count: pages.length,
+    elementor_json_bytes: elementorBytes,
+    media_metadata_count: Array.isArray(snapshot.media)
+      ? snapshot.media.length
+      : 0,
+    menu_count: Array.isArray(snapshot.menus) ? snapshot.menus.length : 0,
+    largest_resource_type:
+      Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'manifest',
+  };
 }
 
 function findOpenAIError(error: unknown): OpenAIProviderError | undefined {

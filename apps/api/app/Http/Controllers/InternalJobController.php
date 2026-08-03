@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -68,6 +69,69 @@ class InternalJobController extends Controller
         }
 
         return response()->json(['data' => ['id' => $snapshot->id, 'checksum' => $snapshot->checksum]], $snapshot->wasRecentlyCreated ? 201 : 200);
+    }
+
+    public function deploymentRollbackSnapshotInit(Request $request, Deployment $deployment): JsonResponse
+    {
+        abort_unless($deployment->status === 'running', 409);
+        $data = $request->validate([
+            'checksum' => 'required|size:64', 'uncompressed_size' => 'required|integer|min:2',
+            'compressed_size' => 'required|integer|min:1', 'content_type' => 'required|in:application/json',
+            'content_encoding' => 'required|in:gzip', 'schema_version' => 'required|string|max:20', 'metrics' => 'required|array',
+        ]);
+        $limit = config('deployment.snapshot_max_bytes');
+        if ($data['uncompressed_size'] > $limit) {
+            return response()->json(['error' => ['code' => 'rollback_snapshot_too_large', 'retryability' => 'non_retryable_data_error', 'size_bytes' => $data['uncompressed_size'], 'limit_bytes' => $limit]], 413);
+        }
+        $uploadId = hash('sha256', $deployment->id.':'.$data['checksum']);
+        $path = "rollback-snapshots/{$deployment->id}/{$uploadId}";
+        Storage::disk('local')->makeDirectory($path);
+        Storage::disk('local')->put("$path/manifest.json", json_encode($data, JSON_THROW_ON_ERROR));
+
+        return response()->json(['data' => ['upload_id' => $uploadId, 'chunk_size_bytes' => config('deployment.snapshot_chunk_max_bytes')]]);
+    }
+
+    public function deploymentRollbackSnapshotChunk(Request $request, Deployment $deployment): JsonResponse
+    {
+        abort_unless($deployment->status === 'running', 409);
+        $data = $request->validate(['upload_id' => 'required|size:64', 'sequence' => 'required|integer|min:0', 'checksum' => 'required|size:64', 'data' => 'required|string']);
+        $bytes = base64_decode($data['data'], true);
+        abort_if($bytes === false || strlen($bytes) > config('deployment.snapshot_chunk_max_bytes'), 413, 'Snapshot chunk exceeds application limit.');
+        abort_unless(hash_equals($data['checksum'], hash('sha256', $bytes)), 422, 'Snapshot chunk checksum mismatch.');
+        $path = "rollback-snapshots/{$deployment->id}/{$data['upload_id']}";
+        abort_unless(Storage::disk('local')->exists("$path/manifest.json"), 404);
+        $chunk = "$path/chunk-".str_pad((string) $data['sequence'], 8, '0', STR_PAD_LEFT);
+        if (Storage::disk('local')->exists($chunk)) {
+            abort_unless(hash_equals($data['checksum'], hash('sha256', Storage::disk('local')->get($chunk))), 409, 'Chunk sequence already contains different data.');
+        } else {
+            Storage::disk('local')->put($chunk, $bytes);
+        }
+
+        return response()->json(['data' => ['sequence' => $data['sequence'], 'checksum' => $data['checksum']]]);
+    }
+
+    public function deploymentRollbackSnapshotComplete(Request $request, Deployment $deployment): JsonResponse
+    {
+        $data = $request->validate(['upload_id' => 'required|size:64']);
+        $path = "rollback-snapshots/{$deployment->id}/{$data['upload_id']}";
+        abort_unless(Storage::disk('local')->exists("$path/manifest.json"), 404);
+        $manifest = json_decode(Storage::disk('local')->get("$path/manifest.json"), true, flags: JSON_THROW_ON_ERROR);
+        $files = collect(Storage::disk('local')->files($path))->filter(fn ($file) => str_contains($file, '/chunk-'))->sort()->values();
+        $compressed = $files->map(fn ($file) => Storage::disk('local')->get($file))->implode('');
+        abort_unless(strlen($compressed) === $manifest['compressed_size'], 422, 'Snapshot upload is incomplete.');
+        $json = gzdecode($compressed);
+        abort_unless($json !== false && strlen($json) === $manifest['uncompressed_size'] && hash_equals($manifest['checksum'], hash('sha256', $json)), 422, 'Snapshot artifact checksum mismatch.');
+        abort_unless(is_array(json_decode($json, true, flags: JSON_THROW_ON_ERROR)), 422);
+        Storage::disk('local')->put("$path/snapshot.json.gz", $compressed);
+        $snapshot = DeploymentRollbackSnapshot::firstOrCreate(['deployment_id' => $deployment->id], [
+            'snapshot' => [], 'checksum' => $manifest['checksum'], 'artifact_path' => "$path/snapshot.json.gz",
+            'uncompressed_size' => $manifest['uncompressed_size'], 'compressed_size' => $manifest['compressed_size'],
+            'content_type' => $manifest['content_type'], 'content_encoding' => $manifest['content_encoding'],
+            'schema_version' => $manifest['schema_version'], 'manifest' => $manifest['metrics'], 'created_at' => now(),
+        ]);
+        $deployment->update(['rollback_snapshot_id' => $snapshot->id]);
+
+        return response()->json(['data' => ['id' => $snapshot->id, 'checksum' => $snapshot->checksum, 'verified' => true]]);
     }
 
     public function generationCancellation(GenerationRun $generationRun): JsonResponse
@@ -216,16 +280,18 @@ class InternalJobController extends Controller
 
     private function started(Request $request, $job): JsonResponse
     {
-        $data = $request->validate(['worker_id' => 'required|string|max:255']);
-        if ($job->status === 'running') {
-            return response()->json(['data' => $job]);
-        }
-        if ($job->status !== 'queued') {
-            return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'Job cannot start.']], 409);
-        }
-        $job->update(['status' => 'running', 'worker_id' => $data['worker_id'], 'started_at' => now(), 'heartbeat_at' => now()]);
+        $data = $request->validate(['worker_id' => 'required|string|max:255', 'attempt' => 'sometimes|integer|min:1', 'idempotency_key' => 'sometimes|string|max:255']);
 
-        return response()->json(['data' => $job]);
+        return DB::transaction(function () use ($job, $data) {
+            $locked = $job::lockForUpdate()->findOrFail($job->id);
+            $attempt = $data['attempt'] ?? $locked->attempt;
+            if ($locked->status !== 'queued' || $attempt !== $locked->attempt || $attempt > $locked->max_attempts) {
+                return response()->json(['data' => ['claimed' => false, 'status' => $locked->status]]);
+            }
+            $locked->update(['status' => 'running', 'worker_id' => $data['worker_id'], 'started_at' => $locked->started_at ?: now(), 'heartbeat_at' => now()]);
+
+            return response()->json(['data' => $locked->fresh()->toArray() + ['claimed' => true]]);
+        });
     }
 
     private function heartbeat($job): JsonResponse
@@ -283,15 +349,15 @@ class InternalJobController extends Controller
         }
         $status = ($data['cancelled'] ?? false) || $job->status === 'cancelling' ? 'cancelled' : 'failed';
         $endedAt = now();
-        $classification = str_contains($data['code'], 'Configuration') ? 'retryable_after_configuration_change' : 'non_retryable_data_error';
+        $classification = $data['code'] === 'rollback_snapshot_too_large' ? 'non_retryable_data_error' : (str_contains($data['code'], 'Configuration') ? 'retryable_after_configuration_change' : 'non_retryable_data_error');
         $message = $classification === 'retryable_after_configuration_change'
             ? 'The deployment client used an invalid authentication configuration. Verify the WordPress connection and retry after the deployment service is updated.'
-            : $data['message'];
-        $updates = ['status' => $status, 'error' => $status === 'failed' ? ['code' => $data['code'], 'classification' => $classification, 'message' => $message, 'details' => $data['details'] ?? null] : null, 'completed_at' => $endedAt];
+            : ($data['code'] === 'rollback_snapshot_too_large' ? 'Rollback snapshot exceeded the current storage limit. No WordPress changes were made.' : $data['message']);
+        $updates = ['status' => $status, 'error' => $status === 'failed' ? ['code' => $data['code'], 'classification' => $classification, 'retryable' => false, 'message' => $message, 'suggested_action' => $data['code'] === 'rollback_snapshot_too_large' ? 'Reduce unusually large page data or contact an administrator to increase artifact storage.' : null, 'details' => $data['details'] ?? null] : null, 'error_details' => $data['details'] ?? null, 'completed_at' => $endedAt];
         if ($job instanceof Deployment) {
             $stage = $job->current_stage ?: 'verify_connection';
             $updates += ['current_stage' => $stage, 'failed_at' => $status === 'failed' ? $endedAt : null, 'cancelled_at' => $status === 'cancelled' ? $endedAt : null, 'duration_ms' => $job->started_at ? $endedAt->diffInMilliseconds($job->started_at, true) : 0];
-            $job->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => $stage, 'event_type' => 'stage.failed', 'progress' => $job->progress, 'message' => $message, 'created_at' => $endedAt]);
+            $job->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => $stage, 'event_type' => 'stage.failed', 'progress' => $job->progress, 'message' => $message, 'metadata' => ['code' => $data['code'], 'classification' => $classification, 'terminal' => true], 'created_at' => $endedAt]);
         } else {
             $updates['current_stage'] = null;
         }
