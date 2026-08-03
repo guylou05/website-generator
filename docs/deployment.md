@@ -31,3 +31,7 @@ site-setting, and media-reference data. Elementor JSON must occur only in its de
 duplicated in page metadata. Run `php artisan deployments:repair-stuck --deployment=<id>` to audit duplicate
 starts and repair an active record that already has a terminal non-retryable event; the command preserves all
 historical events.
+
+# Worker leases and rollback snapshots
+
+Workers heartbeat every `JOB_HEARTBEAT_INTERVAL_MS` (15 seconds by default) while collecting, compressing, uploading, assembling, and verifying rollback snapshots. `JOB_LEASE_SECONDS` defaults to 90 seconds, comfortably longer than the interval; increasing it is only a secondary safeguard. Snapshot chunks are binary-safe, idempotent, and retained so a recovered worker resumes missing chunks rather than creating a new deployment attempt.
