@@ -35,6 +35,7 @@ class StaleJobRecoveryService
         $cutoff = now()->subSeconds(config('app.job_stale_after_seconds'));
 
         return $query->whereIn('status', ['queued', 'running', 'cancelling'])
+            ->whereNull('completed_at')
             ->where(function (Builder $query) use ($cutoff) {
                 $query->where(function (Builder $queued) use ($cutoff) {
                     $queued->where('status', 'queued')
@@ -51,9 +52,12 @@ class StaleJobRecoveryService
     {
         $count = 0;
         $this->stuckQuery($model::query())->eachById(function ($record) use ($type, &$count) {
+            if (str_starts_with((string) data_get($record->error, 'classification'), 'non_retryable')) {
+                return;
+            }
             $count++;
             if ($record->status === 'cancelling') {
-                $record->update(['status' => 'cancelled', 'worker_id' => null, 'current_stage' => null, 'completed_at' => now()]);
+                $record->update(['status' => 'cancelled', 'worker_id' => null, 'current_stage' => null, 'completed_at' => now(), ...($record instanceof Deployment ? ['cancelled_at' => now()] : [])]);
                 $record->events()->create([
                     'stage' => 'system',
                     'event_type' => 'job.cancelled',
@@ -80,7 +84,7 @@ class StaleJobRecoveryService
                 $record->update(['status' => 'queued', 'attempt' => $record->attempt + 1, 'queued_at' => now(), 'heartbeat_at' => null]);
                 $this->jobs->{$type}($record->id, $record->attempt ?? 1);
             } else {
-                $record->update(['status' => 'failed', 'error' => ['code' => 'retry_exhausted', 'message' => 'The job could not be recovered.'], 'completed_at' => now()]);
+                $record->update(['status' => 'failed', 'error' => ['code' => 'retry_exhausted', 'classification' => 'non_retryable_attempt_error', 'retryable' => false, 'message' => 'The job could not be recovered.'], 'completed_at' => now(), ...($record instanceof Deployment ? ['failed_at' => now()] : [])]);
             }
         });
 
