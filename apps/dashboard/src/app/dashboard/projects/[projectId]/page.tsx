@@ -186,15 +186,54 @@ export default function ProjectDetail() {
           {deployments.length === 0 && (
             <p className="text-muted-foreground text-sm">No deployments yet.</p>
           )}
-          {deployments.map((deployment) => (
+          {deployments.map((deployment, index) => (
             <div
               key={deployment.id}
-              className="flex justify-between border-l-2 pl-4 text-sm"
+              className="grid gap-2 rounded-lg border p-4 text-sm sm:grid-cols-4"
             >
-              <span>{deployment.dryRun ? 'Preview' : 'Live deployment'}</span>
-              <span className="capitalize">
-                {deployment.status} · {deployment.progress}%
-              </span>
+              <div>
+                <span className="text-muted-foreground text-xs">
+                  Deployment
+                </span>
+                <p className="font-medium">
+                  #{deployments.length - index} ·{' '}
+                  {deployment.dryRun ? 'Preview' : 'Live'}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground text-xs">
+                  Status / target
+                </span>
+                <p className="capitalize">
+                  {deployment.status} ·{' '}
+                  {deployment.wordpressConnection?.name ?? 'WordPress'}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground text-xs">
+                  Revision / duration
+                </span>
+                <p>
+                  #{deployment.websiteRevision?.revision_number ?? '—'} ·{' '}
+                  {deployment.durationMs == null
+                    ? '—'
+                    : `${Math.round(deployment.durationMs / 1000)}s`}
+                </p>
+              </div>
+              <div className="sm:text-right">
+                <span className="text-muted-foreground text-xs">Started</span>
+                <p>
+                  {deployment.startedAt
+                    ? new Date(deployment.startedAt).toLocaleString()
+                    : 'Queued'}
+                </p>
+                <Link
+                  className="text-primary font-medium underline"
+                  href={`/dashboard/projects/${projectId}/deployments/${deployment.id}`}
+                >
+                  View details
+                </Link>
+              </div>
             </div>
           ))}
         </div>

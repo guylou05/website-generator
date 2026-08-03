@@ -105,8 +105,48 @@ export interface Deployment {
     details?: Record<string, unknown>;
   }> | null;
   result: { site_url?: string; admin_url?: string } | null;
-  error: { code: string; message: string } | null;
-  events: GenerationEvent[];
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+    retryable?: boolean;
+    suggested_action?: string;
+  } | null;
+  errorDetails: Record<string, unknown> | null;
+  warnings: string[];
+  resultSummary: Record<string, unknown> | null;
+  events: DeploymentEvent[];
+  items: DeploymentItem[];
+  attempt: number;
+  deploymentPlanId: string | null;
+  websiteRevisionId: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  queuedAt: string | null;
+  durationMs: number | null;
+  createdBy: string | null;
+  project: { id: string; name: string } | undefined;
+  wordpressConnection:
+    { id: string; name: string; site_url: string } | undefined;
+  websiteRevision: { id: string; revision_number: number } | undefined;
+}
+export interface DeploymentEvent extends GenerationEvent {
+  severity: 'info' | 'warning' | 'error';
+}
+export interface DeploymentItem {
+  id: string;
+  stage: string;
+  resourceType: string;
+  resourceKey: string;
+  operation: string;
+  status: string;
+  attempt: number;
+  remoteId: number | null;
+  remoteUrl: string | null;
+  result: Record<string, unknown> | null;
+  error: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }
 export interface DeploymentPlan {
   id: string;
@@ -370,6 +410,25 @@ interface Wire {
   warnings?: string[];
   estimated_seconds?: number;
   website_revision_id?: string;
+  items?: Wire[];
+  severity?: string;
+  attempt?: number;
+  deployment_plan_id?: string;
+  result_summary?: Record<string, unknown>;
+  error_details?: Record<string, unknown>;
+  queued_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  duration_ms?: number;
+  created_by?: string;
+  project?: { id: string; name: string };
+  wordpress_connection?: { id: string; name: string; site_url: string };
+  website_revision?: { id: string; revision_number: number };
+  resource_type?: string;
+  resource_key?: string;
+  operation?: string;
+  remote_id?: number;
+  remote_url?: string;
   expires_at?: string;
   snapshot_captured_at?: string;
   approved_at?: string;
@@ -440,7 +499,42 @@ export const mapDeployment = (x: Wire): Deployment => ({
   operations: x.operations ?? null,
   result: x.result ?? null,
   error: x.error,
-  events: (x.events ?? []).map(mapEvent),
+  errorDetails: x.error_details ?? null,
+  warnings: x.warnings ?? [],
+  resultSummary: x.result_summary ?? null,
+  events: (x.events ?? []).map((event) => ({
+    ...mapEvent(event),
+    severity: (event.severity ??
+      (event.event_type?.includes('failed')
+        ? 'error'
+        : 'info')) as DeploymentEvent['severity'],
+  })),
+  items: (x.items ?? []).map((item) => ({
+    id: String(item.id),
+    stage: item.stage,
+    resourceType: item.resource_type ?? 'other',
+    resourceKey: item.resource_key ?? '',
+    operation: item.operation ?? '',
+    status: item.status,
+    attempt: item.attempt ?? 0,
+    remoteId: item.remote_id ?? null,
+    remoteUrl: item.remote_url ?? null,
+    result: item.result ?? null,
+    error: item.error,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  })),
+  attempt: x.attempt ?? 1,
+  deploymentPlanId: x.deployment_plan_id ?? null,
+  websiteRevisionId: x.website_revision_id ?? null,
+  startedAt: x.started_at ?? null,
+  completedAt: x.completed_at ?? null,
+  queuedAt: x.queued_at ?? null,
+  durationMs: x.duration_ms ?? null,
+  createdBy: x.created_by ?? null,
+  project: x.project,
+  wordpressConnection: x.wordpress_connection,
+  websiteRevision: x.website_revision,
 });
 
 export class DashboardApiError extends Error {
@@ -870,8 +964,13 @@ export class DashboardApiClient {
       mapDeployment,
     );
   }
-  async deployment(id: string): Promise<Deployment> {
-    return mapDeployment(await this.call<Wire>(`/deployments/${id}`));
+  async deployment(id: string, signal?: AbortSignal): Promise<Deployment> {
+    return mapDeployment(
+      await this.call<Wire>(
+        `/deployments/${id}`,
+        signal ? { signal } : undefined,
+      ),
+    );
   }
   async executeDeploymentPlan(
     id: string,
