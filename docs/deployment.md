@@ -16,8 +16,10 @@ Set `NEXT_PUBLIC_USE_PROXY=true` to select the second topology and provide the d
 # Rollback snapshot transport limits
 
 Rollback capture is mandatory and completes before any WordPress write. Snapshots are gzip-compressed,
-uploaded as idempotent checksum-addressed chunks, reassembled on the API filesystem, and verified against
-their uncompressed SHA-256 checksum. `DEPLOYMENT_SNAPSHOT_CHUNK_MAX_BYTES` (default 512 KiB) is deliberately
+uploaded as idempotent checksum-addressed chunks, staged in the shared database, and verified against their
+uncompressed SHA-256 checksum. Database staging keeps init, chunk, and completion requests safe when a
+deployment platform routes them to different API replicas; the verified JSON snapshot is persisted before
+the temporary chunks are deleted. `DEPLOYMENT_SNAPSHOT_CHUNK_MAX_BYTES` (default 512 KiB) is deliberately
 below the configured Railway edge, Next.js proxy, and Laravel/PHP body limits; those infrastructure limits
 must each be explicitly configured above the chunk size. The internal HTTP client imposes no separate body
 limit. `DEPLOYMENT_SNAPSHOT_MAX_BYTES` (default 100 MiB uncompressed) is the application-level artifact cap.
