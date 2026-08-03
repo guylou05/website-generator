@@ -1,5 +1,4 @@
-import { randomUUID } from 'node:crypto';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- callback data crosses a validated JSON API boundary */
@@ -28,6 +27,7 @@ type GenerationContext = {
     id: string;
     project_id: string;
     provider: 'mock' | 'openai';
+    attempt: number;
     input: Record<string, unknown>;
     business_profile: Record<string, unknown>;
   };
@@ -67,10 +67,14 @@ export class JobHandlers {
       id,
       'execution-context',
     );
-    await this.api.post('generations', id, 'started', {
+    const claim = await this.api.post<{
+      data: { claimed?: boolean; lease_token?: string };
+    }>('generations', id, 'started', {
       worker_id: this.workerId,
     });
-    const stop = this.heartbeat('generations', id);
+    if (claim.data.claimed === false || !claim.data.lease_token) return;
+    const leaseToken = claim.data.lease_token;
+    const stop = this.heartbeat('generations', id, leaseToken);
     try {
       const mock = new MockAiProvider(
         mockResponses(context.data.business_profile),
@@ -145,13 +149,22 @@ export class JobHandlers {
         generationRunId: id,
       });
       await this.api.post('generations', id, 'completed', {
+        lease_token: leaseToken,
+        completion_idempotency_key: `generation:${id}:attempt:${context.data.attempt}`,
+        completion_checksum: createHash('sha256')
+          .update(
+            JSON.stringify({
+              blueprint: validation.data,
+              elementor: { status: 'ready', documents },
+            }),
+          )
+          .digest('hex'),
         output: {
           blueprint: validation.data,
           elementor: {
             status: 'ready',
             documents,
           },
-          summary: { pages_generated: validation.data.pages.length },
         },
       });
       logger.info('Blueprint persistence and generation completion completed', {
@@ -192,7 +205,9 @@ export class JobHandlers {
       id,
       'execution-context',
     );
-    const stop = this.heartbeat('deployments', id);
+    const leaseToken = (claim.data as { lease_token?: string }).lease_token;
+    if (!leaseToken) return;
+    const stop = this.heartbeat('deployments', id, leaseToken);
     try {
       await this.cancelGuard('deployments', id);
       const { wordpress_connection: wordpress, generation_output: output } =
@@ -291,6 +306,11 @@ export class JobHandlers {
       }
       await this.cancelGuard('deployments', id);
       await this.api.post('deployments', id, 'completed', {
+        lease_token: leaseToken,
+        completion_idempotency_key: `deployment:${id}:attempt:${attempt}`,
+        completion_checksum: createHash('sha256')
+          .update(JSON.stringify(result))
+          .digest('hex'),
         operations: result.operations,
         result: { ...result, site_url: wordpress.url },
       });
@@ -344,9 +364,12 @@ export class JobHandlers {
       upload_id: init.data.upload_id,
     });
   }
-  private heartbeat(kind: JobKind, id: string): () => void {
+  private heartbeat(kind: JobKind, id: string, leaseToken: string): () => void {
     const timer = setInterval(
-      () => void this.api.post(kind, id, 'heartbeat').catch(() => {}),
+      () =>
+        void this.api
+          .post(kind, id, 'heartbeat', { lease_token: leaseToken })
+          .catch(() => {}),
       this.heartbeatMs,
     );
     return () => clearInterval(timer);

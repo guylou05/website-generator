@@ -118,6 +118,9 @@ export interface Deployment {
   events: DeploymentEvent[];
   items: DeploymentItem[];
   attempt: number;
+  attemptNumber: number;
+  transientRetryCount: number;
+  recoveryCount: number;
   deploymentPlanId: string | null;
   websiteRevisionId: string | null;
   startedAt: string | null;
@@ -406,6 +409,9 @@ interface Wire {
   generation_run_id?: string;
   wordpress_connection_id?: string;
   dry_run?: boolean;
+  attempt_number?: number;
+  transient_retry_count?: number;
+  recovery_count?: number;
   operations?: Deployment['operations'];
   result?: Deployment['result'];
   safety_status?: DeploymentPlan['safetyStatus'];
@@ -533,6 +539,9 @@ export const mapDeployment = (x: Wire): Deployment => ({
     updatedAt: item.updated_at,
   })),
   attempt: x.attempt ?? 1,
+  attemptNumber: x.attempt_number ?? 1,
+  transientRetryCount: x.transient_retry_count ?? 0,
+  recoveryCount: x.recovery_count ?? 0,
   deploymentPlanId: x.deployment_plan_id ?? null,
   websiteRevisionId: x.website_revision_id ?? null,
   startedAt: x.started_at ?? null,

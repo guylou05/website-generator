@@ -131,10 +131,10 @@ class DeploymentController extends Controller
             if (Deployment::where('deployment_plan_id', $source->deployment_plan_id)->whereIn('status', ['queued', 'running', 'cancelling'])->exists()) {
                 abort(409, 'An active deployment attempt already exists for this plan.');
             }
-            $copy = $source->replicate(['status', 'progress', 'current_stage', 'operations', 'result', 'error', 'error_details', 'queued_at', 'heartbeat_at', 'worker_id', 'started_at', 'completed_at', 'failed_at', 'cancelled_at', 'idempotency_key']);
+            $copy = $source->replicate(['status', 'progress', 'current_stage', 'operations', 'result', 'error', 'error_details', 'queued_at', 'heartbeat_at', 'worker_id', 'claimed_by_worker_id', 'lease_token', 'lease_expires_at', 'queue_delivery_count', 'recovery_count', 'transient_retry_count', 'completion_idempotency_key', 'completion_checksum', 'started_at', 'completed_at', 'failed_at', 'cancelled_at', 'idempotency_key']);
             $root = $source->parent_deployment_id ?: $source->id;
             $number = max((int) $source->attempt_number, (int) $source->attempt) + 1;
-            $copy->fill(['parent_deployment_id' => $root, 'retry_of_id' => $source->id, 'attempt_number' => $number, 'attempt' => $number, 'initiated_by' => $request->user()?->id, 'created_by' => $request->user()?->id, 'idempotency_key' => (string) Str::uuid(), 'status' => 'queued', 'progress' => 0, 'current_stage' => null, 'queued_at' => now()]);
+            $copy->fill(['parent_deployment_id' => $root, 'retry_of_id' => $source->id, 'attempt_number' => $number, 'attempt' => 1, 'queue_delivery_count' => 0, 'recovery_count' => 0, 'transient_retry_count' => 0, 'initiated_by' => $request->user()?->id, 'created_by' => $request->user()?->id, 'idempotency_key' => (string) Str::uuid(), 'status' => 'queued', 'progress' => 0, 'current_stage' => null, 'queued_at' => now()]);
             $copy->save();
 
             return $copy;

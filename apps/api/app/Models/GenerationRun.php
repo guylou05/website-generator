@@ -12,11 +12,11 @@ class GenerationRun extends Model
 {
     use HasUuids, TenantBound { TenantBound::resolveRouteBindingQuery insteadof HasUuids; }
 
-    protected $fillable = ['project_id', 'organization_id', 'provider', 'status', 'current_stage', 'progress', 'input', 'output', 'error', 'queued_at', 'heartbeat_at', 'cancellation_requested_at', 'attempt', 'max_attempts', 'worker_id', 'started_at', 'completed_at'];
+    protected $fillable = ['project_id', 'organization_id', 'provider', 'status', 'current_stage', 'progress', 'input', 'output', 'error', 'queued_at', 'heartbeat_at', 'cancellation_requested_at', 'attempt', 'max_attempts', 'worker_id', 'claimed_by_worker_id', 'lease_token', 'lease_expires_at', 'queue_delivery_count', 'recovery_count', 'transient_retry_count', 'completion_idempotency_key', 'completion_checksum', 'started_at', 'completed_at'];
 
     protected function casts(): array
     {
-        return ['input' => 'array', 'output' => 'array', 'error' => 'array', 'queued_at' => 'datetime', 'heartbeat_at' => 'datetime', 'cancellation_requested_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['input' => 'array', 'output' => 'array', 'error' => 'array', 'queued_at' => 'datetime', 'heartbeat_at' => 'datetime', 'lease_expires_at' => 'datetime', 'cancellation_requested_at' => 'datetime', 'started_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
     public function project(): BelongsTo

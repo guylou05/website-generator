@@ -154,14 +154,14 @@ class InternalJobController extends Controller
         return $this->started($request, $deployment);
     }
 
-    public function generationHeartbeat(GenerationRun $generationRun): JsonResponse
+    public function generationHeartbeat(Request $request, GenerationRun $generationRun): JsonResponse
     {
-        return $this->heartbeat($generationRun);
+        return $this->heartbeat($request, $generationRun);
     }
 
-    public function deploymentHeartbeat(Deployment $deployment): JsonResponse
+    public function deploymentHeartbeat(Request $request, Deployment $deployment): JsonResponse
     {
-        return $this->heartbeat($deployment);
+        return $this->heartbeat($request, $deployment);
     }
 
     public function generationEvent(Request $request, GenerationRun $generationRun): JsonResponse
@@ -179,7 +179,7 @@ class InternalJobController extends Controller
         Log::info('Post-blueprint completion request received', ['generation_run_id' => $generationRun->id]);
         try {
             Log::info('Generation completion payload validation started', ['generation_run_id' => $generationRun->id]);
-            $data = $request->validate(['output' => 'required|array', 'output.blueprint' => 'required|array', 'output.blueprint.pages' => 'required|array|min:1', 'output.elementor' => 'required|array', 'output.elementor.status' => 'required|in:ready', 'output.elementor.documents' => 'required|array|min:1', 'output.elementor.documents.*.page' => 'required|string', 'output.elementor.documents.*.elements' => 'present|array']);
+            $data = $request->validate(['lease_token' => 'required|string|size:64', 'completion_idempotency_key' => 'required|string|max:255', 'completion_checksum' => 'required|string|size:64', 'output' => 'required|array', 'output.blueprint' => 'required|array', 'output.blueprint.pages' => 'required|array|min:1', 'output.elementor' => 'required|array', 'output.elementor.status' => 'required|in:ready', 'output.elementor.documents' => 'required|array|min:1', 'output.elementor.documents.*.page' => 'required|string', 'output.elementor.documents.*.elements' => 'present|array']);
             Log::info('Generation completion payload validation completed', ['generation_run_id' => $generationRun->id]);
 
             Log::info('Generation completion database transaction starting', ['generation_run_id' => $generationRun->id]);
@@ -187,16 +187,13 @@ class InternalJobController extends Controller
                 Log::info('Generation completion database transaction started', ['generation_run_id' => $generationRun->id]);
                 $job = GenerationRun::lockForUpdate()->findOrFail($generationRun->id);
                 Log::info('Generation run locked for completion', ['generation_run_id' => $job->id, 'status' => $job->status]);
-                if ($job->status === 'succeeded') {
+                if ($job->status === 'succeeded' && hash_equals((string) $job->completion_idempotency_key, $data['completion_idempotency_key']) && hash_equals((string) $job->completion_checksum, $data['completion_checksum'])) {
                     Log::info('Generation completion already persisted', ['generation_run_id' => $job->id]);
 
                     return response()->json(['data' => $job]);
                 }
-                if (in_array($job->status, ['cancelling', 'cancelled'], true)) {
-                    return response()->json(['error' => ['code' => 'cancelled', 'message' => 'Cancelled jobs cannot complete.']], 409);
-                }
-                if ($job->status !== 'running') {
-                    return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'Job is not running.']], 409);
+                if ($job->status !== 'running' || ! hash_equals((string) $job->lease_token, $data['lease_token'])) {
+                    return $this->stateConflict($job, 'running', 'complete');
                 }
 
                 $revision = $job->project->websiteRevisions()->where('generation_run_id', $job->id)->first();
@@ -234,11 +231,11 @@ class InternalJobController extends Controller
                 Log::info('Project status update completed', ['generation_run_id' => $job->id]);
 
                 Log::info('Generation run completion update started', ['generation_run_id' => $job->id]);
-                $job->update(['status' => 'succeeded', 'progress' => 100, 'current_stage' => null, 'completed_at' => now(), 'error' => null]);
+                $job->update(['status' => 'succeeded', 'progress' => 100, 'current_stage' => null, 'completed_at' => now(), 'error' => null, 'completion_idempotency_key' => $data['completion_idempotency_key'], 'completion_checksum' => $data['completion_checksum'], 'lease_token' => null, 'lease_expires_at' => null]);
                 Log::info('Generation run completion update completed', ['generation_run_id' => $job->id]);
 
                 Log::info('Final generation event emission started', ['generation_run_id' => $job->id]);
-                $job->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => 'completion', 'event_type' => 'generation.completed', 'progress' => 100, 'message' => 'Generation completed', 'metadata' => ['revision_id' => $revision->id], 'created_at' => now()]);
+                $job->events()->firstOrCreate(['event_uuid' => $this->eventUuid("generation:{$job->id}:{$data['completion_idempotency_key']}:completed")], ['stage' => 'completion', 'event_type' => 'generation.completed', 'progress' => 100, 'message' => 'Generation completed', 'metadata' => ['revision_id' => $revision->id], 'created_at' => now()]);
                 Log::info('Final generation event emission completed', ['generation_run_id' => $job->id]);
 
                 return response()->json(['data' => $job->fresh('events')]);
@@ -250,7 +247,7 @@ class InternalJobController extends Controller
             $details = $this->exceptionDetails($exception);
             Log::error('Post-blueprint generation completion failed', ['generation_run_id' => $generationRun->id, 'exception' => $details]);
             Log::info('Complete generation exception persistence started', ['generation_run_id' => $generationRun->id]);
-            GenerationRun::whereKey($generationRun->id)->update(['status' => 'failed', 'error' => ['code' => $exception::class, 'message' => $exception->getMessage(), 'details' => $details], 'current_stage' => null, 'completed_at' => now()]);
+            GenerationRun::whereKey($generationRun->id)->where('status', 'running')->where('lease_token', $request->input('lease_token'))->update(['status' => 'failed', 'error' => ['code' => $exception::class, 'message' => $exception->getMessage()], 'current_stage' => null, 'completed_at' => now(), 'lease_token' => null, 'lease_expires_at' => null]);
             Log::info('Complete generation exception persistence completed', ['generation_run_id' => $generationRun->id]);
             throw $exception;
         }
@@ -259,7 +256,7 @@ class InternalJobController extends Controller
     public function deploymentCompleted(Request $request, Deployment $deployment): JsonResponse
     {
         abort_unless(! $deployment->deployment_plan_id || $deployment->rollback_snapshot_id, 409, 'Rollback snapshot is required before completion.');
-        $response = $this->completed($request, $deployment, ['operations' => 'required|array', 'result' => 'required|array']);
+        $response = $this->completed($request, $deployment, ['lease_token' => 'required|string|size:64', 'completion_idempotency_key' => 'required|string|max:255', 'completion_checksum' => 'required|string|size:64', 'operations' => 'required|array', 'result' => 'required|array']);
         if ($deployment->deployment_plan_id && $response->getStatusCode() < 300) {
             $deployment->wordpressConnection()->update(['last_deployment_at' => now()]);
             $deployment->project()->update(['last_deployment_id' => $deployment->id]);
@@ -288,19 +285,29 @@ class InternalJobController extends Controller
             if ($locked->status !== 'queued' || $attempt !== $locked->attempt || $attempt > $locked->max_attempts) {
                 return response()->json(['data' => ['claimed' => false, 'status' => $locked->status]]);
             }
-            $locked->update(['status' => 'running', 'worker_id' => $data['worker_id'], 'started_at' => $locked->started_at ?: now(), 'heartbeat_at' => now()]);
+            $lease = hash('sha256', Str::random(64));
+            $locked->increment('queue_delivery_count');
+            // claimed -> running is kept in this row-locked transaction so no scheduler can steal between transitions.
+            $locked->update(['status' => 'claimed', 'worker_id' => $data['worker_id'], 'claimed_by_worker_id' => $data['worker_id'], 'lease_token' => $lease, 'lease_expires_at' => now()->addSeconds(config('app.job_lease_seconds', 90)), 'started_at' => $locked->started_at ?: now(), 'heartbeat_at' => now()]);
+            $locked->update(['status' => 'running']);
 
             return response()->json(['data' => $locked->fresh()->toArray() + ['claimed' => true]]);
         });
     }
 
-    private function heartbeat($job): JsonResponse
+    private function heartbeat(Request $request, $job): JsonResponse
     {
-        if ($job->status === 'running') {
-            $job->update(['heartbeat_at' => now()]);
-        }
+        $data = $request->validate(['lease_token' => 'required|string|size:64']);
 
-        return response()->json(['data' => $job->fresh()]);
+        return DB::transaction(function () use ($job, $data) {
+            $locked = $job::lockForUpdate()->findOrFail($job->id);
+            if (! in_array($locked->status, ['running', 'cancelling'], true) || ! hash_equals((string) $locked->lease_token, $data['lease_token'])) {
+                return $this->stateConflict($locked, 'running', 'heartbeat');
+            }
+            $locked->update(['heartbeat_at' => now(), 'lease_expires_at' => now()->addSeconds(config('app.job_lease_seconds', 90))]);
+
+            return response()->json(['data' => $locked->fresh()]);
+        });
     }
 
     private function event(Request $request, $job): JsonResponse
@@ -317,16 +324,17 @@ class InternalJobController extends Controller
     private function completed(Request $request, $job, array $rules): JsonResponse
     {
         $data = $request->validate($rules);
-        if ($job->status === 'succeeded') {
+        if ($job->status === 'succeeded' && hash_equals((string) $job->completion_idempotency_key, (string) ($data['completion_idempotency_key'] ?? '')) && hash_equals((string) $job->completion_checksum, (string) ($data['completion_checksum'] ?? ''))) {
             return response()->json(['data' => $job]);
         }
         if (in_array($job->status, ['cancelling', 'cancelled'], true)) {
             return response()->json(['error' => ['code' => 'cancelled', 'message' => 'Cancelled jobs cannot complete.']], 409);
         }
-        if ($job->status !== 'running') {
-            return response()->json(['error' => ['code' => 'invalid_state', 'message' => 'Job is not running.']], 409);
+        if ($job->status !== 'running' || ! hash_equals((string) $job->lease_token, (string) ($data['lease_token'] ?? ''))) {
+            return $this->stateConflict($job, 'running', 'complete');
         }
-        $job->update($data + ['status' => 'succeeded', 'progress' => 100, 'current_stage' => null, 'completed_at' => now()]);
+        unset($data['lease_token']);
+        $job->update($data + ['status' => 'succeeded', 'progress' => 100, 'current_stage' => null, 'completed_at' => now(), 'lease_token' => null, 'lease_expires_at' => null]);
         if ($job instanceof GenerationRun) {
             $job->project()->update(['status' => 'ready']);
             $output = $data['output'] ?? [];
@@ -346,6 +354,9 @@ class InternalJobController extends Controller
         $data = $request->validate(['code' => 'required|string|max:255', 'message' => 'required|string|max:4000', 'details' => 'sometimes|array', 'cancelled' => 'sometimes|boolean']);
         if (in_array($job->status, ['failed', 'cancelled'], true)) {
             return response()->json(['data' => $job]);
+        }
+        if ($job->status === 'succeeded') {
+            return $this->stateConflict($job, 'running', 'fail');
         }
         $status = ($data['cancelled'] ?? false) || $job->status === 'cancelling' ? 'cancelled' : 'failed';
         $endedAt = now();
@@ -368,9 +379,9 @@ class InternalJobController extends Controller
 
     private function exceptionDetails(Throwable $exception): array
     {
-        $details = ['class' => $exception::class, 'message' => $exception->getMessage(), 'code' => $exception->getCode(), 'file' => $exception->getFile(), 'line' => $exception->getLine(), 'trace' => $exception->getTraceAsString()];
+        $details = ['class' => $exception::class, 'message' => $exception->getMessage(), 'code' => $exception->getCode()];
         if ($exception instanceof QueryException) {
-            $details['sql'] = ['connection' => $exception->getConnectionName(), 'query' => $exception->getSql(), 'bindings' => $exception->getBindings(), 'error_info' => $exception->errorInfo];
+            $details['database'] = ['connection' => $exception->getConnectionName(), 'sql_state' => $exception->errorInfo[0] ?? null];
         }
         if ($exception instanceof ValidationException) {
             $details['validation_errors'] = $exception->errors();
@@ -380,5 +391,19 @@ class InternalJobController extends Controller
         }
 
         return $details;
+    }
+
+    private function stateConflict($job, string $expected, string $transition): JsonResponse
+    {
+        Log::warning('Job state transition conflict', ['generation_run_id' => $job instanceof GenerationRun ? $job->id : null, 'deployment_id' => $job instanceof Deployment ? $job->id : null, 'queue_job_id' => request()->header('X-Queue-Job-Id'), 'current_database_status' => $job->status, 'expected_status' => $expected, 'worker_id' => request()->input('worker_id'), 'lease_owner' => $job->claimed_by_worker_id, 'lease_expiration' => $job->lease_expires_at, 'attempt_number' => $job instanceof Deployment ? $job->attempt_number : $job->attempt, 'last_heartbeat' => $job->heartbeat_at, 'completed_at' => $job->completed_at, 'failed_at' => $job instanceof Deployment ? $job->failed_at : null, 'transition' => $transition]);
+
+        return response()->json(['error' => ['code' => $job instanceof GenerationRun ? 'generation_state_conflict' : 'deployment_state_conflict', 'current_status' => $job->status, 'expected_status' => $expected, 'transition' => $transition]], 409);
+    }
+
+    private function eventUuid(string $key): string
+    {
+        $hex = md5($key);
+
+        return substr($hex, 0, 8).'-'.substr($hex, 8, 4).'-5'.substr($hex, 13, 3).'-a'.substr($hex, 17, 3).'-'.substr($hex, 20, 12);
     }
 }

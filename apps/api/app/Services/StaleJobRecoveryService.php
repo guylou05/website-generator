@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Deployment;
 use App\Models\GenerationRun;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class StaleJobRecoveryService
 {
@@ -34,14 +35,15 @@ class StaleJobRecoveryService
     {
         $cutoff = now()->subSeconds(config('app.job_stale_after_seconds'));
 
-        return $query->whereIn('status', ['queued', 'running', 'cancelling'])
+        return $query->whereIn('status', ['queued', 'claimed', 'running', 'cancelling'])
             ->whereNull('completed_at')
             ->where(function (Builder $query) use ($cutoff) {
                 $query->where(function (Builder $queued) use ($cutoff) {
                     $queued->where('status', 'queued')
                         ->whereRaw('COALESCE(heartbeat_at, queued_at, created_at) < ?', [$cutoff]);
                 })->orWhere(function (Builder $active) use ($cutoff) {
-                    $active->whereIn('status', ['running', 'cancelling'])
+                    $active->whereIn('status', ['claimed', 'running', 'cancelling'])
+                        ->where(fn (Builder $lease) => $lease->where('lease_expires_at', '<', now())->orWhereNull('lease_expires_at'))
                         ->whereRaw('COALESCE(heartbeat_at, started_at, queued_at, created_at) < ?', [$cutoff]);
                 });
             });
@@ -51,41 +53,44 @@ class StaleJobRecoveryService
     private function recover(string $model, string $type): int
     {
         $count = 0;
-        $this->stuckQuery($model::query())->eachById(function ($record) use ($type, &$count) {
-            if (str_starts_with((string) data_get($record->error, 'classification'), 'non_retryable')) {
-                return;
-            }
-            $count++;
-            if ($record->status === 'cancelling') {
-                $record->update(['status' => 'cancelled', 'worker_id' => null, 'current_stage' => null, 'completed_at' => now(), ...($record instanceof Deployment ? ['cancelled_at' => now()] : [])]);
-                $record->events()->create([
-                    'stage' => 'system',
-                    'event_type' => 'job.cancelled',
-                    'progress' => $record->progress,
-                    'message' => 'Cancellation completed because the worker heartbeat expired.',
-                    'created_at' => now(),
+        $this->stuckQuery($model::query())->pluck('id')->each(function ($id) use ($model, $type, &$count) {
+            DB::transaction(function () use ($id, $model, $type, &$count) {
+                $record = $model::lockForUpdate()->find($id);
+                if (! $record || $record->completed_at || ! in_array($record->status, ['queued', 'claimed', 'running', 'cancelling'], true)) {
+                    return;
+                }
+                if ($record->status !== 'queued' && (($record->lease_expires_at && $record->lease_expires_at->isFuture()) || ($record->lease_expires_at && $record->heartbeat_at && $record->heartbeat_at->gt($record->lease_expires_at)))) {
+                    return;
+                }
+                if (str_starts_with((string) data_get($record->error, 'classification'), 'non_retryable')) {
+                    return;
+                }
+                $count++;
+                if ($record->status === 'cancelling') {
+                    $record->update(['status' => 'cancelled', 'worker_id' => null, 'current_stage' => null, 'completed_at' => now(), ...($record instanceof Deployment ? ['cancelled_at' => now()] : [])]);
+                    $record->events()->create([
+                        'stage' => 'system',
+                        'event_type' => 'job.cancelled',
+                        'progress' => $record->progress,
+                        'message' => 'Cancellation completed because the worker heartbeat expired.',
+                        'created_at' => now(),
+                    ]);
+
+                    return;
+                }
+
+                $previousStatus = $record->status;
+                $record->increment('recovery_count');
+                $record->update(['status' => 'queued', 'worker_id' => null, 'claimed_by_worker_id' => null, 'lease_token' => null, 'lease_expires_at' => null, 'queued_at' => now(), 'heartbeat_at' => null]);
+                $key = md5("{$type}:{$record->id}:recovery:{$record->recovery_count}");
+                $uuid = substr($key, 0, 8).'-'.substr($key, 8, 4).'-5'.substr($key, 13, 3).'-a'.substr($key, 17, 3).'-'.substr($key, 20, 12);
+                $record->events()->firstOrCreate(['event_uuid' => $uuid], [
+                    'stage' => 'system', 'event_type' => 'job.recovered', 'progress' => $record->progress,
+                    'message' => $previousStatus === 'queued' ? 'Queued job was republished.' : 'Expired worker lease was recovered.', 'created_at' => now(),
                 ]);
-
-                return;
-            }
-
-            $previousStatus = $record->status;
-            $record->update(['status' => 'stale', 'worker_id' => null]);
-            $record->events()->create([
-                'stage' => 'system',
-                'event_type' => 'job.stale',
-                'progress' => $record->progress,
-                'message' => $previousStatus === 'queued'
-                    ? 'The queued job was not picked up before the recovery timeout.'
-                    : 'Worker heartbeat expired; recovery started.',
-                'created_at' => now(),
-            ]);
-            if ($record->attempt < $record->max_attempts) {
-                $record->update(['status' => 'queued', 'attempt' => $record->attempt + 1, 'queued_at' => now(), 'heartbeat_at' => null]);
+                // Recovery redelivers the same execution attempt; it never consumes a user attempt.
                 $this->jobs->{$type}($record->id, $record->attempt ?? 1);
-            } else {
-                $record->update(['status' => 'failed', 'error' => ['code' => 'retry_exhausted', 'classification' => 'non_retryable_attempt_error', 'retryable' => false, 'message' => 'The job could not be recovered.'], 'completed_at' => now(), ...($record instanceof Deployment ? ['failed_at' => now()] : [])]);
-            }
+            });
         });
 
         return $count;
