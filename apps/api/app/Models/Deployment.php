@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\TenantBound;
+use App\Support\DeploymentStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Deployment extends Model
 {
     use HasUuids, TenantBound { TenantBound::resolveRouteBindingQuery insteadof HasUuids; }
+
+    public const STATUSES = DeploymentStatus::ALL;
+
+    public function transitionTo(string $status, array $attributes = []): void
+    {
+        DeploymentStatus::assertTransition($this->status, $status);
+        $this->update($attributes + ['status' => $status]);
+    }
 
     protected $fillable = ['parent_deployment_id', 'retry_of_id', 'attempt_number', 'initiated_by', 'project_id', 'organization_id', 'deployment_plan_id', 'generation_run_id', 'website_revision_id', 'wordpress_connection_id', 'status', 'dry_run', 'progress', 'current_stage', 'operations', 'result', 'result_summary', 'error', 'error_details', 'options', 'warnings', 'connector_version', 'duration_ms', 'steps_completed', 'created_by', 'approval_checksum', 'idempotency_key', 'rollback_snapshot_id', 'queued_at', 'heartbeat_at', 'cancellation_requested_at', 'attempt', 'max_attempts', 'worker_id', 'claimed_by_worker_id', 'lease_token', 'lease_expires_at', 'queue_delivery_count', 'recovery_count', 'transient_retry_count', 'completion_idempotency_key', 'completion_checksum', 'started_at', 'completed_at', 'failed_at', 'cancelled_at'];
 

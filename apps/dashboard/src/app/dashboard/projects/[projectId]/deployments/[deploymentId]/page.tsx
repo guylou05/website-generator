@@ -41,7 +41,8 @@ const date = (value: string | null) =>
     : 'Not started';
 const duration = (ms: number | null) =>
   ms == null ? '—' : ms < 1000 ? `${ms} ms` : `${Math.round(ms / 1000)}s`;
-const label = (value: string) => value.replaceAll('_', ' ');
+const label = (value: string) =>
+  value === 'claimed' ? 'Worker claimed deployment' : value.replaceAll('_', ' ');
 const safeUrl = (value: string | null) => {
   if (!value) return null;
   try {
@@ -159,6 +160,11 @@ export default function DeploymentProgressPage() {
                   : '● '}
             {label(deployment.status)}
           </span>
+          {deployment.status === 'claimed' && (
+            <p className="text-muted-foreground text-sm">
+              Waiting for Worker startup
+            </p>
+          )}
         </div>
         <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
           <Meta

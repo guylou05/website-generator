@@ -183,7 +183,7 @@ export class JobHandlers {
     }
   }
   async deployment(id: string, attempt = 1): Promise<void> {
-    const claim = await this.api.post<{ data: { claimed?: boolean } }>(
+    const claim = await this.api.post<{ data: { claimed?: boolean; lease_token?: string } }>(
       'deployments',
       id,
       'started',
@@ -200,13 +200,14 @@ export class JobHandlers {
       });
       return;
     }
+    const leaseToken = claim.data.lease_token;
+    if (!leaseToken) return;
+    await this.api.post('deployments', id, 'running', { lease_token: leaseToken });
     const context = await this.api.get<DeploymentContext>(
       'deployments',
       id,
       'execution-context',
     );
-    const leaseToken = (claim.data as { lease_token?: string }).lease_token;
-    if (!leaseToken) return;
     const stop = this.heartbeat('deployments', id, leaseToken);
     try {
       await this.cancelGuard('deployments', id);

@@ -151,7 +151,32 @@ class InternalJobController extends Controller
 
     public function deploymentStarted(Request $request, Deployment $deployment): JsonResponse
     {
-        return $this->started($request, $deployment);
+        try {
+            return $this->started($request, $deployment);
+        } catch (QueryException $exception) {
+            if (($exception->errorInfo[0] ?? null) !== '23514') {
+                throw $exception;
+            }
+            Log::critical('Deployment status constraint is out of sync with the application', ['deployment_id' => $deployment->id, 'constraint' => 'deployments_status_check', 'exception' => $this->exceptionDetails($exception)]);
+
+            return response()->json(['error' => ['code' => 'deployment_schema_mismatch', 'message' => 'Deployment claiming is unavailable because the database state machine is not configured.', 'current_status' => $deployment->fresh()->status]], 503);
+        }
+    }
+
+    public function deploymentRunning(Request $request, Deployment $deployment): JsonResponse
+    {
+        $data = $request->validate(['lease_token' => 'required|string|size:64']);
+
+        return DB::transaction(function () use ($deployment, $data) {
+            $locked = Deployment::lockForUpdate()->findOrFail($deployment->id);
+            if ($locked->status !== 'claimed' || ! hash_equals((string) $locked->lease_token, $data['lease_token'])) {
+                return $this->stateConflict($locked, 'claimed', 'start');
+            }
+            $locked->transitionTo('running', ['started_at' => $locked->started_at ?: now(), 'heartbeat_at' => now()]);
+            $locked->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => 'deployment', 'event_type' => 'deployment.started', 'progress' => $locked->progress, 'message' => 'WordPress deployment started', 'created_at' => now()]);
+
+            return response()->json(['data' => $locked->fresh()]);
+        });
     }
 
     public function generationHeartbeat(Request $request, GenerationRun $generationRun): JsonResponse
@@ -283,13 +308,16 @@ class InternalJobController extends Controller
             $locked = $job::lockForUpdate()->findOrFail($job->id);
             $attempt = $data['attempt'] ?? $locked->attempt;
             if ($locked->status !== 'queued' || $attempt !== $locked->attempt || $attempt > $locked->max_attempts) {
-                return response()->json(['data' => ['claimed' => false, 'status' => $locked->status]]);
+                return $this->claimConflict($locked);
             }
             $lease = hash('sha256', Str::random(64));
             $locked->increment('queue_delivery_count');
-            // claimed -> running is kept in this row-locked transaction so no scheduler can steal between transitions.
-            $locked->update(['status' => 'claimed', 'worker_id' => $data['worker_id'], 'claimed_by_worker_id' => $data['worker_id'], 'lease_token' => $lease, 'lease_expires_at' => now()->addSeconds(config('app.job_lease_seconds', 90)), 'started_at' => $locked->started_at ?: now(), 'heartbeat_at' => now()]);
-            $locked->update(['status' => 'running']);
+            $locked->update(['status' => 'claimed', 'worker_id' => $data['worker_id'], 'claimed_by_worker_id' => $data['worker_id'], 'lease_token' => $lease, 'lease_expires_at' => now()->addSeconds(config('app.job_lease_seconds', 90)), 'heartbeat_at' => now()]);
+            if ($locked instanceof Deployment) {
+                $locked->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => 'deployment', 'event_type' => 'deployment.claimed', 'progress' => $locked->progress, 'message' => 'Worker claimed deployment', 'created_at' => now()]);
+            } else {
+                $locked->update(['status' => 'running', 'started_at' => $locked->started_at ?: now()]);
+            }
 
             return response()->json(['data' => $locked->fresh()->toArray() + ['claimed' => true]]);
         });
@@ -398,6 +426,11 @@ class InternalJobController extends Controller
         Log::warning('Job state transition conflict', ['generation_run_id' => $job instanceof GenerationRun ? $job->id : null, 'deployment_id' => $job instanceof Deployment ? $job->id : null, 'queue_job_id' => request()->header('X-Queue-Job-Id'), 'current_database_status' => $job->status, 'expected_status' => $expected, 'worker_id' => request()->input('worker_id'), 'lease_owner' => $job->claimed_by_worker_id, 'lease_expiration' => $job->lease_expires_at, 'attempt_number' => $job instanceof Deployment ? $job->attempt_number : $job->attempt, 'last_heartbeat' => $job->heartbeat_at, 'completed_at' => $job->completed_at, 'failed_at' => $job instanceof Deployment ? $job->failed_at : null, 'transition' => $transition]);
 
         return response()->json(['error' => ['code' => $job instanceof GenerationRun ? 'generation_state_conflict' : 'deployment_state_conflict', 'current_status' => $job->status, 'expected_status' => $expected, 'transition' => $transition]], 409);
+    }
+
+    private function claimConflict($job): JsonResponse
+    {
+        return response()->json(['error' => ['code' => $job instanceof Deployment ? 'deployment_claim_conflict' : 'generation_claim_conflict', 'message' => 'The deployment could not be claimed because its state changed.', 'current_status' => $job->status]], 409);
     }
 
     private function eventUuid(string $key): string

@@ -161,4 +161,5 @@ Route::middleware('internal.worker')->prefix('internal')->group(function () {
     Route::post('/deployments/{deployment}/rollback-snapshot/init', [InternalJobController::class, 'deploymentRollbackSnapshotInit']);
     Route::post('/deployments/{deployment}/rollback-snapshot/chunks', [InternalJobController::class, 'deploymentRollbackSnapshotChunk']);
     Route::post('/deployments/{deployment}/rollback-snapshot/complete', [InternalJobController::class, 'deploymentRollbackSnapshotComplete']);
+    Route::post('/deployments/{deployment}/running', [InternalJobController::class, 'deploymentRunning']);
 });
