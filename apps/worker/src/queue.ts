@@ -1,6 +1,11 @@
 import type Redis from 'ioredis';
 import { z } from 'zod';
 import { logger } from './logger.js';
+import {
+  DeploymentConflictError,
+  InternalApiError,
+  PermanentApiError,
+} from './internal-api.js';
 
 const transportJobSchema = z
   .object({
@@ -62,10 +67,37 @@ export async function consumeOne(
         await processJob(job);
         await redis.del(`${config.prefix}:published:${job.idempotency_key}`);
       } catch (error) {
-        // An unexpected transport/process crash is retried. Domain failures are
-        // reported to the API by JobHandlers and resolve normally.
-        await redis.lpush(ready, payload);
-        throw error;
+        if (error instanceof InternalApiError && error.retryable) {
+          const delayMs = retryDelayMs(job.attempt);
+          logger.error('Internal API request will be retried', {
+            deploymentId:
+              job.type === 'deployment' ? job.resource_id : undefined,
+            resourceId: job.resource_id,
+            status: error.details.status,
+            apiErrorCode: error.details.code,
+            decision: 'retry',
+            retryDelayMs: delayMs,
+          });
+          await sleep(delayMs);
+          await redis.lpush(ready, payload);
+        } else {
+          const permanent = error instanceof PermanentApiError;
+          logger.info(
+            error instanceof DeploymentConflictError
+              ? 'Deployment conflict'
+              : 'Queue job discarded',
+            {
+              deploymentId:
+                job.type === 'deployment' ? job.resource_id : undefined,
+              resourceId: job.resource_id,
+              status: permanent ? error.details.status : undefined,
+              apiErrorCode: permanent
+                ? error.details.code
+                : 'unexpected_worker_error',
+              decision: 'discard',
+            },
+          );
+        }
       } finally {
         if ((await redis.get(lock)) === workerId) await redis.del(lock);
       }
@@ -87,3 +119,10 @@ export async function consumeOne(
   }
   return true;
 }
+
+export function retryDelayMs(attempt: number): number {
+  return Math.min(30_000, 1_000 * 2 ** Math.max(0, attempt - 1));
+}
+
+const sleep = (milliseconds: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
