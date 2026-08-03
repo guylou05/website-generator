@@ -76,8 +76,9 @@ class InternalJobController extends Controller
 
     public function deploymentRollbackSnapshotInit(Request $request, Deployment $deployment): JsonResponse
     {
-        abort_unless($deployment->status === 'running', 409);
+        $this->assertDeploymentLease($request, $deployment);
         $data = $request->validate([
+            'lease_token' => 'required|string|size:64',
             'checksum' => 'required|size:64', 'uncompressed_size' => 'required|integer|min:2',
             'compressed_size' => 'required|integer|min:1', 'content_type' => 'required|in:application/json',
             'content_encoding' => 'required|in:gzip', 'schema_version' => 'required|string|max:20', 'metrics' => 'required|array',
@@ -98,13 +99,18 @@ class InternalJobController extends Controller
             }
         });
 
-        return response()->json(['data' => ['upload_id' => $uploadId, 'chunk_size_bytes' => config('deployment.snapshot_chunk_max_bytes')]]);
+        $chunks = DeploymentSnapshotUploadChunk::where('upload_id', $uploadId)->orderBy('sequence')->pluck('sequence')->all();
+        Log::info('Snapshot upload initialized', ['deployment_id' => $deployment->id, 'chunk_number' => null, 'total_chunks' => (int) ceil($data['compressed_size'] / config('deployment.snapshot_chunk_max_bytes')), 'byte_size' => $data['compressed_size'], 'duration_ms' => 0, 'error_code' => null]);
+
+        return response()->json(['data' => ['upload_id' => $uploadId, 'chunk_size_bytes' => config('deployment.snapshot_chunk_max_bytes'), 'completed_chunks' => $chunks, 'verified' => (bool) $deployment->rollback_snapshot_id]]);
     }
 
     public function deploymentRollbackSnapshotChunk(Request $request, Deployment $deployment): JsonResponse
     {
-        abort_unless($deployment->status === 'running', 409);
+        $this->assertDeploymentLease($request, $deployment);
+        $started = hrtime(true);
         $data = $request->validate([
+            'lease_token' => 'required|string|size:64',
             'upload_id' => ['required', 'string', 'size:64', new ValidUtf8],
             'sequence' => ['required', 'integer', 'min:0'],
             'checksum' => ['required', 'string', 'size:64', new ValidUtf8],
@@ -115,18 +121,28 @@ class InternalJobController extends Controller
         abort_if(strlen($bytes) > config('deployment.snapshot_chunk_max_bytes'), 413, 'Snapshot chunk exceeds application limit.');
         abort_unless(hash_equals($data['checksum'], hash('sha256', $bytes)), 422, 'Snapshot chunk checksum mismatch.');
         $upload = DeploymentSnapshotUpload::whereKey($data['upload_id'])->where('deployment_id', $deployment->id)->firstOrFail();
+        Log::info('Snapshot chunk started', ['deployment_id' => $deployment->id, 'chunk_number' => $data['sequence'] + 1, 'total_chunks' => (int) ceil($upload->manifest['compressed_size'] / config('deployment.snapshot_chunk_max_bytes')), 'byte_size' => strlen($bytes), 'duration_ms' => 0, 'error_code' => null]);
         $chunk = DeploymentSnapshotUploadChunk::firstOrCreate(
             ['upload_id' => $upload->id, 'sequence' => $data['sequence']],
             ['checksum' => $data['checksum'], 'data' => $bytes]
         );
         abort_unless(hash_equals($data['checksum'], $chunk->checksum), 409, 'Chunk sequence already contains different data.');
+        $upload->touch();
+        $totalChunks = max(1, (int) ceil($upload->manifest['compressed_size'] / config('deployment.snapshot_chunk_max_bytes')));
+        $deployment->update(['current_stage' => 'capture_rollback_snapshot', 'progress' => 7 + (int) floor((($data['sequence'] + 1) / $totalChunks) * 6)]);
+        Log::info('Snapshot chunk completed', ['deployment_id' => $deployment->id, 'chunk_number' => $data['sequence'] + 1, 'total_chunks' => $totalChunks, 'byte_size' => strlen($bytes), 'duration_ms' => (int) ((hrtime(true) - $started) / 1e6), 'error_code' => null]);
 
         return response()->json(['data' => ['sequence' => $data['sequence'], 'checksum' => $data['checksum']]]);
     }
 
     public function deploymentRollbackSnapshotComplete(Request $request, Deployment $deployment): JsonResponse
     {
-        $data = $request->validate(['upload_id' => 'required|size:64']);
+        $this->assertDeploymentLease($request, $deployment);
+        $started = hrtime(true);
+        $data = $request->validate(['lease_token' => 'required|string|size:64', 'upload_id' => 'required|size:64']);
+        if ($deployment->rollback_snapshot_id && ($snapshot = $deployment->rollbackSnapshot)) {
+            return response()->json(['data' => ['id' => $snapshot->id, 'checksum' => $snapshot->checksum, 'verified' => true]]);
+        }
         $upload = DeploymentSnapshotUpload::whereKey($data['upload_id'])->where('deployment_id', $deployment->id)->firstOrFail();
         $manifest = $upload->manifest;
         $compressed = DeploymentSnapshotUploadChunk::where('upload_id', $upload->id)
@@ -137,6 +153,7 @@ class InternalJobController extends Controller
         abort_unless(strlen($compressed) === $manifest['compressed_size'], 422, 'Snapshot upload is incomplete.');
         $json = gzdecode($compressed);
         abort_unless($json !== false && strlen($json) === $manifest['uncompressed_size'] && hash_equals($manifest['checksum'], hash('sha256', $json)), 422, 'Snapshot artifact checksum mismatch.');
+        Log::info('Snapshot checksum verified', ['deployment_id' => $deployment->id, 'chunk_number' => null, 'total_chunks' => DeploymentSnapshotUploadChunk::where('upload_id', $upload->id)->count(), 'byte_size' => strlen($json), 'duration_ms' => (int) ((hrtime(true) - $started) / 1e6), 'error_code' => null]);
         $decoded = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
         abort_unless(is_array($decoded), 422);
         $snapshot = DB::transaction(function () use ($deployment, $decoded, $manifest, $upload) {
@@ -147,12 +164,21 @@ class InternalJobController extends Controller
                 'schema_version' => $manifest['schema_version'], 'manifest' => $manifest['metrics'], 'created_at' => now(),
             ]);
             $deployment->update(['rollback_snapshot_id' => $snapshot->id]);
-            $upload->delete();
+            $upload->touch();
 
             return $snapshot;
         });
+        Log::info('Snapshot manifest persisted', ['deployment_id' => $deployment->id, 'chunk_number' => null, 'total_chunks' => DeploymentSnapshotUploadChunk::where('upload_id', $upload->id)->count(), 'byte_size' => $manifest['uncompressed_size'], 'duration_ms' => (int) ((hrtime(true) - $started) / 1e6), 'error_code' => null]);
 
         return response()->json(['data' => ['id' => $snapshot->id, 'checksum' => $snapshot->checksum, 'verified' => true]]);
+    }
+
+    private function assertDeploymentLease(Request $request, Deployment $deployment): void
+    {
+        abort_unless($deployment->status === 'running'
+            && is_string($request->input('lease_token'))
+            && hash_equals((string) $deployment->lease_token, $request->input('lease_token')),
+            409, 'Deployment lease is no longer owned by this worker.');
     }
 
     public function generationCancellation(GenerationRun $generationRun): JsonResponse

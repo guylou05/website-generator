@@ -73,14 +73,14 @@ class DeploymentSnapshotChunkTest extends TestCase
         DeploymentSnapshotUpload::create([
             'id' => $uploadId,
             'deployment_id' => $deployment->id,
-            'manifest' => [],
+            'manifest' => ['compressed_size' => strlen($bytes)],
             'created_at' => now(),
         ]);
         $checksum = hash('sha256', $bytes);
 
         $this->withToken('test-worker-token')->postJson(
             '/api/internal/deployments/'.$deployment->id.'/rollback-snapshot/chunks',
-            ['upload_id' => $uploadId, 'sequence' => 0, 'checksum' => $checksum, 'data' => base64_encode($bytes)],
+            ['lease_token' => str_repeat('a', 64), 'upload_id' => $uploadId, 'sequence' => 0, 'checksum' => $checksum, 'data' => base64_encode($bytes)],
         )->assertOk();
 
         return DeploymentSnapshotUploadChunk::sole();
@@ -97,6 +97,7 @@ class DeploymentSnapshotChunkTest extends TestCase
             'generation_run_id' => $run->id,
             'wordpress_connection_id' => $connection->id,
             'status' => 'running',
+            'lease_token' => str_repeat('a', 64),
             'dry_run' => false,
         ]);
     }

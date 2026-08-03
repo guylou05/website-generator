@@ -44,6 +44,8 @@ const duration = (ms: number | null) =>
 const label = (value: string) =>
   value === 'claimed'
     ? 'Worker claimed deployment'
+    : value === 'capture_rollback_snapshot'
+      ? 'Capturing rollback snapshot'
     : value.replaceAll('_', ' ');
 const safeUrl = (value: string | null) => {
   if (!value) return null;
@@ -205,7 +207,9 @@ export default function DeploymentProgressPage() {
           <Meta
             title="Current stage"
             value={
-              deployment.currentStage
+              deployment.currentStage === 'capture_rollback_snapshot' && deployment.recoveryCount > 0
+                ? 'Resuming rollback snapshot upload'
+                : deployment.currentStage
                 ? label(deployment.currentStage)
                 : deployment.status === 'succeeded'
                   ? 'Finalized'

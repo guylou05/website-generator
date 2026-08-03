@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { gzipSync, gunzipSync } from 'node:zlib';
+import { gzip, gunzipSync } from 'node:zlib';
+import { promisify } from 'node:util';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- callback data crosses a validated JSON API boundary */
 import {
@@ -55,6 +56,10 @@ type DeploymentContext = {
   };
 };
 class Cancelled extends Error {}
+class LeaseLost extends Error {
+  readonly code = 'lease_lost';
+}
+const gzipAsync = promisify(gzip);
 export class JobHandlers {
   constructor(
     private readonly api: InternalApiClient,
@@ -74,7 +79,7 @@ export class JobHandlers {
     });
     if (claim.data.claimed === false || !claim.data.lease_token) return;
     const leaseToken = claim.data.lease_token;
-    const stop = this.heartbeat('generations', id, leaseToken);
+    const heartbeat = this.heartbeat('generations', id, leaseToken);
     try {
       const mock = new MockAiProvider(
         mockResponses(context.data.business_profile),
@@ -180,7 +185,7 @@ export class JobHandlers {
       });
       await this.fail('generations', id, error);
     } finally {
-      stop();
+      heartbeat.stop();
     }
   }
   async deployment(id: string, attempt = 1): Promise<void> {
@@ -208,7 +213,7 @@ export class JobHandlers {
       id,
       'execution-context',
     );
-    const stop = this.heartbeat('deployments', id, leaseToken);
+    const heartbeat = this.heartbeat('deployments', id, leaseToken);
     try {
       await this.cancelGuard('deployments', id);
       const { wordpress_connection: wordpress, generation_output: output } =
@@ -218,13 +223,7 @@ export class JobHandlers {
         output.elementor?.documents === undefined
       )
         throw new Error('Generation output is invalid');
-      await this.api.post('deployments', id, 'events', {
-        event_uuid: randomUUID(),
-        stage: 'deployment',
-        event_type: 'deployment.started',
-        progress: 10,
-        message: 'WordPress deployment started',
-      });
+      heartbeat.assertOwned();
       await this.cancelGuard('deployments', id);
       const authentication =
         wordpress.authentication_type === 'connector'
@@ -264,7 +263,7 @@ export class JobHandlers {
         metadata?: Record<string, unknown>,
       ) =>
         this.api.post('deployments', id, 'events', {
-          event_uuid: randomUUID(),
+          event_uuid: deterministicEventId(id, stage, eventType),
           stage,
           event_type: eventType,
           progress: Math.floor((index / executionStages.length) * 100),
@@ -279,7 +278,7 @@ export class JobHandlers {
       const rollback = context.data.plan?.snapshot;
       if (!rollback)
         throw new Error('Approved rollback source snapshot is missing');
-      await this.persistRollbackSnapshot(id, rollback);
+      await this.persistRollbackSnapshot(id, rollback, leaseToken, heartbeat.assertOwned);
       await stageEvent('capture_rollback_snapshot', 'stage.completed', 2);
       const elementorPages = Object.fromEntries(
         output.elementor.documents.map((d) => [d.page, d.elements]),
@@ -316,18 +315,26 @@ export class JobHandlers {
         result: { ...result, site_url: wordpress.url },
       });
     } catch (error) {
+      if (error instanceof LeaseLost || heartbeat.lost()) {
+        logger.error('Deployment stopped after lease ownership was lost', { deploymentId: id, errorCode: 'lease_lost' });
+        return;
+      }
       if (error instanceof InternalApiError) throw error;
       await this.fail('deployments', id, error);
     } finally {
-      stop();
+      heartbeat.stop();
     }
   }
   private async persistRollbackSnapshot(
     id: string,
     snapshot: Record<string, unknown>,
+    leaseToken: string,
+    assertOwned: () => void,
   ): Promise<void> {
+    const stageStarted = Date.now();
     const serialized = Buffer.from(JSON.stringify(snapshot));
-    const compressed = gzipSync(serialized);
+    const compressed = await gzipAsync(serialized);
+    assertOwned();
     const checksum = createHash('sha256').update(serialized).digest('hex');
     const metrics = snapshotMetrics(snapshot, serialized.byteLength);
     logger.info('Rollback snapshot prepared', {
@@ -336,8 +343,9 @@ export class JobHandlers {
       compressedSizeBytes: compressed.byteLength,
     });
     const init = await this.api.post<{
-      data: { upload_id: string; chunk_size_bytes: number };
+      data: { upload_id: string; chunk_size_bytes: number; completed_chunks: number[]; verified?: boolean };
     }>('deployments', id, 'rollback-snapshot/init', {
+      lease_token: leaseToken,
       checksum,
       uncompressed_size: serialized.byteLength,
       compressed_size: compressed.byteLength,
@@ -347,34 +355,61 @@ export class JobHandlers {
       metrics,
     });
     const chunkSize = init.data.chunk_size_bytes;
+    const totalChunks = Math.ceil(compressed.length / chunkSize);
+    const completed = new Set(init.data.completed_chunks ?? []);
+    logger.info('Snapshot upload initialized', { deploymentId: id, totalChunks, byteSize: compressed.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
     for (
       let offset = 0, sequence = 0;
       offset < compressed.length;
       offset += chunkSize, sequence += 1
     ) {
+      assertOwned();
       const chunk = compressed.subarray(offset, offset + chunkSize);
+      if (completed.has(sequence)) {
+        logger.info('Snapshot chunk already persisted; skipping', { deploymentId: id, chunkNumber: sequence + 1, totalChunks, byteSize: chunk.byteLength, durationMs: 0, errorCode: null });
+        continue;
+      }
+      const chunkStarted = Date.now();
+      logger.info('Snapshot chunk started', { deploymentId: id, chunkNumber: sequence + 1, totalChunks, byteSize: chunk.byteLength, durationMs: 0, errorCode: null });
       await this.api.post('deployments', id, 'rollback-snapshot/chunks', {
+        lease_token: leaseToken,
         upload_id: init.data.upload_id,
         sequence,
         checksum: createHash('sha256').update(chunk).digest('hex'),
         data: chunk.toString('base64'),
       });
+      logger.info('Snapshot chunk completed', { deploymentId: id, chunkNumber: sequence + 1, totalChunks, byteSize: chunk.byteLength, durationMs: Date.now() - chunkStarted, errorCode: null });
     }
     if (!gunzipSync(compressed).equals(serialized))
       throw new Error('Rollback snapshot compression verification failed');
+    assertOwned();
+    logger.info('Snapshot upload completed', { deploymentId: id, totalChunks, byteSize: compressed.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
     await this.api.post('deployments', id, 'rollback-snapshot/complete', {
+      lease_token: leaseToken,
       upload_id: init.data.upload_id,
     });
+    assertOwned();
+    logger.info('Snapshot checksum verified', { deploymentId: id, totalChunks, byteSize: serialized.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
+    logger.info('Snapshot manifest persisted', { deploymentId: id, totalChunks, byteSize: serialized.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
+    logger.info('Snapshot stage completed', { deploymentId: id, totalChunks, byteSize: serialized.byteLength, durationMs: Date.now() - stageStarted, errorCode: null });
   }
-  private heartbeat(kind: JobKind, id: string, leaseToken: string): () => void {
-    const timer = setInterval(
-      () =>
-        void this.api
-          .post(kind, id, 'heartbeat', { lease_token: leaseToken })
-          .catch(() => {}),
-      this.heartbeatMs,
-    );
-    return () => clearInterval(timer);
+  private heartbeat(kind: JobKind, id: string, leaseToken: string) {
+    let stopped = false;
+    let inFlight = false;
+    let leaseLost = false;
+    const beat = async () => {
+      if (stopped || inFlight || leaseLost) return;
+      inFlight = true;
+      try { await this.api.post(kind, id, 'heartbeat', { lease_token: leaseToken }); }
+      catch (error) {
+        const status = error instanceof InternalApiError ? error.details.status : undefined;
+        logger.error('Worker heartbeat failed', { jobKind: kind, jobId: id, errorCode: status === 409 ? 'lease_lost' : 'heartbeat_failed' });
+        if (status === 409) leaseLost = true;
+      } finally { inFlight = false; }
+    };
+    void beat();
+    const timer = setInterval(() => void beat(), this.heartbeatMs);
+    return { stop: () => { stopped = true; clearInterval(timer); }, lost: () => leaseLost, assertOwned: () => { if (leaseLost) throw new LeaseLost('Deployment lease ownership was lost'); } };
   }
   private async cancelGuard(kind: JobKind, id: string): Promise<void> {
     const state = await this.api.get<{ cancelled: boolean }>(
@@ -523,4 +558,9 @@ function mockResponses(profile: Record<string, unknown>): any {
       pages: [],
     },
   };
+}
+
+function deterministicEventId(deploymentId: string, stage: string, eventType: string): string {
+  const hex = createHash('sha256').update(`${deploymentId}:${stage}:${eventType}`).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }

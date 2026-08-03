@@ -6,6 +6,7 @@ use App\Models\Deployment;
 use App\Models\GenerationRun;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use App\Models\DeploymentSnapshotUpload;
 
 class StaleJobRecoveryService
 {
@@ -61,6 +62,19 @@ class StaleJobRecoveryService
                 }
                 if ($record->status !== 'queued' && (($record->lease_expires_at && $record->lease_expires_at->isFuture()) || ($record->lease_expires_at && $record->heartbeat_at && $record->heartbeat_at->gt($record->lease_expires_at)))) {
                     return;
+                }
+                $cutoff = now()->subSeconds(config('app.job_stale_after_seconds'));
+                if ($record->heartbeat_at && $record->heartbeat_at->gte($cutoff)) {
+                    return;
+                }
+                if ($record instanceof Deployment) {
+                    $recentUpload = DeploymentSnapshotUpload::where('deployment_id', $record->id)
+                        ->where(fn (Builder $query) => $query->where('updated_at', '>=', $cutoff)->orWhere(fn (Builder $created) => $created->whereNull('updated_at')->where('created_at', '>=', $cutoff)))
+                        ->exists();
+                    $terminal = $record->events()->whereIn('event_type', ['deployment.completed', 'deployment.failed', 'deployment.cancelled', 'stage.failed'])->where(fn (Builder $query) => $query->whereIn('event_type', ['deployment.completed', 'deployment.failed', 'deployment.cancelled'])->orWhere('metadata->terminal', true))->exists();
+                    if ($recentUpload || $terminal) {
+                        return;
+                    }
                 }
                 if (str_starts_with((string) data_get($record->error, 'classification'), 'non_retryable')) {
                     return;
