@@ -50,7 +50,7 @@ class InternalJobController extends Controller
             'plan' => ['id' => $plan->id, 'version' => $plan->plan_version, 'changes' => $plan->changes, 'options' => $deployment->options, 'snapshot' => $plan->snapshot],
             'generation_output' => ['blueprint' => $revision->blueprint, 'elementor' => $revision->elementor_output],
             // This route is worker-authenticated and never mounted in the browser route group.
-            'wordpress' => ['url' => $c->site_url, 'authentication_type' => $c->authentication_type, 'username' => $c->username, 'application_password' => $c->encrypted_application_password, 'connector_token' => $c->encrypted_connector_token],
+            'wordpress_connection' => ['url' => $c->site_url, 'authentication_type' => $c->authentication_type, 'username' => $c->username, 'application_password' => $c->encrypted_application_password, 'connector_token' => $c->encrypted_connector_token],
         ]]);
     }
 
@@ -282,7 +282,20 @@ class InternalJobController extends Controller
             return response()->json(['data' => $job]);
         }
         $status = ($data['cancelled'] ?? false) || $job->status === 'cancelling' ? 'cancelled' : 'failed';
-        $job->update(['status' => $status, 'error' => $status === 'failed' ? ['code' => $data['code'], 'message' => $data['message'], 'details' => $data['details'] ?? null] : null, 'current_stage' => null, 'completed_at' => now()]);
+        $endedAt = now();
+        $classification = str_contains($data['code'], 'Configuration') ? 'retryable_after_configuration_change' : 'non_retryable_data_error';
+        $message = $classification === 'retryable_after_configuration_change'
+            ? 'The deployment client used an invalid authentication configuration. Verify the WordPress connection and retry after the deployment service is updated.'
+            : $data['message'];
+        $updates = ['status' => $status, 'error' => $status === 'failed' ? ['code' => $data['code'], 'classification' => $classification, 'message' => $message, 'details' => $data['details'] ?? null] : null, 'completed_at' => $endedAt];
+        if ($job instanceof Deployment) {
+            $stage = $job->current_stage ?: 'verify_connection';
+            $updates += ['current_stage' => $stage, 'failed_at' => $status === 'failed' ? $endedAt : null, 'cancelled_at' => $status === 'cancelled' ? $endedAt : null, 'duration_ms' => $job->started_at ? $endedAt->diffInMilliseconds($job->started_at, true) : 0];
+            $job->events()->create(['event_uuid' => (string) Str::uuid(), 'stage' => $stage, 'event_type' => 'stage.failed', 'progress' => $job->progress, 'message' => $message, 'created_at' => $endedAt]);
+        } else {
+            $updates['current_stage'] = null;
+        }
+        $job->update($updates);
 
         return response()->json(['data' => $job->fresh('events')]);
     }

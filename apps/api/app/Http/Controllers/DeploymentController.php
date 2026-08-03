@@ -14,6 +14,8 @@ use App\Services\JobTransport;
 use App\Services\UsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DeploymentController extends Controller
 {
@@ -31,9 +33,12 @@ class DeploymentController extends Controller
 
     public function show(Deployment $deployment): JsonResponse
     {
-        $deployment->load(['events', 'items', 'project:id,name', 'wordpressConnection:id,name,site_url', 'websiteRevision:id,revision_number']);
+        $deployment->load(['events', 'items', 'project:id,name', 'deploymentPlan', 'wordpressConnection:id,name,site_url,status', 'websiteRevision:id,revision_number']);
 
-        return response()->json(['data' => $this->safeDeployment($deployment)]);
+        $data = $this->safeDeployment($deployment);
+        [$data['retry_allowed'], $data['retry_reason']] = $this->retryEligibility($deployment);
+
+        return response()->json(['data' => $data]);
     }
 
     /** Execute a queued/failed approved deployment. Completed executions are idempotent. */
@@ -115,21 +120,47 @@ class DeploymentController extends Controller
         return response()->json(['data' => $deployment->fresh('events')], 202);
     }
 
-    public function retry(Deployment $deployment, JobTransport $jobs): JsonResponse
+    public function retry(Request $request, Deployment $deployment, JobTransport $jobs): JsonResponse
     {
-        if (! in_array($deployment->status, ['failed', 'partially_succeeded', 'cancelled', 'stale'], true)) {
-            return response()->json(['error' => ['code' => 'not_retryable', 'message' => 'Deployment is not retryable.']], 409);
+        [$allowed, $reason] = $this->retryEligibility($deployment);
+        if (! $allowed) {
+            return response()->json(['error' => ['code' => 'not_retryable', 'message' => $reason]], 409);
         }
-        $retryable = (bool) data_get($deployment->error, 'retryable', data_get($deployment->error, 'details.retryable', false));
-        if (! $retryable || in_array(data_get($deployment->error, 'code'), ['validation_failed', 'permission_denied', 'authentication_failed', 'remote_drift'], true)) {
-            return response()->json(['error' => ['code' => 'not_retryable', 'message' => 'This failure requires review and cannot be retried safely.']], 409);
-        }
-        $copy = $deployment->replicate(['status', 'progress', 'current_stage', 'operations', 'result', 'error', 'queued_at', 'heartbeat_at', 'worker_id', 'started_at', 'completed_at']);
-        $copy->fill(['status' => 'queued', 'progress' => 0, 'queued_at' => now(), 'attempt' => $deployment->attempt + 1]);
-        $copy->save();
+        $copy = DB::transaction(function () use ($deployment, $request) {
+            $source = Deployment::lockForUpdate()->findOrFail($deployment->id);
+            if (Deployment::where('deployment_plan_id', $source->deployment_plan_id)->whereIn('status', ['queued', 'running', 'cancelling'])->exists()) {
+                abort(409, 'An active deployment attempt already exists for this plan.');
+            }
+            $copy = $source->replicate(['status', 'progress', 'current_stage', 'operations', 'result', 'error', 'error_details', 'queued_at', 'heartbeat_at', 'worker_id', 'started_at', 'completed_at', 'failed_at', 'cancelled_at', 'idempotency_key']);
+            $root = $source->parent_deployment_id ?: $source->id;
+            $number = max((int) $source->attempt_number, (int) $source->attempt) + 1;
+            $copy->fill(['parent_deployment_id' => $root, 'retry_of_id' => $source->id, 'attempt_number' => $number, 'attempt' => $number, 'initiated_by' => $request->user()?->id, 'created_by' => $request->user()?->id, 'idempotency_key' => (string) Str::uuid(), 'status' => 'queued', 'progress' => 0, 'current_stage' => null, 'queued_at' => now()]);
+            $copy->save();
+
+            return $copy;
+        });
         $jobs->deployment($copy->id, $copy->attempt ?? 1);
 
         return response()->json(['data' => $copy], 202);
+    }
+
+    private function retryEligibility(Deployment $deployment): array
+    {
+        if (! in_array($deployment->status, ['failed', 'partially_succeeded', 'cancelled'], true)) {
+            return [false, 'Only failed, partially successful, or cancelled deployments can be retried.'];
+        }
+        $plan = $deployment->deploymentPlan;
+        if (! $plan || ! $plan->verifyIntegrity() || ! hash_equals((string) $deployment->approval_checksum, (string) $plan->approval_checksum)) {
+            return [false, 'The approved plan is missing or no longer passes its checksum.'];
+        }
+        if ($deployment->wordpressConnection?->status !== 'verified') {
+            return [false, 'Verify the WordPress connection before retrying.'];
+        }
+        if (Deployment::where('deployment_plan_id', $deployment->deployment_plan_id)->where('id', '!=', $deployment->id)->whereIn('status', ['queued', 'running', 'cancelling'])->exists()) {
+            return [false, 'An active deployment attempt already exists for this plan.'];
+        }
+
+        return [true, null];
     }
 
     public function cancel(Deployment $deployment): JsonResponse

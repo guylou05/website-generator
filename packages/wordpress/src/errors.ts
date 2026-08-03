@@ -57,6 +57,26 @@ export class WordPressConfigurationError extends WordPressError {
     this.name = 'WordPressConfigurationError';
   }
 }
+export class WordPressAuthenticationConfigurationError extends WordPressError {
+  constructor(
+    readonly code:
+      | 'connector_token_missing'
+      | 'application_password_username_missing'
+      | 'application_password_missing'
+      | 'unsupported_authentication_type',
+  ) {
+    const messages = {
+      connector_token_missing: 'A connector token is required',
+      application_password_username_missing: 'A WordPress username is required',
+      application_password_missing:
+        'A WordPress application password is required',
+      unsupported_authentication_type:
+        'The WordPress authentication type is unsupported',
+    } as const;
+    super(messages[code], code);
+    this.name = 'WordPressAuthenticationConfigurationError';
+  }
+}
 export class WordPressDeploymentError extends WordPressError {
   constructor(
     message: string,

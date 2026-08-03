@@ -1,7 +1,4 @@
-import {
-  applicationPasswordAuthorization,
-  normalizeWordPressUrl,
-} from './auth.js';
+import { authenticationAuthorization, normalizeWordPressUrl } from './auth.js';
 import {
   WordPressApiError,
   WordPressAuthenticationError,
@@ -34,6 +31,7 @@ export interface WordPressRequestOptions {
 export class WordPressClient {
   readonly baseUrl: string;
   private readonly authorization: string;
+  private readonly authenticationType: WordPressCredentials['authentication']['type'];
   private readonly fetchImplementation: typeof fetch;
   private readonly timeoutMs: number;
   private readonly maxAttempts: number;
@@ -44,7 +42,10 @@ export class WordPressClient {
     options: WordPressClientOptions = {},
   ) {
     this.baseUrl = normalizeWordPressUrl(credentials.url);
-    this.authorization = applicationPasswordAuthorization(credentials);
+    this.authorization = authenticationAuthorization(
+      credentials.authentication,
+    );
+    this.authenticationType = credentials.authentication.type;
     this.fetchImplementation = options.fetch ?? globalThis.fetch;
     if (!this.fetchImplementation)
       throw new WordPressConfigurationError(
@@ -64,6 +65,23 @@ export class WordPressClient {
   }
 
   async testConnection(): Promise<ConnectionTestResult> {
+    if (this.authenticationType === 'connector') {
+      const health = await this.request<{
+        connected: boolean;
+        capabilities?: Record<string, boolean>;
+      }>('/wp-json/website-generator/v1/health');
+      if (!health.connected)
+        throw new WordPressAuthenticationError(
+          'The connector did not report a healthy connection',
+          401,
+        );
+      return {
+        success: true,
+        userId: 0,
+        username: 'connector',
+        capabilities: health.capabilities ?? { manage_options: true },
+      };
+    }
     const user = await this.request<{
       id: number;
       slug: string;

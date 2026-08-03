@@ -1,10 +1,16 @@
 import type { SiteBlueprint } from '@website-generator/shared/schema';
 import type { ElementorDocument } from '@website-generator/renderer/elementor';
 
+export type WordPressAuthentication =
+  | { readonly type: 'connector'; readonly token: unknown }
+  | {
+      readonly type: 'application_password';
+      readonly username: unknown;
+      readonly applicationPassword: unknown;
+    };
 export interface WordPressCredentials {
   readonly url: string;
-  readonly username: string;
-  readonly applicationPassword: string;
+  readonly authentication: WordPressAuthentication;
 }
 export interface WordPressClientOptions {
   readonly timeoutMs?: number;
